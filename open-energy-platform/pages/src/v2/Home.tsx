@@ -7,14 +7,14 @@
 // starts. No dashboards-as-destination; every number is a door into a txn.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
-import { Shell } from './Shell';
+import { Shell, LoadError } from './Shell';
 import { getChains, listTxns } from './api';
 import { groupedStarts } from './starts';
 import {
-  homeSort, moneyValue, zarValue, valueText, ageSince, stateKind, candidatesFor,
+  homeSort, moneyValue, zarValue, valueText, ageSince, stateKind, candidatesFor, rowProps,
   type ChainMap, type TxnRow,
 } from './decl';
 
@@ -38,9 +38,16 @@ export default function Home() {
   const nav = useNavigate();
   const [chains, setChains] = useState<ChainMap>({});
   const [rows, setRows] = useState<TxnRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => { getChains().then(setChains); }, []);
-  useEffect(() => { listTxns({ open: true, mine: true, limit: 200 }).then(setRows); }, [user?.id]);
+  const load = useCallback(() => {
+    setFailed(false); setRows(null);
+    listTxns({ open: true, mine: true, limit: 200 })
+      .then(setRows)
+      .catch(() => { setFailed(true); setRows([]); });
+  }, [user?.id]);
+  useEffect(() => { load(); }, [load]);
 
   const role = user?.role ?? '';
   const ranked = useMemo(() => (rows ? homeSort(rows) : []), [rows]);
@@ -57,7 +64,7 @@ export default function Home() {
     const others: TxnRow[] = [];
     for (const r of rest) {
       const c = chains[r.chain_key];
-      const yours = c && candidatesFor(c, r.state, role).some((x) => x.enabled);
+      const yours = c && candidatesFor(c, r.state, [role]).some((x) => x.enabled);
       (yours ? mine : others).push(r);
     }
     return { mine, others };
@@ -66,7 +73,7 @@ export default function Home() {
   // The day's shape — computed from what's already loaded, no extra endpoint.
   const stats = useMemo(() => {
     const nextIsMine = next && chains[next.chain_key]
-      && candidatesFor(chains[next.chain_key], next.state, role).some((x) => x.enabled);
+      && candidatesFor(chains[next.chain_key], next.state, [role]).some((x) => x.enabled);
     const oldest = ranked.length ? ageSince(ranked[ranked.length - 1].opened_at) : null;
     return {
       open: ranked.length,
@@ -78,7 +85,9 @@ export default function Home() {
 
   return (
     <Shell>
-      {rows === null ? (
+      {failed ? (
+        <LoadError what="your work queue" onRetry={load} />
+      ) : rows === null ? (
         <>
           <div className="v2-skeleton" style={{ height: 76, marginBottom: 'var(--sp-6)' }} />
           <div className="v2-skeleton" style={{ height: 120 }} />
@@ -106,7 +115,7 @@ export default function Home() {
                       onClick={() => nav(`/v2/find?start=${s.chainKey}:${s.edge.id}`)}
                     >
                       <span className="plus">＋</span>
-                      <span className="grow">{s.label}<span className="noun">{s.chain.noun}</span></span>
+                      <span className="grow">{s.label}</span>
                     </button>
                   ))}
                 </div>
@@ -183,7 +192,7 @@ function QueueTable({ rows, chains, onOpen }: { rows: TxnRow[]; chains: ChainMap
           const holder = chains[r.chain_key]?.states[r.state]?.holder;
           const age = ageSince(r.opened_at);
           return (
-            <tr key={r.id} className="v2-row" onClick={() => onOpen(r.id)}>
+            <tr key={r.id} {...rowProps(() => onOpen(r.id), `${r.human_ref} — ${r.title}`)}>
               <td className="ref">{r.human_ref}</td>
               <td className="ttl">{r.title}</td>
               <td><Pill chain={chains[r.chain_key]} state={r.state} /></td>
@@ -202,9 +211,15 @@ function QueueTable({ rows, chains, onOpen }: { rows: TxnRow[]; chains: ChainMap
 
 function NextCard({ row, chain, onOpen }: { row: TxnRow; chain?: ChainMap[string]; onOpen: () => void }) {
   const holder = chain?.states[row.state]?.holder;
-  const why = holder && holder !== 'none' ? `Held by ${holder} — awaiting the next move.` : 'Open and progressing.';
   const age = ageSince(row.opened_at);
   const hasValue = moneyValue(row) !== 0;
+  // Why THIS is first — the honest ranking reason (Home sorts value desc, then
+  // oldest). Not a restatement of the Holder chip below.
+  const why = hasValue
+    ? `The largest open item on your desk — ${valueText(row)} at stake.`
+    : age.tier === 'ok'
+      ? 'The most pressing item on your desk right now.'
+      : `Your oldest open item — waiting ${age.text}.`;
   return (
     <div className="v2-card v2-next">
       <div className="v2-label">Next</div>

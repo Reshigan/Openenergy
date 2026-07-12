@@ -7,14 +7,14 @@
 // /v2 exposes book depth, the left column becomes a real ladder.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
-import { Shell } from './Shell';
+import { Shell, LoadError } from './Shell';
 import { getChains, listTxns } from './api';
 import { tradeStarts } from './starts';
 import {
-  moneyValue, homeSort, zarValue, valueText, stateKind,
+  moneyValue, homeSort, zarValue, valueText, stateKind, rowProps,
   type ChainMap, type TxnRow,
 } from './decl';
 
@@ -31,10 +31,17 @@ export default function Trade() {
   const nav = useNavigate();
   const [chains, setChains] = useState<ChainMap>({});
   const [rows, setRows] = useState<TxnRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const role = user?.role ?? '';
 
   useEffect(() => { getChains().then(setChains); }, []);
-  useEffect(() => { listTxns({ open: true, limit: 300 }).then(setRows); }, []);
+  const load = useCallback(() => {
+    setFailed(false); setRows(null);
+    listTxns({ open: true, limit: 300 })
+      .then(setRows)
+      .catch(() => { setFailed(true); setRows([]); });
+  }, []);
+  useEffect(() => { load(); }, [load]);
 
   // The role's trading-shaped journey domains (Active Trading, Risk & Margin,
   // Post-trade & Settlement, Contracts). Openers + position filter both derive
@@ -88,10 +95,12 @@ export default function Trade() {
         </div>
       )}
 
-      <div className="v2-cols" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
+      <div className="v2-cols v2-cols--trade">
         <div className="v2-col">
           <h4>Your positions</h4>
-          {rows === null ? (
+          {failed ? (
+            <LoadError what="your positions" onRetry={load} />
+          ) : rows === null ? (
             Array.from({ length: 6 }).map((_, i) => <div key={i} className="v2-skeleton" />)
           ) : positions.length === 0 ? (
             <div className="v2-empty">No open positions. Open one from the right.</div>
@@ -106,7 +115,7 @@ export default function Trade() {
                   const label = chains[r.chain_key]?.states[r.state]?.label ?? r.state;
                   const pct = peak > 0 ? Math.max(6, Math.round((Math.abs(moneyValue(r)) / peak) * 100)) : 0;
                   return (
-                    <tr key={r.id} className="v2-row" onClick={() => nav(`/v2/t/${r.id}`)}>
+                    <tr key={r.id} {...rowProps(() => nav(`/v2/t/${r.id}`), `${r.human_ref} — ${r.title}`)}>
                       <td className="ref" style={{ width: 1, whiteSpace: 'nowrap' }}>{r.human_ref}</td>
                       <td className="ttl">{r.title}</td>
                       <td style={{ width: 1 }}><span className={`v2-pill is-${kind}`}>{label}</span></td>
@@ -137,7 +146,7 @@ export default function Trade() {
                     onClick={() => nav(`/v2/find?start=${s.chainKey}:${s.edge.id}`)}
                   >
                     <span className="plus">＋</span>
-                    <span className="grow">{s.label}<span className="noun">{s.chain.noun}</span></span>
+                    <span className="grow">{s.label}</span>
                   </button>
                 ))}
               </div>

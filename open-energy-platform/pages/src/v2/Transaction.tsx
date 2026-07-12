@@ -13,7 +13,7 @@ import { getChains, getTxn, actTxn } from './api';
 import { TransitionForm } from './FieldForm';
 import {
   candidatesFor, stateKind, fromStates, fieldLabel, fmtDuration,
-  explainReject, tsToSAST, spineStates,
+  explainReject, tsToSAST, spineStates, humanize,
   RECORD_ONLY_NOTICE,
   type ChainDecl, type TxnBundle, type Candidate, type Json,
 } from './decl';
@@ -39,10 +39,19 @@ export default function Transaction() {
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
-  const role = user?.role ?? '';
+  // The engine authorizes an action by intersecting edge.by with the actor's
+  // PARTY slots on THIS txn (operator/buyer/seller/…), never the JWT role. Mirror
+  // that: my roles = the live parties whose participant is me. A user with no
+  // slot yet (e.g. before joining) gets []; only edges open to that get through.
+  const myRoles = useMemo(() => {
+    if (bundle === 'missing' || !bundle) return [];
+    return bundle.parties
+      .filter((p) => p.until_event_id === null && p.participant_id === user?.id)
+      .map((p) => p.role_on_txn);
+  }, [bundle, user?.id]);
   const candidates = useMemo(
-    () => (chain && bundle !== 'missing' && bundle ? candidatesFor(chain, bundle.txn.state, role) : []),
-    [chain, bundle, role],
+    () => (chain && bundle !== 'missing' && bundle ? candidatesFor(chain, bundle.txn.state, myRoles) : []),
+    [chain, bundle, myRoles],
   );
 
   // `/` focuses the command bar (unless typing in a field already).
@@ -158,19 +167,29 @@ export default function Transaction() {
       {!txn.closed_at && candidates.length > 0 && (
         <>
           <CommandBar ref={cmdRef} candidates={candidates} onPick={setActive} />
-          <div className="v2-actions">
-            {candidates.map((c) => (
-              <button
-                key={c.t.id}
-                className={`v2-btn ${c.t.intent === 'destructive' ? 'v2-btn-destructive' : c.t.intent === 'primary' ? 'v2-btn-primary' : 'v2-btn-secondary'}`}
-                disabled={!c.enabled}
-                title={c.enabled ? '' : c.reason}
-                onClick={() => setActive(c)}
-              >
-                {c.t.label}
-              </button>
-            ))}
-          </div>
+          {/* Only actionable transitions get a button. Unavailable ones live in
+              the blocked list below with their reason — no dead disabled buttons. */}
+          {candidates.some((c) => c.enabled) && (
+            <div className="v2-actions">
+              {candidates.filter((c) => c.enabled).map((c) => (
+                <button
+                  key={c.t.id}
+                  className={`v2-btn ${c.t.intent === 'destructive' ? 'v2-btn-destructive' : c.t.intent === 'primary' ? 'v2-btn-primary' : 'v2-btn-secondary'}`}
+                  onClick={() => setActive(c)}
+                >
+                  {c.t.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Blocked actions state their reason in the open, not just on hover. */}
+          {candidates.some((c) => !c.enabled && c.reason) && (
+            <ul className="v2-blocked">
+              {candidates.filter((c) => !c.enabled && c.reason).map((c) => (
+                <li key={c.t.id}><b>{c.t.label}</b> — {c.reason}</li>
+              ))}
+            </ul>
+          )}
         </>
       )}
 
@@ -211,6 +230,7 @@ const CommandBar = forwardRef<HTMLInputElement, { candidates: Candidate[]; onPic
         ref={ref}
         className="v2-input"
         style={{ marginBottom: 'var(--sp-3)', maxWidth: 420 }}
+        aria-label="Type an action to fire it"
         placeholder="Press / then type an action…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -265,9 +285,9 @@ function Timeline({ chain, events, currentState }: { chain: ChainDecl | null; ev
         <li key={e.seq}>
           <span className="dot" />
           <div className="when">{tsToSAST(e.occurred_at)}</div>
-          <div className="what">{chain?.states[e.to_state]?.label ?? e.to_state} <span className="who">· {e.type}</span></div>
+          <div className="what">{chain?.states[e.to_state]?.label ?? e.to_state} <span className="who">· {humanize(e.type)}</span></div>
           <div className="who">{e.actor_kind === 'user' ? e.actor_id.slice(0, 8) : e.actor_kind}</div>
-          {e.reason_code && <div className="cause">reason: {e.reason_code}{e.reason_text ? ` — ${e.reason_text}` : ''}</div>}
+          {e.reason_code && <div className="cause">reason: {humanize(e.reason_code)}{e.reason_text ? ` — ${e.reason_text}` : ''}</div>}
         </li>
       ))}
       {nexts.map((label, i) => (
