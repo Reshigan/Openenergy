@@ -13,14 +13,13 @@ import type { Guard, GuardVerdict, Json } from '../types';
 
 /** counterparties must be different legal entities (no self-dealing). */
 export const counterpartyDistinct: Guard = (ctx): GuardVerdict => {
+  // At @new the engine synthesises guardParties (actorBecomes + party-typed
+  // inputs) into ctx.parties, so party fields already arrive here as live
+  // parties — no need to scan raw input strings (that mis-counted descriptive
+  // string inputs as distinct participants and defeated self-dealing detection).
   const live = ctx.parties.filter((p) => p.until_event_id === null);
   const ids = new Set(live.map((p) => p.participant_id));
-  // when a party field on this edge names a participant, count it too
-  for (const v of Object.values(ctx.input)) {
-    if (typeof v === 'string') ids.add(v);
-  }
-  const supplierAndBuyer = live.length + Object.keys(ctx.input).length;
-  if (supplierAndBuyer >= 2 && ids.size < 2) {
+  if (live.length >= 2 && ids.size < 2) {
     return { ok: false, code: 'SELF_DEALING', evidence: { participants: [...ids] } };
   }
   return { ok: true };

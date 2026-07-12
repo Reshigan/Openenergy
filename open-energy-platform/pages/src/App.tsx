@@ -38,6 +38,12 @@ const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage')
 const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
 const JourneyCockpit        = React.lazy(() => import('./meridian/JourneyCockpit'));
 
+// v2 generative frontend — chains-as-data, own chrome (Shell). Four surfaces.
+const V2Home                = React.lazy(() => import('./v2/Home'));
+const V2Transaction         = React.lazy(() => import('./v2/Transaction'));
+const V2Find                = React.lazy(() => import('./v2/Find'));
+const V2Trade               = React.lazy(() => import('./v2/Trade'));
+
 // The cockpit is the post-login home; if it throws at runtime, show a graceful
 // fallback with an escape to the (still-live) classic Horizon board rather than
 // blanking the app for everyone.
@@ -623,6 +629,11 @@ function AppRoutes() {
       {/* /horizon retired (journeys-only UI): the per-role boards folded into the
           journey cockpit; admin's cross-role deep-view lives there as the role switch. */}
       <Route path="/horizon" element={<Navigate to="/cockpit" replace />} />
+      {/* v2 generative surfaces */}
+      <Route path="/v2" element={<ProtectedRoute><V2Home /></ProtectedRoute>} />
+      <Route path="/v2/find" element={<ProtectedRoute><V2Find /></ProtectedRoute>} />
+      <Route path="/v2/trade" element={<ProtectedRoute><V2Trade /></ProtectedRoute>} />
+      <Route path="/v2/t/:id" element={<ProtectedRoute><V2Transaction /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       {/* Retired browse planes — create is in-journey, search is the ⌘K palette.
          Redirect into the cockpit so old links/bookmarks land on the single plane. */}

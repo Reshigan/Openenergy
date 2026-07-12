@@ -249,9 +249,20 @@ export async function applyTransition(cmd: Command, deps: EngineDeps): Promise<R
       }
     }
 
-    // step 6 — run EVERY guard, keep all verdicts, surface the first rejection in order
+    // step 6 — run EVERY guard, keep all verdicts, surface the first rejection in order.
+    // At @new, parties attach at step 8 (after guards) — so party-reading guards
+    // (regulatorPresentIf*) would see []. Feed them the parties that WILL attach:
+    // actorBecomes + the party-typed inputs, shaped as live PartyRows.
     const at = deps.clock.now();
-    const ctx = buildCtx(txn, parties, events, coerced.values, cmd.actor, at, deps);
+    const guardParties: PartyRow[] = isNew
+      ? [
+          ...(edge.actorBecomes && cmd.actor.participant_id
+            ? [{ txn_id: txn.id, participant_id: cmd.actor.participant_id, role_on_txn: edge.actorBecomes, terms: null, from_event_id: '', until_event_id: null }]
+            : []),
+          ...coerced.parties.map((p) => ({ txn_id: txn.id, participant_id: p.participant_id, role_on_txn: p.role, terms: null, from_event_id: '', until_event_id: null })),
+        ]
+      : parties;
+    const ctx = buildCtx(txn, guardParties, events, coerced.values, cmd.actor, at, deps);
     const verdicts: Array<{ guard: string; verdict: GuardVerdict }> = [];
     let firstReject: { guard: string; verdict: GuardVerdict } | null = null;
     for (const gname of edge.guards) {
