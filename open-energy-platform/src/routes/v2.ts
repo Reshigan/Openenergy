@@ -41,6 +41,14 @@ import { ppaChangeInLaw } from '../v2/domain/chains/ppa_change_in_law';
 import { settlementFail } from '../v2/domain/chains/settlement_fail';
 import { tradeAllocation } from '../v2/domain/chains/trade_allocation';
 import { tradeReporting } from '../v2/domain/chains/trade_reporting';
+import { availabilityGuarantee } from '../v2/domain/chains/availability_guarantee';
+import { curtailmentClaim } from '../v2/domain/chains/curtailment_claim';
+import { greenTariff } from '../v2/domain/chains/green_tariff';
+import { ppaNomination } from '../v2/domain/chains/ppa_nomination';
+import { ppaTermination } from '../v2/domain/chains/ppa_termination';
+import { takeOrPay } from '../v2/domain/chains/take_or_pay';
+import { tariffDetermination } from '../v2/domain/chains/tariff_determination';
+import { virtualPpaSettlement } from '../v2/domain/chains/virtual_ppa_settlement';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { sealPendingEvents } from '../v2/domain/merkle-seal';
@@ -83,6 +91,14 @@ const CHAINS = {
   settlement_fail: settlementFail,
   trade_allocation: tradeAllocation,
   trade_reporting: tradeReporting,
+  availability_guarantee: availabilityGuarantee,
+  curtailment_claim: curtailmentClaim,
+  green_tariff: greenTariff,
+  ppa_nomination: ppaNomination,
+  ppa_termination: ppaTermination,
+  take_or_pay: takeOrPay,
+  tariff_determination: tariffDetermination,
+  virtual_ppa_settlement: virtualPpaSettlement,
 };
 
 const clock: Clock = { now: () => ({ epoch_ms: Date.now(), zone: 'UTC' }) };
@@ -227,6 +243,36 @@ v2.get('/txn/:id', async (c) => {
   }
 
   return c.json({ success: true, data: bundle });
+});
+
+// ── GET /chains — serialize the chain registry for the generative frontend ──
+// JSON.stringify drops function-valued props (title/derive), keeping the pure
+// data the UI needs: fields, states, transitions (with input FieldDecls +
+// guards + requiresReason), roles, timers, settles, visibility. This is the
+// single source the four surfaces read to generate every screen and form.
+v2.get('/chains', (c) => {
+  return c.json({ success: true, data: JSON.parse(JSON.stringify(CHAINS)) });
+});
+
+// ── GET /txns — flexible list feeding Home / Find / Ledger ──────────────────
+// Query: ?chain_key=&open=1&mine=1&q=&limit=
+// Visibility: non-operators are ALWAYS scoped to their own party (+public) —
+// they can never enumerate another party's txns. Operators see all, unless
+// mine=1 narrows them to their own. The client computes the rich Home ordering
+// (blocking / SLA / money) from the chain decl; the server returns opened_at DESC.
+v2.get('/txns', async (c) => {
+  const user = getCurrentUser(c);
+  const isOperator = OPERATOR_ROLES.includes(user.role);
+  const mine = c.req.query('mine') === '1';
+  const limit = Number(c.req.query('limit')) || 100;
+  const rows = await buildDeps(c).store.listTxns({
+    scope_participant_id: isOperator && !mine ? undefined : user.id,
+    chain_key: c.req.query('chain_key') || undefined,
+    open_only: c.req.query('open') === '1',
+    q: c.req.query('q') || undefined,
+    limit,
+  });
+  return c.json({ success: true, data: rows });
 });
 
 // ── GET /export — L6 regulator export pack (pure read over the event log) ────

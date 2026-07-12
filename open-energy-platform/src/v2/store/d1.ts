@@ -18,6 +18,7 @@ import type {
   PartyRow,
   Store,
   TxnBundle,
+  TxnListFilter,
   TxnRow,
 } from '../domain/types';
 import { ConstraintViolation } from '../domain/types';
@@ -166,6 +167,32 @@ export class D1Store implements Store {
       parties: (parties.results ?? []).map(toPartyRow),
       events: (events.results ?? []).map(toEventRow),
     };
+  }
+
+  async listTxns(f: TxnListFilter): Promise<TxnRow[]> {
+    const where: string[] = [];
+    const binds: unknown[] = [];
+    let join = '';
+    // scope: only txns this participant is a live party to, OR public ones.
+    if (f.scope_participant_id) {
+      join = `LEFT JOIN v2_parties p ON p.txn_id = t.id AND p.until_event_id IS NULL AND p.participant_id = ?`;
+      binds.push(f.scope_participant_id);
+      where.push(`(p.participant_id IS NOT NULL OR t.visibility = 'public')`);
+    }
+    if (f.chain_key) { where.push(`t.chain_key = ?`); binds.push(f.chain_key); }
+    if (f.open_only) { where.push(`t.closed_at IS NULL`); }
+    if (f.q) {
+      where.push(`(t.human_ref LIKE ? OR t.title LIKE ? OR t.fields LIKE ?)`);
+      const like = `%${f.q}%`;
+      binds.push(like, like, like);
+    }
+    const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    binds.push(Math.max(1, Math.min(f.limit, 200)));
+    const rows = await this.db
+      .prepare(`SELECT DISTINCT t.* FROM v2_txns t ${join} ${clause} ORDER BY t.opened_at DESC LIMIT ?`)
+      .bind(...binds)
+      .all<TxnDbRow>();
+    return (rows.results ?? []).map(toTxnRow);
   }
 
   async findEventByIdempotencyKey(key: string): Promise<EventRow | null> {

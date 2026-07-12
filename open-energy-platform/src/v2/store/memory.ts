@@ -15,6 +15,7 @@ import type {
   Store,
   TimerRow,
   TxnBundle,
+  TxnListFilter,
   TxnRow,
 } from '../domain/types';
 import { ConstraintViolation } from '../domain/types';
@@ -49,6 +50,29 @@ export class MemoryStore implements Store {
 
   async findEventByIdempotencyKey(key: string): Promise<EventRow | null> {
     return this.idem.get(key) ?? null;
+  }
+
+  async listTxns(f: TxnListFilter): Promise<TxnRow[]> {
+    const isLiveParty = (id: string, pid: string) =>
+      (this.parties.get(id) ?? []).some((p) => p.until_event_id === null && p.participant_id === pid);
+    const q = f.q?.toLowerCase();
+    let rows = [...this.txns.values()];
+    if (f.scope_participant_id) {
+      const pid = f.scope_participant_id;
+      rows = rows.filter((t) => t.visibility === 'public' || isLiveParty(t.id, pid));
+    }
+    if (f.chain_key) rows = rows.filter((t) => t.chain_key === f.chain_key);
+    if (f.open_only) rows = rows.filter((t) => t.closed_at === null);
+    if (q) {
+      rows = rows.filter(
+        (t) =>
+          t.human_ref.toLowerCase().includes(q) ||
+          t.title.toLowerCase().includes(q) ||
+          JSON.stringify(t.fields).toLowerCase().includes(q),
+      );
+    }
+    rows.sort((a, b) => (a.opened_at < b.opened_at ? 1 : a.opened_at > b.opened_at ? -1 : 0));
+    return rows.slice(0, Math.max(1, Math.min(f.limit, 200)));
   }
 
   async reference(key: string, _atEpochMs: number): Promise<Json | null> {

@@ -296,8 +296,21 @@ export interface ExportQuery {
   participant_ids?: string[];
 }
 
+/** Flexible list filter for Home/Find/Ledger. All predicates AND together.
+ *  scope_participant_id set ⇒ only txns this participant is a live party to, OR
+ *  public ones (non-operator scoping). Operators pass it undefined to see all. */
+export interface TxnListFilter {
+  scope_participant_id?: string;
+  chain_key?: string;
+  open_only?: boolean;
+  /** substring over human_ref / title / fields (case-insensitive) */
+  q?: string;
+  limit: number;
+}
+
 export interface Store {
   getTxn(id: string): Promise<TxnBundle | null>;
+  listTxns(f: TxnListFilter): Promise<TxnRow[]>;
   findEventByIdempotencyKey(key: string): Promise<EventRow | null>;
   reference(key: string, atEpochMs: number): Promise<Json | null>;
   commit(batch: CommitBatch): Promise<{ global_seq: number }>;
