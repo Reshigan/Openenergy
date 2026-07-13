@@ -446,9 +446,9 @@ export function IppCpTrackerTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Condition Precedent</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New Condition Precedent</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">CP Title *</label>
@@ -622,7 +622,7 @@ export function IppCpTrackerTab() {
                         <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded border"
-                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
+                          style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))', borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))' }}
                         >
                           Actions
                         </button>

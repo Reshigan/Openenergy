@@ -27,9 +27,9 @@ interface LicenceReturnKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   return_triggered:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
-  data_assembly:            'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
-  internal_review:          'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
-  board_approval:           'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  data_assembly:            'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  internal_review:          'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  board_approval:           'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   portal_submission:        'bg-yellow-100 text-yellow-800',
   acknowledgement_pending:  'bg-yellow-100 text-yellow-800',
   nersa_review:             'bg-orange-100 text-orange-700',
@@ -57,7 +57,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const CAPACITY_TIER_COLORS: Record<string, string> = {
   small:    'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
-  medium:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
+  medium:   'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--ink, oklch(0.17_0.010_250))]',
   large:    'bg-yellow-100 text-yellow-800',
   major:    'bg-orange-100 text-orange-800',
   flagship: 'bg-red-100 text-red-800',
@@ -398,9 +398,9 @@ export function IppLicenceReturnsTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual NERSA Licence Return</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New Annual NERSA Licence Return</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>

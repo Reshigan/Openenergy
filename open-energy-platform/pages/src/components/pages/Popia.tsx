@@ -104,7 +104,7 @@ function statusStyle(status: string): React.CSSProperties {
 
 function severityStyle(severity: string): React.CSSProperties {
   if (severity === 'critical') return { background: BAD_BG, color: BAD };
-  if (severity === 'high') return { background: 'oklch(0.97 0.05 35)', color: 'oklch(0.42 0.18 35)' };
+  if (severity === 'high') return { background: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, oklch(0.97 0.05 35)))', color: 'var(--warn, oklch(0.42 0.18 35))' };
   if (severity === 'medium') return { background: WARN_BG, color: WARN };
   return { background: BG2, color: TX2 };
 }

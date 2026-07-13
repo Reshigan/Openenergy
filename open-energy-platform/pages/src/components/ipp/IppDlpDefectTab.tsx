@@ -187,7 +187,7 @@ export function IppDlpDefectTab() {
       <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
         {[
           { label: 'Total', value: summary?.total ?? 0, color: 'text-[var(--ink, #1e2a38)]' },
-          { label: 'Open', value: summary?.open_count ?? 0, color: 'text-[oklch(0.46_0.16_55)]' },
+          { label: 'Open', value: summary?.open_count ?? 0, color: 'text-[var(--accent,oklch(0.46_0.16_55))]' },
           { label: 'Critical', value: summary?.critical_count ?? 0, color: 'text-red-700' },
           { label: 'Escalated', value: summary?.escalated_count ?? 0, color: 'text-red-800' },
           { label: 'Disputed', value: summary?.disputed_count ?? 0, color: 'text-orange-700' },
@@ -269,7 +269,7 @@ export function IppDlpDefectTab() {
                     {d.is_safety_related === 1 && <span title="Safety related" className="text-red-500 text-xs font-bold">⚠</span>}
                     {d.is_structural === 1 && <span title="Structural" className="text-orange-500 text-xs font-bold">S</span>}
                     {d.is_hold_point === 1 && <span title="Hold point" className="text-purple-500 text-xs font-bold">H</span>}
-                    {d.is_reportable === 1 && <span title="Reportable" className="text-xs font-bold" style={{ color: 'oklch(0.46 0.16 55)' }}>R</span>}
+                    {d.is_reportable === 1 && <span title="Reportable" className="text-xs font-bold" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>R</span>}
                   </div>
                 </td>
               </tr>
@@ -305,7 +305,7 @@ export function IppDlpDefectTab() {
                 {selected.is_safety_related === 1 && <span className="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700">Safety related</span>}
                 {selected.is_structural === 1 && <span className="px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-700">Structural</span>}
                 {selected.is_hold_point === 1 && <span className="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">Hold point</span>}
-                {selected.is_reportable === 1 && <span className="px-2 py-0.5 rounded text-xs" style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' }}>Reportable</span>}
+                {selected.is_reportable === 1 && <span className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>Reportable</span>}
               </div>
 
               <div>

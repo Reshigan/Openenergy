@@ -35,8 +35,8 @@ const STATUS_COLORS: Record<string, string> = {
   monitoring_active:      'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   assessment_due:         'bg-amber-100 text-amber-700',
   evidence_gathered:      'bg-cyan-100 text-cyan-700',
-  evidence_submitted:     'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
-  under_review:           'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  evidence_submitted:     'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  under_review:           'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   query_raised:           'bg-orange-100 text-orange-700',
   query_resolved:         'bg-teal-100 text-teal-700',
   assessed_compliant:     'bg-green-100 text-green-700',
@@ -68,8 +68,8 @@ const STATUS_LABELS: Record<string, string> = {
 const CLASS_COLORS: Record<string, string> = {
   security_of_supply: 'bg-red-100 text-red-700',
   environmental:      'bg-green-100 text-green-700',
-  financial:          'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
-  technical:          'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  financial:          'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  technical:          'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   administrative:     'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
 };
 
@@ -447,9 +447,9 @@ export function IppLicenceObligationTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Licence Obligation</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New Licence Obligation</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">IPP ID *</label>

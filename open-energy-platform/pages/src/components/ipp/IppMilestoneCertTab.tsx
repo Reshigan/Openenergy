@@ -28,10 +28,10 @@ interface MilestoneCertKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   milestone_triggered:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
-  documentation_preparation:    'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  documentation_preparation:    'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   ie_pre_review:                'bg-cyan-100 text-cyan-700',
   documentation_submitted:      'bg-sky-100 text-sky-700',
-  ipp_office_acknowledgment:    'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  ipp_office_acknowledgment:    'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   technical_verification:       'bg-purple-100 text-purple-700',
   clarification_requested:      'bg-yellow-100 text-yellow-800',
   clarification_submitted:      'bg-teal-100 text-teal-700',
@@ -57,9 +57,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const TIER_BADGE_COLORS: Record<string, string> = {
-  small:     'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
+  small:     'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--ink, oklch(0.17_0.010_250))]',
   medium:    'bg-sky-100 text-sky-800',
-  large:     'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
+  large:     'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--ink, oklch(0.17_0.010_250))]',
   utility:   'bg-purple-100 text-purple-800',
   strategic: 'bg-violet-100 text-violet-800',
 };
@@ -363,9 +363,9 @@ export function IppMilestoneCertTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Milestone Certification</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New Milestone Certification</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>

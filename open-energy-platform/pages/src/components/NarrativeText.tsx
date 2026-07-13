@@ -216,7 +216,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
     tone === 'card'
       ? { borderColor: 'var(--border-subtle, #dde4ec)' }
       : tone === 'bubble'
-        ? { background: '#f7f8f9' }
+        ? { background: 'var(--s2, #f7f8f9)' }
         : {};
 
   return (
@@ -283,7 +283,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
             <pre
               key={idx}
               className="rounded-md p-3 overflow-x-auto text-[12px] leading-relaxed font-mono"
-              style={{ background: '#f4f5f7', color: 'var(--ink, #1a2033)' }}
+              style={{ background: 'var(--s2, #f4f5f7)', color: 'var(--ink, #1a2033)' }}
             >
               {tok.text}
             </pre>

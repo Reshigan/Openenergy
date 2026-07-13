@@ -42,7 +42,7 @@ const LOCK_PILL: Record<string, string> = {
   released: 'bg-purple-100 text-purple-700',
 };
 const LOCK_PILL_STYLE: Record<string, React.CSSProperties> = {
-  cash_in: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' },
+  cash_in: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' },
 };
 
 const ZAR = (n: number) => `R${Math.round(Math.abs(n || 0)).toLocaleString('en-ZA')}`;

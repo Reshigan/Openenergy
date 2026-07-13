@@ -38,9 +38,9 @@ interface AmendmentKpis {
 
 const STATUS_COLORS: Record<string, { className: string; style?: React.CSSProperties }> = {
   amendment_requested:    { className: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]' },
-  eligibility_assessed:   { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  eligibility_assessed:   { className: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   lender_circulated:      { className: 'bg-cyan-100 text-cyan-700' },
-  majority_response:      { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  majority_response:      { className: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   unanimous_required:     { className: 'bg-amber-100 text-amber-700' },
   consent_obtained:       { className: 'bg-teal-100 text-teal-700' },
   documentation_prepared: { className: 'bg-violet-100 text-violet-700' },
@@ -71,7 +71,7 @@ const STATUS_LABELS: Record<string, string> = {
 const CLASS_COLORS: Record<string, { className: string; style?: React.CSSProperties }> = {
   unanimous_consent:        { className: 'bg-red-100 text-red-700' },
   majority_consent:         { className: 'bg-amber-100 text-amber-700' },
-  technical_amendment:      { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  technical_amendment:      { className: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   administrative_amendment: { className: 'bg-cyan-100 text-cyan-700' },
   clerical_correction:      { className: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]' },
 };
@@ -460,9 +460,9 @@ export function LenderFacilityAmendmentTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New Facility Amendment Request</div>
+          <div className="text-sm font-semibold text-[var(--ink-2, oklch(0.40_0.009_250))]">New Facility Amendment Request</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Facility ID *</label>
@@ -665,7 +665,7 @@ export function LenderFacilityAmendmentTab() {
                         <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded border"
-                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
+                          style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))', borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))' }}
                         >
                           Actions
                         </button>

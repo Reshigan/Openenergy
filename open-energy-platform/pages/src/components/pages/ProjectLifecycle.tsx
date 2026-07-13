@@ -55,10 +55,10 @@ type LifecyclePayload = {
 };
 
 const statusStyle: Record<StageStatus, { label: string; bg: string; fg: string; icon: typeof Circle }> = {
-  not_started: { label: 'Not started', bg: '#eef1f4', fg: 'var(--ink-2, #6b7685)', icon: Circle },
+  not_started: { label: 'Not started', bg: 'var(--s2, #eef1f4)', fg: 'var(--ink-2, #6b7685)', icon: Circle },
   in_progress: { label: 'In progress', bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', icon: Clock },
-  completed: { label: 'Completed', bg: '#cdf0dd', fg: 'var(--good)', icon: CheckCircle2 },
-  blocked: { label: 'Blocked', bg: '#fde7e9', fg: 'var(--bad, #c0392b)', icon: AlertCircle },
+  completed: { label: 'Completed', bg: 'color-mix(in oklch, var(--good, oklch(0.55 0.18 145)) 14%, var(--s1, #cdf0dd))', fg: 'var(--good)', icon: CheckCircle2 },
+  blocked: { label: 'Blocked', bg: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, #fde7e9))', fg: 'var(--bad, #c0392b)', icon: AlertCircle },
 };
 
 const phaseLabel: Record<string, string> = {
@@ -153,7 +153,7 @@ function StageCard({
         {stage.next_action && (
           <div
             className="mt-3 px-3 py-2 rounded-lg text-[12px] flex items-start gap-2"
-            style={{ background: '#fff7e3', border: '1px solid #ecd99a', color: '#7a4a0c' }}
+            style={{ background: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, #fff7e3))', border: '1px solid var(--warn, #ecd99a)', color: 'var(--warn, #7a4a0c)' }}
           >
             <Lightbulb size={14} className="flex-shrink-0 mt-0.5" />
             <span>{stage.next_action}</span>
@@ -165,7 +165,7 @@ function StageCard({
             type="button"
             onClick={() => navigate(stage.workflow.href)}
             className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded"
-            style={{ background: 'oklch(0.46 0.16 55)', color: '#fff' }}
+            style={{ background: 'var(--accent, oklch(0.46 0.16 55))', color: '#fff' }}
           >
             {stage.workflow.label} <ArrowRight size={12} />
           </button>
@@ -203,11 +203,11 @@ function SuggestionBanner({
   return (
     <div
       className="rounded-xl border p-4 flex gap-3"
-      style={{ background: 'linear-gradient(135deg,#fffdf3 0%,#fff7e3 100%)', borderColor: '#ecd99a' }}
+      style={{ background: 'linear-gradient(135deg,var(--s1, #fffdf3) 0%,color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, #fff7e3)) 100%)', borderColor: 'var(--warn, #ecd99a)' }}
     >
       <div
         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: 'var(--s1, #fff)', color: '#b04e0f' }}
+        style={{ background: 'var(--s1, #fff)', color: 'var(--accent, #b04e0f)' }}
       >
         <Lightbulb size={16} />
       </div>
@@ -234,7 +234,7 @@ function SuggestionBanner({
             disabled={accepting}
             onClick={handleAccept}
             className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded"
-            style={{ background: 'oklch(0.46 0.16 55)', color: '#fff', opacity: accepting ? 0.6 : 1 }}
+            style={{ background: 'var(--accent, oklch(0.46 0.16 55))', color: '#fff', opacity: accepting ? 0.6 : 1 }}
           >
             {accepting ? 'Working…' : suggestion.accept.label} <ArrowRight size={12} />
           </button>
@@ -304,35 +304,35 @@ export function ProjectLifecycle() {
       {/* Project header */}
       <div
         className="rounded-xl border p-5"
-        style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
+        style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <div className="text-[10px] tracking-[0.12em] uppercase font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
+            <div className="text-[10px] tracking-[0.12em] uppercase font-mono font-semibold" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
               {phaseLabel[phase] || phase}
             </div>
-            <h1 className="mt-1 text-[24px] sm:text-[28px] font-bold tracking-tight" style={{ color: 'oklch(0.15 0.025 250)' }}>
+            <h1 className="mt-1 text-[24px] sm:text-[28px] font-bold tracking-tight" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
               {project.project_name}
             </h1>
-            <p className="mt-0.5 text-[14px]" style={{ color: 'oklch(0.45 0.015 250)' }}>
+            <p className="mt-0.5 text-[14px]" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>
               {project.capacity_mw} MW {project.technology} · {project.location}
               {project.commercial_operation_date ? ` · COD ${project.commercial_operation_date}` : ''}
             </p>
           </div>
           <div className="grid grid-cols-3 gap-4 text-right">
             <div>
-              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'oklch(0.55 0.008 250)' }}>Stages done</div>
-              <div className="text-[24px] font-bold font-mono" style={{ color: 'oklch(0.15 0.025 250)' }}>{completed}/{stages.length}</div>
+              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>Stages done</div>
+              <div className="text-[24px] font-bold font-mono" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>{completed}/{stages.length}</div>
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'oklch(0.55 0.008 250)' }}>PPA price</div>
-              <div className="text-[24px] font-bold font-mono" style={{ color: 'oklch(0.15 0.025 250)' }}>
+              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>PPA price</div>
+              <div className="text-[24px] font-bold font-mono" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
                 {project.ppa_price_per_mwh ? `R${Math.round(project.ppa_price_per_mwh)}` : '—'}
               </div>
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'oklch(0.55 0.008 250)' }}>PPA term</div>
-              <div className="text-[24px] font-bold font-mono" style={{ color: 'oklch(0.15 0.025 250)' }}>
+              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>PPA term</div>
+              <div className="text-[24px] font-bold font-mono" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
                 {project.ppa_duration_years ? `${project.ppa_duration_years}y` : '—'}
               </div>
             </div>
@@ -342,7 +342,7 @@ export function ProjectLifecycle() {
           <button
             type="button"
             onClick={() => navigate(`/projects/${project.id}`)}
-            className="h-9 px-4 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 border hover:bg-[var(--s2, #eef2f7)]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' } as React.CSSProperties}
+            className="h-9 px-4 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 border hover:bg-[var(--s2, #eef2f7)]" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' } as React.CSSProperties}
           >
             <ArrowLeft size={12} /> Back to project file
           </button>

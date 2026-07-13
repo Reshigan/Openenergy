@@ -116,7 +116,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
       {error && (
         <div
           className="px-5 py-3 text-[13px] inline-flex items-center gap-2"
-          style={{ background: '#ffebee', color: 'var(--bad, #c0392b)' }}
+          style={{ background: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, #ffebee))', color: 'var(--bad, #c0392b)' }}
         >
           <AlertTriangle size={14} /> {error}
         </div>
@@ -125,7 +125,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
       {open && brief && (
         <div className="p-5 space-y-4">
           {brief.text && (
-            <div className="rounded-md p-3" style={{ background: '#f7f8f9' }}>
+            <div className="rounded-md p-3" style={{ background: 'var(--s2, #f7f8f9)' }}>
               <NarrativeText text={brief.text} />
             </div>
           )}

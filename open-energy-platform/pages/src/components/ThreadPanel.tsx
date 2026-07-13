@@ -105,7 +105,7 @@ export function ThreadPanel({
           <ul className="space-y-3">
             {threads.map((t) => (
               <li key={t.id} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[11px] flex-shrink-0" style={{ background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[11px] flex-shrink-0" style={{ background: 'var(--s2, oklch(0.94 0.02 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>
                   {initials(t.author_name)}
                 </div>
                 <div className="flex-1 min-w-0">

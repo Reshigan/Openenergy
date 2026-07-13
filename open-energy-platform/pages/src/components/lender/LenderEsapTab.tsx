@@ -64,8 +64,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<string, React.CSSProperties> = {
-  data_collection: { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)' },
-  draft_report:    { background: 'oklch(0.94 0.01 270)',  color: 'oklch(0.40 0.09 270)' },
+  data_collection: { background: 'var(--s1, oklch(0.96 0.006 250))', color: 'var(--accent, oklch(0.40 0.12 250))' },
+  draft_report:    { background: 'var(--s2, oklch(0.94 0.01 270))',  color: 'var(--accent, oklch(0.40 0.09 270))' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -92,7 +92,7 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 const TIER_STYLES: Record<string, React.CSSProperties> = {
-  minor: { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)' },
+  minor: { background: 'var(--s1, oklch(0.96 0.006 250))', color: 'var(--accent, oklch(0.40 0.12 250))' },
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -486,9 +486,9 @@ export function LenderEsapTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ border: '1px solid oklch(0.87 0.006 250)', background: 'oklch(0.97 0.003 250)' }}
+          style={{ border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))', background: 'var(--s1, oklch(0.97 0.003 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New ESAP Monitoring Period</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New ESAP Monitoring Period</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project ID *</label>
@@ -643,7 +643,7 @@ export function LenderEsapTab() {
                         <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded border"
-                          style={{ background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)', borderColor: 'oklch(0.87 0.006 250)' }}
+                          style={{ background: 'var(--s1, oklch(0.96 0.006 250))', color: 'var(--accent, oklch(0.40 0.12 250))', borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}
                         >
                           Actions
                         </button>

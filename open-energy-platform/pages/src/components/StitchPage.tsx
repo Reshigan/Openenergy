@@ -91,7 +91,7 @@ export function StitchPage<TId extends string = string>({
           >
             {TIcon ? <TIcon size={14} /> : null} {t.label}
             {t.badge && (
-              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : ''}`} style={active ? {} : { background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' }}>{t.badge}</span>
+              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : ''}`} style={active ? {} : { background: 'var(--s2, oklch(0.94 0.02 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>{t.badge}</span>
             )}
           </button>
         );
@@ -100,24 +100,24 @@ export function StitchPage<TId extends string = string>({
   ) : null;
 
   return (
-    <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
+    <div className="space-y-0 min-h-screen" style={{ background: 'var(--s0, oklch(0.96 0.003 250))' }}>
       {noHero ? (
         <header className="border-b px-6 lg:px-10 py-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3"
-          style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
+          style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
           <div>
             {eyebrowLabel && (
-              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
+              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
                 {Icon ? <span className="inline mr-1"><Icon size={10} /></span> : null}{eyebrowLabel}
               </div>
             )}
             <h1
               className="mt-0.5 font-display font-bold tracking-tight"
-              style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}
+              style={{ fontSize: 20, color: 'var(--ink, oklch(0.15 0.025 250))' }}
             >
               {title}
             </h1>
             {subtitle && (
-              <p className="text-[12px] mt-0.5 max-w-3xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>
+              <p className="text-[12px] mt-0.5 max-w-3xl" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>{subtitle}</p>
             )}
           </div>
           <div className="flex flex-col lg:flex-row lg:items-end gap-2">
@@ -236,7 +236,7 @@ export function StitchPill({ status, label, tone }: {
     info: '',
     neutral: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   };
-  const infoStyle = t === 'info' ? { background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' } : {};
+  const infoStyle = t === 'info' ? { background: 'var(--s2, oklch(0.94 0.02 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } : {};
   return (
     <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${palette[t]}`} style={infoStyle}>{text}</span>
   );

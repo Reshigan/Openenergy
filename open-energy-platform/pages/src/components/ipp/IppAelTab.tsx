@@ -35,8 +35,8 @@ interface AelLicence {
 
 const STATUS_COLORS: Record<string, { cls: string; style?: React.CSSProperties }> = {
   ael_triggered:                   { cls: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]' },
-  emissions_inventory:             { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
-  application_preparation:         { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  emissions_inventory:             { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
+  application_preparation:         { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   application_submitted:           { cls: 'bg-yellow-100 text-yellow-800' },
   authority_completeness_review:   { cls: 'bg-cyan-100 text-cyan-700' },
   public_participation_open:       { cls: 'bg-sky-100 text-sky-700' },

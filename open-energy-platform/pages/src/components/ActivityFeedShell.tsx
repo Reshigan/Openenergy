@@ -89,19 +89,19 @@ const CATEGORIES: { key: Category; label: string }[] = [
 // ── Colours ────────────────────────────────────────────────────────────────
 
 const C = {
-  canvas:      'oklch(0.97 0.003 250)',
-  surface:     'oklch(0.99 0.002 80)',
-  border:      'oklch(0.88 0.006 250)',
-  borderFaint: 'oklch(0.93 0.004 250)',
-  text:        'oklch(0.20 0.025 250)',
-  textMuted:   'oklch(0.45 0.015 250)',
-  textFaint:   'oklch(0.60 0.008 250)',
-  urgent:      { bg: 'oklch(0.97 0.015 25)',  border: 'oklch(0.75 0.15 25)', dot: 'oklch(0.55 0.22 25)', label: 'oklch(0.40 0.18 25)' },
-  caution:     { bg: 'oklch(0.97 0.015 85)',  border: 'oklch(0.80 0.13 80)', dot: 'oklch(0.65 0.16 75)', label: 'oklch(0.40 0.14 80)' },
-  info:        { bg: 'oklch(0.99 0.002 80)',  border: 'oklch(0.88 0.006 250)', dot: 'oklch(0.55 0.10 250)', label: 'oklch(0.45 0.015 250)' },
+  canvas:      'var(--s0, oklch(0.97 0.003 250))',
+  surface:     'var(--s1, oklch(0.99 0.002 80))',
+  border:      'var(--border-subtle, oklch(0.88 0.006 250))',
+  borderFaint: 'var(--border-subtle, oklch(0.93 0.004 250))',
+  text:        'var(--ink, oklch(0.20 0.025 250))',
+  textMuted:   'var(--ink-2, oklch(0.45 0.015 250))',
+  textFaint:   'var(--ink-2, oklch(0.60 0.008 250))',
+  urgent:      { bg: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, oklch(0.97 0.015 25)))',  border: 'oklch(0.75 0.15 25)', dot: 'oklch(0.55 0.22 25)', label: 'oklch(0.40 0.18 25)' },
+  caution:     { bg: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, oklch(0.97 0.015 85)))',  border: 'oklch(0.80 0.13 80)', dot: 'oklch(0.65 0.16 75)', label: 'oklch(0.40 0.14 80)' },
+  info:        { bg: 'var(--s1, oklch(0.99 0.002 80))',  border: 'var(--border-subtle, oklch(0.88 0.006 250))', dot: 'oklch(0.55 0.10 250)', label: 'oklch(0.45 0.015 250)' },
   primary:     'oklch(0.38 0.08 250)',
   badge:       { urgent: 'oklch(0.55 0.22 25)', caution: 'oklch(0.65 0.16 75)', info: 'oklch(0.55 0.10 250)' },
-  pill:        { active: { bg: 'oklch(0.20 0.025 250)', text: '#fff' }, inactive: { bg: 'transparent', text: 'oklch(0.45 0.015 250)' } },
+  pill:        { active: { bg: 'oklch(0.20 0.025 250)', text: '#fff' }, inactive: { bg: 'transparent', text: 'var(--ink-2, oklch(0.45 0.015 250))' } },
 } as const;
 
 // ── Utility ────────────────────────────────────────────────────────────────
@@ -143,7 +143,7 @@ function UrgencyDot({ urgency }: { urgency: Urgency }) {
 function SlaChip({ item }: { item: FeedItem }) {
   if (!item.sla_remaining_ms && item.sla_remaining_ms !== 0) return null;
   const breached = item.sla_remaining_ms === 0;
-  const bg    = breached ? C.urgent.bg    : item.urgency === 'urgent' ? 'oklch(0.96 0.020 25)' : 'oklch(0.97 0.012 80)';
+  const bg    = breached ? C.urgent.bg    : item.urgency === 'urgent' ? 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, oklch(0.96 0.020 25)))' : 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, oklch(0.97 0.012 80)))';
   const color = breached ? C.urgent.label : item.urgency === 'urgent' ? C.urgent.label : C.caution.label;
   return (
     <span
@@ -170,8 +170,8 @@ function WaveTag({ wave }: { wave: number | null }) {
         fontSize: 9, fontFamily: '"IBM Plex Mono", monospace',
         fontWeight: 500, letterSpacing: '0.06em',
         padding: '1px 6px', borderRadius: 3,
-        background: 'oklch(0.94 0.004 250)',
-        color: 'oklch(0.45 0.015 250)',
+        background: 'var(--s2, oklch(0.94 0.004 250))',
+        color: 'var(--ink-2, oklch(0.45 0.015 250))',
         textTransform: 'uppercase',
       }}
     >
@@ -674,7 +674,7 @@ export function ActivityFeedShell() {
                   key={n}
                   style={{
                     height: 80, borderRadius: 8,
-                    background: 'oklch(0.93 0.004 250)',
+                    background: 'var(--s2, oklch(0.93 0.004 250))',
                     animation: 'pulse 1.6s ease-in-out infinite',
                     opacity: 1 - n * 0.2,
                   }}

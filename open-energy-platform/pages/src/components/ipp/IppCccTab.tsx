@@ -25,9 +25,9 @@ interface CccNegotiation {
 type StatusStyle = { cls: string; style?: React.CSSProperties };
 const STATUS_COLORS: Record<string, StatusStyle> = {
   ccc_initiated:             { cls: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]' },
-  load_flow_study:           { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  load_flow_study:           { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   cost_assessment:           { cls: 'bg-sky-100 text-sky-700' },
-  ipp_review:                { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  ipp_review:                { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   negotiation_in_progress:   { cls: 'bg-yellow-100 text-yellow-800' },
   expert_determination:      { cls: 'bg-amber-100 text-amber-700' },
   provisional_agreement:     { cls: 'bg-teal-100 text-teal-700' },

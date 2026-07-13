@@ -87,24 +87,24 @@ export function EsumsOmOpportunities() {
 
   return (
     <div className="space-y-3">
-      <header className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
+      <header className="rounded-xl border p-5" style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold inline-flex items-center gap-1" style={{ color: 'oklch(0.55 0.008 250)' }}>
+            <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold inline-flex items-center gap-1" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
               <Sparkles size={10} /> Performance opportunities · deterministic rule scan
             </div>
-            <h1 className="font-display text-[20px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>
+            <h1 className="font-display text-[20px] font-bold tracking-tight mt-0.5" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
               {data.count} opportunities · {formatZAR(data.total_annual_upside_zar)} annual upside
             </h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>
               Every opportunity is computed from SQL + arithmetic over operational data — no LLM inference,
               no opaque models. Tap an evidence chip to see why a rule fired.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[11px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
+          <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
             <span>Last scan</span>
             <span className="font-mono">{new Date(data.generated_at).toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit' })}</span>
-            <button type="button" onClick={load} className="ml-2 px-2 h-7 rounded text-[11px] border hover:bg-[var(--s2, #eef2f7)]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' }}>
+            <button type="button" onClick={load} className="ml-2 px-2 h-7 rounded text-[11px] border hover:bg-[var(--s2, #eef2f7)]" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
               Re-scan
             </button>
           </div>

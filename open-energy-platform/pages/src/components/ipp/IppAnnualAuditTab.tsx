@@ -30,13 +30,13 @@ interface AudKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   audit_cycle_opened:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
-  trial_balance_preparation:   'bg-[#e8edf5]',
+  trial_balance_preparation:   'bg-[var(--s2,#e8edf5)]',
   year_end_journals:           'bg-cyan-100 text-cyan-700',
-  audit_fieldwork:             'bg-[#e8edf5]',
+  audit_fieldwork:             'bg-[var(--s2,#e8edf5)]',
   management_accounts_review:  'bg-violet-100 text-violet-700',
   audit_queries_resolution:    'bg-yellow-100 text-yellow-800',
   draft_opinion_review:        'bg-orange-100 text-orange-700',
-  board_approval:              'bg-[#e8edf5]',
+  board_approval:              'bg-[var(--s2,#e8edf5)]',
   cipc_submission:             'bg-teal-100 text-teal-700',
   audit_completed:             'bg-green-100 text-green-700',
   audit_qualified:             'bg-red-100 text-red-700',
@@ -44,9 +44,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLOR_STYLES: Record<string, React.CSSProperties> = {
-  trial_balance_preparation:   { color: 'oklch(0.46 0.16 55)' },
-  audit_fieldwork:             { color: 'oklch(0.46 0.16 55)' },
-  board_approval:              { color: 'oklch(0.17 0.010 250)' },
+  trial_balance_preparation:   { color: 'var(--accent, oklch(0.46 0.16 55))' },
+  audit_fieldwork:             { color: 'var(--accent, oklch(0.46 0.16 55))' },
+  board_approval:              { color: 'var(--ink, oklch(0.17 0.010 250))' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -79,7 +79,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:    'bg-[#e8edf5]',
+  small:    'bg-[var(--s2,#e8edf5)]',
   medium:   'bg-yellow-100 text-yellow-800',
   large:    'bg-orange-100 text-orange-800',
   major:    'bg-red-100 text-red-800',
@@ -87,7 +87,7 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 const TIER_COLOR_STYLES: Record<string, React.CSSProperties> = {
-  small: { color: 'oklch(0.17 0.010 250)' },
+  small: { color: 'var(--ink, oklch(0.17 0.010 250))' },
 };
 
 const HARD_TERMINALS = new Set([
@@ -386,9 +386,9 @@ export function IppAnnualAuditTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual Financial Statements & Independent Audit</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New Annual Financial Statements & Independent Audit</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Financial Year *</label>
@@ -540,7 +540,7 @@ export function IppAnnualAuditTab() {
                         <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded border"
-                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
+                          style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))', borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))' }}
                         >
                           Actions
                         </button>

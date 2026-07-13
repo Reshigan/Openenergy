@@ -9,7 +9,7 @@ interface ErrorBannerProps {
 
 export function ErrorBanner({ message = 'Something went wrong', onRetry, onDismiss }: ErrorBannerProps) {
   return (
-    <div className="flex items-center gap-3 p-4 rounded-lg border" style={{ background: '#fff5f5', borderColor: '#fca5a5' }}>
+    <div className="flex items-center gap-3 p-4 rounded-lg border" style={{ background: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, #fff5f5))', borderColor: 'var(--bad, #fca5a5)' }}>
       <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--bad, #c0392b)' }} />
       <p className="text-sm flex-1" style={{ color: 'var(--bad, #c0392b)' }}>{message}</p>
       {onRetry && (

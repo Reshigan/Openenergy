@@ -258,7 +258,7 @@ export function DisclosureTab() {
                 <td className="px-4 py-2">{pct(r.settlement_finality_pct)}</td>
                 <td className="px-4 py-2">
                   {r.published
-                    ? <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' }}>{r.published_at ? new Date(r.published_at).toLocaleDateString() : '✓'}</span>
+                    ? <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>{r.published_at ? new Date(r.published_at).toLocaleDateString() : '✓'}</span>
                     : <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px]">draft</span>}
                 </td>
               </tr>

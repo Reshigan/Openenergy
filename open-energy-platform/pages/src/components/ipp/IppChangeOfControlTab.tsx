@@ -43,8 +43,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  completeness_check: { color: 'oklch(0.46 0.16 55)' },
-  competition_screen: { color: 'oklch(0.46 0.16 55)' },
+  completeness_check: { color: 'var(--accent, oklch(0.46 0.16 55))' },
+  competition_screen: { color: 'var(--accent, oklch(0.46 0.16 55))' },
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -56,8 +56,8 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 const TIER_STYLE: Record<string, React.CSSProperties> = {
-  moderate:    { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' },
-  significant: { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' },
+  moderate:    { color: 'var(--accent, oklch(0.46 0.16 55))', background: 'var(--s2, oklch(0.94 0.006 250))' },
+  significant: { color: 'var(--accent, oklch(0.46 0.16 55))', background: 'var(--s2, oklch(0.94 0.006 250))' },
 };
 
 const TX_TYPE_LABELS: Record<string, string> = {
@@ -208,7 +208,7 @@ export function IppChangeOfControlTab() {
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt, filterForeign); }}
             className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white border-transparent' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
-            style={filterTier === t ? { background: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.46 0.16 55)' } : {}}
+            style={filterTier === t ? { background: 'var(--accent, oklch(0.46 0.16 55))', borderColor: 'var(--accent, oklch(0.46 0.16 55))' } : {}}
           >
             {t}
           </button>

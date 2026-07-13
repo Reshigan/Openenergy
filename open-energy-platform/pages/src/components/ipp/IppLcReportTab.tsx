@@ -30,8 +30,8 @@ interface LcReportKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   period_open:              'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
-  data_collection:          'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
-  internal_verification:    'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  data_collection:          'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  internal_verification:    'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   report_preparation:       'bg-cyan-100 text-cyan-700',
   report_submitted:         'bg-sky-100 text-sky-700',
   completeness_check:       'bg-purple-100 text-purple-700',
@@ -363,9 +363,9 @@ export function IppLcReportTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg border p-4 space-y-3"
-          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New LC/SED Report</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New LC/SED Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>

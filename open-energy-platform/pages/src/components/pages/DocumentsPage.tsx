@@ -39,7 +39,7 @@ export function DocumentsPage() {
       title="Document templates & envelopes"
       subtitle="Issue parameterised contracts, route them for signature, and verify completed envelopes."
     >
-      <div className="flex flex-wrap gap-1 mb-3 border-b" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+      <div className="flex flex-wrap gap-1 mb-3 border-b" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
         {([
           ['envelopes', 'Envelopes', Inbox],
           ['templates', 'Templates', FileText],
@@ -47,8 +47,8 @@ export function DocumentsPage() {
           <button type="button" key={k} onClick={() => setTab(k)}
             className="h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px"
             style={tab === k
-              ? { borderColor: 'oklch(0.46 0.16 55)', color: 'oklch(0.46 0.16 55)' }
-              : { borderColor: 'transparent', color: 'oklch(0.60 0.007 250)' }}>
+              ? { borderColor: 'var(--accent, oklch(0.46 0.16 55))', color: 'var(--accent, oklch(0.46 0.16 55))' }
+              : { borderColor: 'transparent', color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>
             <Icon size={13}/> {label}
           </button>
         ))}
@@ -75,22 +75,22 @@ function TemplatesTab() {
 
   return (
     <section className="space-y-3">
-      <div className="text-[12px]" style={{ color: 'oklch(0.60 0.007 250)' }}>{rows.length} published templates</div>
-      {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{err}</div>}
+      <div className="text-[12px]" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>{rows.length} published templates</div>
+      {err && <div className="text-[12px]" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}>{err}</div>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {rows.map((t) => (
           <div key={t.id} className="widget-card p-4">
-            <div className="text-[11px] uppercase tracking-wider" style={{ color: 'oklch(0.60 0.007 250)' }}>{t.category}{t.jurisdiction ? ` · ${t.jurisdiction}` : ''}</div>
-            <div className="font-semibold text-[14px]" style={{ color: 'oklch(0.17 0.010 250)' }}>{t.display_name}</div>
-            <div className="text-[11px] font-mono" style={{ color: 'oklch(0.60 0.007 250)' }}>{t.template_key} · v{t.version}</div>
+            <div className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>{t.category}{t.jurisdiction ? ` · ${t.jurisdiction}` : ''}</div>
+            <div className="font-semibold text-[14px]" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>{t.display_name}</div>
+            <div className="text-[11px] font-mono" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>{t.template_key} · v{t.version}</div>
             <button type="button" onClick={() => setRaising(t)}
               className="mt-3 h-8 px-3 rounded text-white text-[11px] font-semibold inline-flex items-center gap-1"
-              style={{ background: 'oklch(0.46 0.16 55)' }}>
+              style={{ background: 'var(--accent, oklch(0.46 0.16 55))' }}>
               <Plus size={12}/> Raise envelope
             </button>
           </div>
         ))}
-        {rows.length === 0 && <div className="md:col-span-3 p-6 text-center text-[12px]" style={{ color: 'oklch(0.60 0.007 250)' }}>No templates published yet.</div>}
+        {rows.length === 0 && <div className="md:col-span-3 p-6 text-center text-[12px]" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>No templates published yet.</div>}
       </div>
       {raising && <RaiseEnvelopeModal template={raising} onClose={() => setRaising(null)} onCreated={() => { setRaising(null); }}/>}
     </section>
@@ -129,46 +129,46 @@ function RaiseEnvelopeModal({ template, onClose, onCreated }: { template: Templa
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
-      <div className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'oklch(0.99 0.002 80)' }}>
-        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+      <div className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'var(--s1, oklch(0.99 0.002 80))' }}>
+        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
           <div>
-            <div className="text-[11px] uppercase" style={{ color: 'oklch(0.60 0.007 250)' }}>Raise envelope</div>
-            <div className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{template.display_name}</div>
+            <div className="text-[11px] uppercase" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>Raise envelope</div>
+            <div className="font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>{template.display_name}</div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
-          <div className="text-[12px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Variables</div>
+          <div className="text-[12px] font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>Variables</div>
           {variables.map((v) => (
-            <label key={v.key} className="block text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>
+            <label key={v.key} className="block text-[11px] font-semibold" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>
               {v.key}
-              {v.desc && <span className="font-normal ml-1" style={{ color: 'oklch(0.60 0.007 250)' }}>— {v.desc}</span>}
+              {v.desc && <span className="font-normal ml-1" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>— {v.desc}</span>}
               <input className="mt-1 w-full h-8 px-2 rounded border text-[12px]"
-                     style={{ borderColor: 'oklch(0.87 0.006 250)' }}
+                     style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}
                      value={vals[v.key] || ''}
                      onChange={(e) => setVals({ ...vals, [v.key]: e.target.value })}/>
             </label>
           ))}
-          <div className="text-[12px] font-semibold mt-3" style={{ color: 'oklch(0.17 0.010 250)' }}>Signatories ({sigs.length})</div>
+          <div className="text-[12px] font-semibold mt-3" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>Signatories ({sigs.length})</div>
           {sigs.map((s, i) => (
-            <label key={i} className="block text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>
-              {s.label} <span className="font-normal" style={{ color: 'oklch(0.60 0.007 250)' }}>({s.role})</span>
+            <label key={i} className="block text-[11px] font-semibold" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>
+              {s.label} <span className="font-normal" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>({s.role})</span>
               <input placeholder="participant_id" className="mt-1 w-full h-8 px-2 rounded border text-[12px] font-mono"
-                     style={{ borderColor: 'oklch(0.87 0.006 250)' }}
+                     style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}
                      value={signatories[i] || ''}
                      onChange={(e) => {
                        const next = [...signatories]; next[i] = e.target.value; setSignatories(next);
                      }}/>
             </label>
           ))}
-          {err && <div className="text-[12px] inline-flex items-center gap-1" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13}/> {err}</div>}
-          {ack && <div className="text-[12px] inline-flex items-center gap-1" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={13}/> {ack}</div>}
+          {err && <div className="text-[12px] inline-flex items-center gap-1" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}><AlertCircle size={13}/> {err}</div>}
+          {ack && <div className="text-[12px] inline-flex items-center gap-1" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}><CheckCircle2 size={13}/> {ack}</div>}
         </div>
-        <div className="p-4 border-t flex justify-end gap-2" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
-          <button type="button" onClick={onClose} className="h-8 px-3 text-[12px]" style={{ color: 'oklch(0.40 0.009 250)' }}>Cancel</button>
+        <div className="p-4 border-t flex justify-end gap-2" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
+          <button type="button" onClick={onClose} className="h-8 px-3 text-[12px]" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Cancel</button>
           <button type="button" disabled={busy} onClick={submit}
                   className="h-8 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50"
-                  style={{ background: 'oklch(0.46 0.16 55)' }}>
+                  style={{ background: 'var(--accent, oklch(0.46 0.16 55))' }}>
             {busy ? 'Creating…' : 'Create envelope'}
           </button>
         </div>
@@ -193,12 +193,12 @@ function EnvelopesTab() {
 
   return (
     <section className="space-y-3">
-      <div className="text-[12px]" style={{ color: 'oklch(0.60 0.007 250)' }}>{rows.length} envelopes visible to you</div>
-      {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{err}</div>}
+      <div className="text-[12px]" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>{rows.length} envelopes visible to you</div>
+      {err && <div className="text-[12px]" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}>{err}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="text-left border-b" style={{ color: 'oklch(0.60 0.007 250)', borderColor: 'oklch(0.87 0.006 250)' }}>
+            <tr className="text-left border-b" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))', borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
               <th className="py-1.5">Raised</th>
               <th className="py-1.5">ID</th>
               <th className="py-1.5">Status</th>
@@ -214,18 +214,18 @@ function EnvelopesTab() {
                 sigCount = s.length; signed = s.filter((x) => x.signed_at).length;
               } catch { /* empty */ }
               return (
-                <tr key={e.id} className="border-b" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+                <tr key={e.id} className="border-b" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
                   <td className="py-1.5 font-mono">{new Date(e.raised_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</td>
                   <td className="py-1.5 font-mono">{e.id}</td>
-                  <td className="py-1.5"><span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold" style={{ background: 'oklch(0.96 0.003 250)', color: 'oklch(0.17 0.010 250)' }}>{e.status}</span></td>
+                  <td className="py-1.5"><span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold" style={{ background: 'var(--s1, oklch(0.96 0.003 250))', color: 'var(--ink, oklch(0.17 0.010 250))' }}>{e.status}</span></td>
                   <td className="py-1.5">{signed}/{sigCount}</td>
                   <td className="py-1.5 text-right">
-                    <button type="button" onClick={() => setSelected(e)} className="text-[11px] underline" style={{ color: 'oklch(0.46 0.16 55)' }}>Open</button>
+                    <button type="button" onClick={() => setSelected(e)} className="text-[11px] underline" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>Open</button>
                   </td>
                 </tr>
               );
             })}
-            {rows.length === 0 && <tr><td colSpan={5} className="py-2 italic" style={{ color: 'oklch(0.60 0.007 250)' }}>No envelopes yet.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={5} className="py-2 italic" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>No envelopes yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -286,56 +286,56 @@ function EnvelopeDetail({ envelope, onClose, onChanged }: { envelope: Envelope; 
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
-      <div className="rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'oklch(0.99 0.002 80)' }}>
-        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+      <div className="rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'var(--s1, oklch(0.99 0.002 80))' }}>
+        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
           <div>
-            <div className="text-[11px] uppercase" style={{ color: 'oklch(0.60 0.007 250)' }}>Envelope · {envelope.status}</div>
-            <div className="font-mono text-[12px]" style={{ color: 'oklch(0.17 0.010 250)' }}>{envelope.id}</div>
-            <div className="text-[10px] font-mono break-all" style={{ color: 'oklch(0.60 0.007 250)' }}>hash: {envelope.document_hash}</div>
+            <div className="text-[11px] uppercase" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>Envelope · {envelope.status}</div>
+            <div className="font-mono text-[12px]" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>{envelope.id}</div>
+            <div className="text-[10px] font-mono break-all" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>hash: {envelope.document_hash}</div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
           <div>
-            <div className="text-[12px] font-semibold mb-1" style={{ color: 'oklch(0.17 0.010 250)' }}>Rendered document</div>
+            <div className="text-[12px] font-semibold mb-1" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>Rendered document</div>
             <pre className="rounded p-3 text-[11px] whitespace-pre-wrap max-h-72 overflow-y-auto border"
-                 style={{ background: 'oklch(0.96 0.003 250)', borderColor: 'oklch(0.87 0.006 250)' }}>{envelope.body_rendered}</pre>
+                 style={{ background: 'var(--s1, oklch(0.96 0.003 250))', borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>{envelope.body_rendered}</pre>
           </div>
           <div>
-            <div className="text-[12px] font-semibold mb-1" style={{ color: 'oklch(0.17 0.010 250)' }}>Signatories</div>
-            <ul className="text-[12px]" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+            <div className="text-[12px] font-semibold mb-1" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>Signatories</div>
+            <ul className="text-[12px]" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
               {signatoryList.map((s, i) => (
-                <li key={i} className="py-2 flex items-center gap-2 border-t" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+                <li key={i} className="py-2 flex items-center gap-2 border-t" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
                   <span className="font-semibold">{s.label}</span>
-                  <span style={{ color: 'oklch(0.60 0.007 250)' }}>({s.role})</span>
+                  <span style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>({s.role})</span>
                   <span className="font-mono text-[11px] ml-2">{s.participant_id || '—'}</span>
                   {s.signed_at
-                    ? <span className="ml-auto text-[11px] inline-flex items-center gap-1" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={12}/> {new Date(s.signed_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</span>
-                    : <span className="ml-auto text-[11px]" style={{ color: 'oklch(0.60 0.007 250)' }}>pending</span>}
+                    ? <span className="ml-auto text-[11px] inline-flex items-center gap-1" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}><CheckCircle2 size={12}/> {new Date(s.signed_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</span>
+                    : <span className="ml-auto text-[11px]" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>pending</span>}
                 </li>
               ))}
             </ul>
           </div>
           {sigs.length > 0 && (
             <details className="text-[11px]">
-              <summary className="cursor-pointer" style={{ color: 'oklch(0.60 0.007 250)' }}>Cryptographic signatures ({sigs.length})</summary>
+              <summary className="cursor-pointer" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>Cryptographic signatures ({sigs.length})</summary>
               <ul className="mt-2">
                 {sigs.map((s) => (
-                  <li key={s.id} className="py-1 font-mono border-t" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+                  <li key={s.id} className="py-1 font-mono border-t" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
                     {s.signer_id} · {s.signing_method} · {new Date(s.signed_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}
                   </li>
                 ))}
               </ul>
             </details>
           )}
-          {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
-          {ack && <div className="text-[12px]" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
+          {err && <div className="text-[12px]" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
+          {ack && <div className="text-[12px]" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
         </div>
-        <div className="p-4 border-t flex justify-end gap-2" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
-          <button type="button" onClick={cancel} className="h-8 px-3 text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>Cancel envelope</button>
+        <div className="p-4 border-t flex justify-end gap-2" style={{ borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }}>
+          <button type="button" onClick={cancel} className="h-8 px-3 text-[12px]" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}>Cancel envelope</button>
           <button type="button" disabled={busy || envelope.status === 'completed' || envelope.status === 'cancelled'} onClick={sign}
                   className="h-8 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-40 inline-flex items-center gap-1"
-                  style={{ background: 'oklch(0.46 0.16 55)' }}>
+                  style={{ background: 'var(--accent, oklch(0.46 0.16 55))' }}>
             <Send size={12}/> {busy ? 'Signing…' : 'Sign'}
           </button>
         </div>

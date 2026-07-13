@@ -33,8 +33,8 @@ interface UseClaimKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   claim_submitted:       'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
-  metering_data_verified:'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
-  liability_assessed:    'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  metering_data_verified:'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  liability_assessed:    'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   preliminary_quantum:   'bg-cyan-100 text-cyan-700',
   grid_operator_response:'bg-amber-100 text-amber-700',
   negotiation:           'bg-purple-100 text-purple-700',
@@ -66,7 +66,7 @@ const STATUS_LABELS: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   industrial:  'bg-red-100 text-red-700',
   commercial:  'bg-amber-100 text-amber-700',
-  municipal:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  municipal:   'bg-[var(--s2, oklch(0.94_0.006_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   residential: 'bg-green-100 text-green-700',
   scheduled:   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
 };
@@ -480,7 +480,7 @@ export function OfftakerUseClaimTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded border" style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
+                          className="px-2 py-0.5 text-xs rounded border" style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))', borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))' }}
                         >
                           Actions
                         </button>

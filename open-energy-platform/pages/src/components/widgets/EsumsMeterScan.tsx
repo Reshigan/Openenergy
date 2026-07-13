@@ -95,14 +95,14 @@ export function EsumsMeterScan() {
     <div className="space-y-3">
       {/* div, not <header>: meridian.css styles the bare header element as the
           chrome's flex row, which would lay the eyebrow/title/copy side-by-side. */}
-      <div className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
-        <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold inline-flex items-center gap-1" style={{ color: 'oklch(0.55 0.008 250)' }}>
+      <div className="rounded-xl border p-5" style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
+        <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold inline-flex items-center gap-1" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
           <Sparkles size={10} /> Meter analysis · import a meter, find the wins
         </div>
-        <h1 className="font-display text-[20px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>
+        <h1 className="font-display text-[20px] font-bold tracking-tight mt-0.5" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
           Opportunity scan
         </h1>
-        <p className="text-[12px] mt-0.5 max-w-[70ch]" style={{ color: 'oklch(0.45 0.015 250)' }}>
+        <p className="text-[12px] mt-0.5 max-w-[70ch]" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>
           Paste a short window of interval readings for any meter — electricity, water, gas and more. The scan runs
           deterministic algorithms (standby load, time-of-use shift, continuous flow) and estimates the annual saving.
           The free scan shows how many wins and the rough total; the full report itemises each one with its evidence.
@@ -114,14 +114,14 @@ export function EsumsMeterScan() {
           <label className="block">
             <span className="widget-kpi-label">Meter type</span>
             <select value={medium} onChange={(e) => setMedium(e.target.value as Medium)}
-              className="mt-1 w-full h-9 px-2 rounded-md border text-[13px] bg-surface-v2" style={{ borderColor: 'oklch(0.88 0.006 250)' }}>
+              className="mt-1 w-full h-9 px-2 rounded-md border text-[13px] bg-surface-v2" style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
               {MEDIA.map((m) => <option key={m.key} value={m.key}>{m.label} ({m.unit})</option>)}
             </select>
           </label>
           <label className="block">
             <span className="widget-kpi-label">Unit price (R per {unit})</span>
             <input value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} inputMode="decimal"
-              className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'oklch(0.88 0.006 250)' }} />
+              className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }} />
           </label>
         </div>
 
@@ -134,17 +134,17 @@ export function EsumsMeterScan() {
             <label className="block">
               <span className="widget-kpi-label">Off-peak price (R per {unit})</span>
               <input value={offpeak} onChange={(e) => setOffpeak(e.target.value)} inputMode="decimal" placeholder="e.g. 1.10"
-                className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'oklch(0.88 0.006 250)' }} />
+                className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }} />
             </label>
             <label className="block">
               <span className="widget-kpi-label">Peak hours (0–23)</span>
               <input value={peakHours} onChange={(e) => setPeakHours(e.target.value)} placeholder="17,18,19,20"
-                className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'oklch(0.88 0.006 250)' }} />
+                className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }} />
             </label>
             <label className="block">
               <span className="widget-kpi-label">Idle hours (0–23)</span>
               <input value={offHours} onChange={(e) => setOffHours(e.target.value)} placeholder="0,1,2,3,4"
-                className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'oklch(0.88 0.006 250)' }} />
+                className="mt-1 w-full h-9 px-2 rounded-md border text-[13px]" style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }} />
             </label>
           </div>
         )}
@@ -153,8 +153,8 @@ export function EsumsMeterScan() {
           <span className="widget-kpi-label inline-flex items-center gap-1"><Upload size={11} /> Readings — one "timestamp,value" per line</span>
           <textarea value={csv} onChange={(e) => setCsv(e.target.value)} rows={6} spellCheck={false}
             placeholder={`2026-06-01T00:00:00Z,4.2\n2026-06-01T01:00:00Z,4.1\n2026-06-01T18:00:00Z,31.7\n…`}
-            className="mt-1 w-full px-2 py-2 rounded-md border text-[12px] font-mono" style={{ borderColor: 'oklch(0.88 0.006 250)' }} />
-          <span className="text-[11px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
+            className="mt-1 w-full px-2 py-2 rounded-md border text-[12px] font-mono" style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }} />
+          <span className="text-[11px]" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
             {readings.length} reading{readings.length === 1 ? '' : 's'} parsed · timestamps ISO 8601 · values in {unit}
           </span>
         </label>
@@ -175,10 +175,10 @@ export function EsumsMeterScan() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <div className="widget-kpi-label">Free scan</div>
-                <div className="font-display text-[22px] font-bold tracking-tight" style={{ color: 'oklch(0.15 0.025 250)' }}>
+                <div className="font-display text-[22px] font-bold tracking-tight" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
                   {result.count} opportunit{result.count === 1 ? 'y' : 'ies'} found
                 </div>
-                <div className="text-[13px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>
+                <div className="text-[13px] mt-0.5" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>
                   Estimated <span className="font-mono font-bold widget-tone-good-text" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatZAR(result.totalEstZarYr)}</span>/yr in total upside
                   {result.topTitle && <> · top win: <strong>{result.topTitle}</strong></>}
                 </div>
@@ -191,7 +191,7 @@ export function EsumsMeterScan() {
               )}
             </div>
             {result.count === 0 && (
-              <p className="text-[12px] mt-3" style={{ color: 'oklch(0.45 0.015 250)' }}>
+              <p className="text-[12px] mt-3" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>
                 No improvement opportunities detected in this window — the meter looks well-optimised.
               </p>
             )}

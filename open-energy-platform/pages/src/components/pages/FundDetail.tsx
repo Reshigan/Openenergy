@@ -704,8 +704,8 @@ export function FundDetail() {
                   onClick={() => s.tab && setActiveTab(s.tab)}
                   style={{
                     textAlign: 'left',
-                    background: 'oklch(0.97 0.012 250)',
-                    border: '1px solid oklch(0.87 0.02 250)',
+                    background: 'var(--s1, oklch(0.97 0.012 250))',
+                    border: '1px solid var(--border-subtle, oklch(0.87 0.02 250))',
                     borderRadius: 6,
                     padding: '10px 12px',
                     cursor: 'pointer',

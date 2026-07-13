@@ -38,7 +38,7 @@ type LoiRow = {
 
 const statusMeta: Record<string, { bg: string; color: string; label: string }> = {
   drafted:   { bg: BG2,     color: TX2,  label: 'Drafted' },
-  sent:      { bg: 'oklch(0.93 0.04 240)', color: 'oklch(0.35 0.14 240)', label: 'Awaiting response' },
+  sent:      { bg: 'color-mix(in oklch, var(--info, oklch(0.55 0.15 240)) 14%, var(--s1, oklch(0.93 0.04 240)))', color: 'var(--info, oklch(0.35 0.14 240))', label: 'Awaiting response' },
   signed:    { bg: GOOD_BG, color: GOOD, label: 'Accepted' },
   withdrawn: { bg: BAD_BG,  color: BAD,  label: 'Declined' },
   expired:   { bg: WARN_BG, color: WARN, label: 'Expired' },
@@ -322,12 +322,12 @@ export function Lois() {
 
         {/* Context hint */}
         <div style={{
-          background: 'oklch(0.93 0.04 240)', border: '1px solid oklch(0.85 0.06 240)', borderRadius: 8, padding: '14px 16px',
+          background: 'color-mix(in oklch, var(--info, oklch(0.55 0.15 240)) 14%, var(--s1, oklch(0.93 0.04 240)))', border: '1px solid var(--info, oklch(0.85 0.06 240))', borderRadius: 8, padding: '14px 16px',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'oklch(0.35 0.14 240)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--info, oklch(0.35 0.14 240))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
             HOW IT WORKS
           </div>
-          <p style={{ fontSize: 12, color: 'oklch(0.30 0.10 240)', margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12, color: 'var(--info, oklch(0.30 0.10 240))', margin: 0, lineHeight: 1.6 }}>
             An accepted LOI automatically spawns a draft Term Sheet in your contracts list. Accepting is non-binding until the Term Sheet is countersigned.
           </p>
         </div>

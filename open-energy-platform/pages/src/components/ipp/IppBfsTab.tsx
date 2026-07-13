@@ -26,9 +26,9 @@ interface BfsStudy {
 type StatusStyle = { className: string; style?: CSSProperties };
 const STATUS_COLORS: Record<string, StatusStyle> = {
   bfs_triggered:             { className: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]' },
-  scope_definition:          { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  scope_definition:          { className: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   data_collection:           { className: 'bg-sky-100 text-sky-700' },
-  analysis_in_progress:      { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  analysis_in_progress:      { className: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   draft_bfs_issued:          { className: 'bg-yellow-100 text-yellow-800' },
   peer_review:               { className: 'bg-amber-100 text-amber-700' },
   ipp_comments_submitted:    { className: 'bg-teal-100 text-teal-700' },

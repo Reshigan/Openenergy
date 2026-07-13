@@ -49,9 +49,9 @@ const SOURCE_ICON: Record<Item['source'], React.ComponentType<{ size?: number; c
 };
 
 const SEVERITY_STYLE: Record<string, React.CSSProperties> = {
-  overdue: { background: 'oklch(0.97 0.04 20)', color: 'oklch(0.48 0.20 20)', border: '1px solid oklch(0.85 0.10 20)' },
-  soon: { background: 'oklch(0.97 0.04 55)', color: 'oklch(0.46 0.16 55)', border: '1px solid oklch(0.85 0.10 55)' },
-  normal: { background: 'oklch(0.94 0.004 250)', color: 'oklch(0.40 0.009 250)', border: '1px solid oklch(0.87 0.006 250)' },
+  overdue: { background: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, oklch(0.97 0.04 20)))', color: 'var(--bad, oklch(0.48 0.20 20))', border: '1px solid var(--bad, oklch(0.85 0.10 20))' },
+  soon: { background: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, oklch(0.97 0.04 55)))', color: 'var(--accent, oklch(0.46 0.16 55))', border: '1px solid var(--warn, oklch(0.85 0.10 55))' },
+  normal: { background: 'var(--s2, oklch(0.94 0.004 250))', color: 'var(--ink-2, oklch(0.40 0.009 250))', border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' },
 };
 
 export function SchedulePage() {
@@ -98,13 +98,13 @@ export function SchedulePage() {
       title="Upcoming deadlines"
       subtitle={`Everything due across your portfolio in the next ${days} days — invoices, milestones, insurance, licences, outages, hearings.`}
       actions={
-        <div className="inline-flex items-center gap-1 rounded-lg p-1" style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.87 0.006 250)' }}>
+        <div className="inline-flex items-center gap-1 rounded-lg p-1" style={{ background: 'var(--s1, oklch(0.99 0.002 80))', border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' }}>
           {[30, 60, 90, 180].map((n) => (
             <button type="button" key={n} onClick={() => setDays(n)}
               className="h-8 px-3 rounded-md text-[12px] font-semibold"
               style={days === n
-                ? { background: 'oklch(0.46 0.16 55)', color: '#fff' }
-                : { color: 'oklch(0.40 0.009 250)' }}>
+                ? { background: 'var(--accent, oklch(0.46 0.16 55))', color: '#fff' }
+                : { color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>
               {n}d
             </button>
           ))}
@@ -116,8 +116,8 @@ export function SchedulePage() {
         <button type="button" onClick={() => setFilter('all')}
           className="h-8 px-3 rounded-full text-[11px] font-semibold"
           style={filter === 'all'
-            ? { background: 'oklch(0.46 0.16 55)', color: '#fff', border: '1px solid oklch(0.46 0.16 55)' }
-            : { background: 'oklch(0.99 0.002 80)', color: 'oklch(0.40 0.009 250)', border: '1px solid oklch(0.87 0.006 250)' }}>
+            ? { background: 'var(--accent, oklch(0.46 0.16 55))', color: '#fff', border: '1px solid var(--accent, oklch(0.46 0.16 55))' }
+            : { background: 'var(--s1, oklch(0.99 0.002 80))', color: 'var(--ink-2, oklch(0.40 0.009 250))', border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' }}>
           All <span className="opacity-70 ml-1">{counts.all || 0}</span>
         </button>
         {(Object.keys(SOURCE_LABEL) as Item['source'][]).map((s) => {
@@ -127,15 +127,15 @@ export function SchedulePage() {
             <button type="button" key={s} onClick={() => setFilter(s)}
               className="h-8 px-3 rounded-full text-[11px] font-semibold inline-flex items-center gap-1"
               style={filter === s
-                ? { background: 'oklch(0.46 0.16 55)', color: '#fff', border: '1px solid oklch(0.46 0.16 55)' }
-                : { background: 'oklch(0.99 0.002 80)', color: 'oklch(0.40 0.009 250)', border: '1px solid oklch(0.87 0.006 250)' }}>
+                ? { background: 'var(--accent, oklch(0.46 0.16 55))', color: '#fff', border: '1px solid var(--accent, oklch(0.46 0.16 55))' }
+                : { background: 'var(--s1, oklch(0.99 0.002 80))', color: 'var(--ink-2, oklch(0.40 0.009 250))', border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' }}>
               <Icon size={12} /> {SOURCE_LABEL[s]} <span className="opacity-70">{counts[s]}</span>
             </button>
           );
         })}
       </div>
 
-      {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{err}</div>}
+      {err && <div className="text-[12px]" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}>{err}</div>}
 
       {loading ? (
         <Skeleton variant="card" rows={8} />
@@ -152,39 +152,39 @@ export function SchedulePage() {
             const isOverdue = day < todayStr;
             const isToday = day === todayStr;
             return (
-              <section key={day} className="overflow-hidden" style={{ borderRadius: '12px', border: '1px solid oklch(0.87 0.006 250)', background: 'oklch(0.99 0.002 80)' }}>
+              <section key={day} className="overflow-hidden" style={{ borderRadius: '12px', border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))', background: 'var(--s1, oklch(0.99 0.002 80))' }}>
                 <header className="px-4 py-2 flex items-center gap-3"
                   style={{
-                    borderBottom: '1px solid oklch(0.91 0.005 250)',
+                    borderBottom: '1px solid var(--border-subtle, oklch(0.91 0.005 250))',
                     background: isOverdue
-                      ? 'oklch(0.97 0.04 20)'
+                      ? 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, oklch(0.97 0.04 20)))'
                       : isToday
-                        ? 'oklch(0.95 0.02 250)'
-                        : 'oklch(0.97 0.003 250)',
+                        ? 'var(--s2, oklch(0.95 0.02 250))'
+                        : 'var(--s1, oklch(0.97 0.003 250))',
                   }}>
-                  <Calendar size={14} style={{ color: isOverdue ? 'oklch(0.48 0.20 20)' : 'oklch(0.46 0.16 55)' }} />
-                  <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>
+                  <Calendar size={14} style={{ color: isOverdue ? 'var(--bad, oklch(0.48 0.20 20))' : 'var(--accent, oklch(0.46 0.16 55))' }} />
+                  <div className="text-[13px] font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>
                     {d.toLocaleDateString('en-ZA', { timeZone: 'Africa/Johannesburg', weekday: 'long', day: 'numeric', month: 'long' })}
                   </div>
-                  <span className="text-[11px]" style={{ color: 'oklch(0.60 0.007 250)' }}>{dayItems.length} item{dayItems.length === 1 ? '' : 's'}</span>
-                  {isOverdue && <span className="ml-auto text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertTriangle size={12} /> Overdue</span>}
-                  {isToday && <span className="ml-auto text-[11px] font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Today</span>}
+                  <span className="text-[11px]" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>{dayItems.length} item{dayItems.length === 1 ? '' : 's'}</span>
+                  {isOverdue && <span className="ml-auto text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}><AlertTriangle size={12} /> Overdue</span>}
+                  {isToday && <span className="ml-auto text-[11px] font-semibold" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>Today</span>}
                 </header>
                 <ul>
                   {dayItems.map((it) => {
                     const Icon = SOURCE_ICON[it.source];
                     return (
-                      <li key={`${it.source}-${it.id}`} style={{ borderTop: '1px solid oklch(0.91 0.005 250)' }}>
+                      <li key={`${it.source}-${it.id}`} style={{ borderTop: '1px solid var(--border-subtle, oklch(0.91 0.005 250))' }}>
                         <Link to={it.href} className="flex items-center gap-3 px-4 py-2 text-[13px]" style={{ color: 'inherit' }}>
-                          <span className="flex-shrink-0" style={{ color: 'oklch(0.60 0.007 250)', display: 'flex' }}><Icon size={14} /></span>
+                          <span className="flex-shrink-0" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))', display: 'flex' }}><Icon size={14} /></span>
                           <span className="flex-1 min-w-0">
-                            <span className="block truncate" style={{ color: 'oklch(0.17 0.010 250)' }}>{it.label}</span>
-                            <span className="block text-[11px] truncate" style={{ color: 'oklch(0.60 0.007 250)' }}>{SOURCE_LABEL[it.source]}{it.secondary ? ` · ${it.secondary}` : ''}</span>
+                            <span className="block truncate" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>{it.label}</span>
+                            <span className="block text-[11px] truncate" style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }}>{SOURCE_LABEL[it.source]}{it.secondary ? ` · ${it.secondary}` : ''}</span>
                           </span>
                           <span className="px-2 py-0.5 rounded text-[10px] uppercase font-semibold" style={SEVERITY_STYLE[it.severity]}>
                             {it.severity}
                           </span>
-                          <ArrowRight size={14} style={{ color: 'oklch(0.60 0.007 250)' }} />
+                          <ArrowRight size={14} style={{ color: 'var(--ink-2, oklch(0.60 0.007 250))' }} />
                         </Link>
                       </li>
                     );

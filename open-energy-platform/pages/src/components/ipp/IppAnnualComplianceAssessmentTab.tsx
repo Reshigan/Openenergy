@@ -34,14 +34,14 @@ interface AcsKpis {
 type StatusStyle = { cls: string; style: React.CSSProperties };
 const STATUS_COLORS: Record<string, StatusStyle> = {
   assessment_triggered:      { cls: 'bg-[var(--s2, #eef2f7)]', style: { color: 'var(--ink-2, #6b7685)' } },
-  protection_systems_audit:  { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  protection_systems_audit:  { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   metering_scada_audit:      { cls: 'bg-cyan-100 text-cyan-700', style: {} },
-  reactive_power_audit:      { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  reactive_power_audit:      { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } },
   frequency_response_audit:  { cls: 'bg-violet-100 text-violet-700', style: {} },
   frt_pq_audit:              { cls: 'bg-purple-100 text-purple-700', style: {} },
   internal_technical_review: { cls: 'bg-yellow-100 text-yellow-800', style: {} },
   so_submission:             { cls: 'bg-orange-100 text-orange-700', style: {} },
-  so_review_in_progress:     { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.17 0.010 250)' } },
+  so_review_in_progress:     { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--ink, oklch(0.17 0.010 250))' } },
   assessment_accepted:       { cls: 'bg-green-100 text-green-700', style: {} },
   assessment_deficient:      { cls: 'bg-red-100 text-red-700', style: {} },
   assessment_lapsed:         { cls: 'bg-[var(--s2, #eef2f7)]', style: { color: 'var(--ink-2, #9aa5b4)' } },
@@ -78,7 +78,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 type TierStyle = { cls: string; style: React.CSSProperties };
 const TIER_COLORS: Record<string, TierStyle> = {
-  small:    { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.17 0.010 250)' } },
+  small:    { cls: '', style: { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--ink, oklch(0.17 0.010 250))' } },
   medium:   { cls: 'bg-yellow-100 text-yellow-800', style: {} },
   large:    { cls: 'bg-orange-100 text-orange-800', style: {} },
   major:    { cls: 'bg-red-100 text-red-800', style: {} },
@@ -391,9 +391,9 @@ export function IppAnnualComplianceAssessmentTab() {
         <form
           onSubmit={handleCreate}
           className="rounded-lg p-4 space-y-3"
-          style={{ border: '1px solid oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
+          style={{ border: '1px solid var(--border-subtle, oklch(0.87 0.010 250))', background: 'var(--s2, oklch(0.94 0.006 250))' }}
         >
-          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual Grid Code Compliance Assessment</div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>New Annual Grid Code Compliance Assessment</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Plant Name *</label>
@@ -552,7 +552,7 @@ export function IppAnnualComplianceAssessmentTab() {
                         <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded border"
-                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
+                          style={{ background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))', borderColor: 'var(--border-subtle, oklch(0.87 0.010 250))' }}
                         >
                           Actions
                         </button>

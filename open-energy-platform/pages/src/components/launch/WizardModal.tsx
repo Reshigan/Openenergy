@@ -32,16 +32,16 @@ function StepIndicator({ steps, current }: { steps: WizardStep[]; current: numbe
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-all"
               style={{
-                background: i < current ? 'var(--good, #1a8a5b)' : i === current ? 'oklch(0.46 0.16 55)' : '#f1f4f8',
+                background: i < current ? 'var(--good, #1a8a5b)' : i === current ? 'oklch(0.46 0.16 55)' : 'var(--s2, #f1f4f8)',
                 borderColor: i < current ? 'var(--good, #1a8a5b)' : i === current ? 'oklch(0.46 0.16 55)' : 'var(--border-subtle, #dde4ec)',
-                color: i <= current ? '#fff' : '#9aa6b4',
+                color: i <= current ? '#fff' : 'var(--ink-2, #9aa6b4)',
               }}
             >
               {i < current ? <Check size={12} /> : i + 1}
             </div>
             <div
               className="text-[9px] mt-0.5 text-center leading-tight px-1"
-              style={{ color: i === current ? 'var(--ink, #0f1c2e)' : '#9aa6b4', maxWidth: 56 }}
+              style={{ color: i === current ? 'var(--ink, #0f1c2e)' : 'var(--ink-2, #9aa6b4)', maxWidth: 56 }}
             >
               {s.title}
             </div>
@@ -229,22 +229,22 @@ export function WizardModal({
           {/* Header */}
           <div
             className="px-6 py-4 border-b flex items-start justify-between gap-3"
-            style={{ borderColor: 'oklch(0.88 0.006 250)', background: 'oklch(0.99 0.002 80)' }}
+            style={{ borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))', background: 'var(--s1, oklch(0.99 0.002 80))' }}
           >
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] font-mono" style={{ color: 'oklch(0.55 0.008 250)' }}>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] font-mono" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
                 {spec.steps.length}-step wizard
               </div>
-              <div className="mt-0.5 text-[17px] font-bold leading-tight" style={{ color: 'oklch(0.15 0.025 250)' }}>{spec.title}</div>
+              <div className="mt-0.5 text-[17px] font-bold leading-tight" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>{spec.title}</div>
               {spec.subtitle && (
-                <div className="mt-0.5 text-[12px]" style={{ color: 'oklch(0.45 0.015 250)' }}>{spec.subtitle}</div>
+                <div className="mt-0.5 text-[12px]" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>{spec.subtitle}</div>
               )}
             </div>
             <button
               type="button"
               onClick={onClose}
               className="mt-0.5 p-1.5 rounded-md hover:bg-[var(--s2, #eef2f7)] transition-colors"
-              style={{ color: 'oklch(0.55 0.008 250)' }}
+              style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}
               aria-label="Close wizard"
             >
               <X size={16} />
@@ -272,10 +272,10 @@ export function WizardModal({
             {currentStep.aiHint && (
               <div
                 className="flex items-start gap-2.5 rounded-xl p-3 mb-4"
-                style={{ background: '#fffbf0', border: '1px solid #f0e4a8' }}
+                style={{ background: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, #fffbf0))', border: '1px solid var(--warn, #f0e4a8)' }}
               >
                 <Lightbulb size={14} style={{ color: '#b04e0f', flexShrink: 0, marginTop: 1 }} />
-                <p className="text-[11px] leading-relaxed" style={{ color: '#6b3a12' }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--warn, #6b3a12)' }}>
                   {currentStep.aiHint}
                 </p>
               </div>
@@ -292,7 +292,7 @@ export function WizardModal({
             <div className="space-y-3">
               {currentStep.fields.map(f => (
                 <label key={f.key} className="block text-[13px]">
-                  <span className="font-medium" style={{ color: '#3a4658' }}>
+                  <span className="font-medium" style={{ color: 'var(--ink-2, #3a4658)' }}>
                     {f.label}{f.required && <span className="text-red-500 ml-0.5">*</span>}
                   </span>
                   <FieldInput
@@ -303,7 +303,7 @@ export function WizardModal({
                     lookupLoading={lookupLoading}
                   />
                   {f.helperText && (
-                    <span className="block mt-0.5 text-[10px]" style={{ color: '#9aa6b4' }}>{f.helperText}</span>
+                    <span className="block mt-0.5 text-[10px]" style={{ color: 'var(--ink-2, #9aa6b4)' }}>{f.helperText}</span>
                   )}
                 </label>
               ))}
@@ -313,7 +313,7 @@ export function WizardModal({
           {/* Footer */}
           <div
             className="px-6 py-4 border-t flex items-center justify-between gap-3"
-            style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: '#fafbfc' }}
+            style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: 'var(--s1, #fafbfc)' }}
           >
             {/* Back / step counter */}
             <div className="flex items-center gap-3">
@@ -336,7 +336,7 @@ export function WizardModal({
                   Cancel
                 </button>
               )}
-              <span className="text-[11px]" style={{ color: '#9aa6b4' }}>
+              <span className="text-[11px]" style={{ color: 'var(--ink-2, #9aa6b4)' }}>
                 {stepIndex + 1} / {spec.steps.length}
               </span>
             </div>
@@ -415,7 +415,7 @@ export function WizardPicker({
                 type="button"
                 onClick={() => onSelect(w)}
                 className="w-full text-left rounded-xl border p-3.5 transition-all hover:border-[oklch(0.46_0.16_55)] hover:shadow-sm"
-                style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: '#fafbfc' }}
+                style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: 'var(--s1, #fafbfc)' }}
               >
                 <div className="text-[13px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>{w.title}</div>
                 {w.subtitle && (

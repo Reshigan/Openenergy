@@ -756,13 +756,13 @@ function renderDetail(row: SllRow): React.ReactNode {
         </div>
       )}
       {row.cure_basis && (
-        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: 'oklch(0.98 0.04 55)', borderColor: WARN }}>
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, oklch(0.98 0.04 55)))', borderColor: WARN }}>
           <div className="mb-0.5" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: WARN }}>Cure basis</div>
           <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.cure_basis}</div>
         </div>
       )}
       {row.restatement_basis && (
-        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: 'oklch(0.98 0.04 55)', borderColor: WARN }}>
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: 'color-mix(in oklch, var(--warn, oklch(0.65 0.18 75)) 14%, var(--s1, oklch(0.98 0.04 55)))', borderColor: WARN }}>
           <div className="mb-0.5" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: WARN }}>Restatement basis</div>
           <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.restatement_basis}</div>
         </div>

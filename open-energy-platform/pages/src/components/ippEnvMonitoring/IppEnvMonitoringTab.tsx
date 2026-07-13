@@ -148,8 +148,8 @@ const STATUS_COLOR: Record<EnvMonitoringStatus, string> = {
 };
 
 const STATUS_STYLE: Partial<Record<EnvMonitoringStatus, React.CSSProperties>> = {
-  sampling:         { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)' },
-  sample_submitted: { background: 'oklch(0.94 0.01 270)',  color: 'oklch(0.40 0.09 270)' },
+  sampling:         { background: 'var(--s1, oklch(0.96 0.006 250))', color: 'var(--ink-2, oklch(0.40 0.12 250))' },
+  sample_submitted: { background: 'var(--s2, oklch(0.94 0.01 270))',  color: 'var(--ink-2, oklch(0.40 0.09 270))' },
 };
 
 const ACTIONS: Record<EnvMonitoringStatus, Array<{ action: string; label: string; danger?: boolean }>> = {
@@ -208,7 +208,7 @@ function KpiCard({ label, value, color }: { label: string; value: number; color:
     gray: 'bg-[var(--s1, #f8fafc)] text-[var(--ink, #2d3748)] border-[var(--border-subtle, #dde4ec)]',
   };
   const blueStyle: React.CSSProperties | undefined = color === 'blue'
-    ? { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.17 0.010 250)', borderColor: 'oklch(0.87 0.006 250)' }
+    ? { background: 'var(--s1, oklch(0.96 0.006 250))', color: 'var(--ink, oklch(0.17 0.010 250))', borderColor: 'var(--border-subtle, oklch(0.87 0.006 250))' }
     : undefined;
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`} style={blueStyle}>
@@ -533,7 +533,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                         {!!row.floor_lender_report_required && (
                           <span
                             className="px-1 py-0.5 rounded text-[9px] font-bold"
-                            style={{ background: 'oklch(0.94 0.01 270)', color: 'oklch(0.35 0.09 270)' }}
+                            style={{ background: 'var(--s2, oklch(0.94 0.01 270))', color: 'var(--ink-2, oklch(0.35 0.09 270))' }}
                             title="Lender report required"
                           >LDR</span>
                         )}
@@ -544,7 +544,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                       <td className="px-3 py-2">
                         <button type="button"
                           className="text-xs hover:underline"
-                          style={{ color: 'oklch(0.46 0.16 55)' }}
+                          style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}
                           onClick={e => { e.stopPropagation(); setSelected(row); }}
                         >
                           Manage
@@ -762,7 +762,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                   {!!selected.floor_lender_report_required && (
                     <span
                       className="px-2 py-0.5 rounded text-[10px]"
-                      style={{ background: 'oklch(0.94 0.01 270)', color: 'oklch(0.40 0.09 270)' }}
+                      style={{ background: 'var(--s2, oklch(0.94 0.01 270))', color: 'var(--ink-2, oklch(0.40 0.09 270))' }}
                     >Lender report required</span>
                   )}
                   {!!selected.is_near_sensitive_receptor && <span className="px-2 py-0.5 rounded text-[10px] bg-red-200 text-red-900">Near sensitive receptor</span>}
@@ -775,10 +775,10 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               <div className="mb-4">
                 <p className="text-xs text-[var(--ink-2, #6b7685)] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
-                  {selected.ncr_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>NCR: {selected.ncr_ref}</span>}
-                  {selected.hse_incident_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>HSE: {selected.hse_incident_ref}</span>}
-                  {selected.ms_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>MS: {selected.ms_ref}</span>}
-                  {selected.stage_gate_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>Stage gate: {selected.stage_gate_ref}</span>}
+                  {selected.ncr_ref && <span className="text-xs" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>NCR: {selected.ncr_ref}</span>}
+                  {selected.hse_incident_ref && <span className="text-xs" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>HSE: {selected.hse_incident_ref}</span>}
+                  {selected.ms_ref && <span className="text-xs" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>MS: {selected.ms_ref}</span>}
+                  {selected.stage_gate_ref && <span className="text-xs" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>Stage gate: {selected.stage_gate_ref}</span>}
                 </div>
               </div>
             )}

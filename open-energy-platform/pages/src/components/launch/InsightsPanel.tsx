@@ -105,7 +105,7 @@ export default function InsightsPanel({ chainKey, label, className }: InsightsPa
         )}
 
         {cards.map((card) => (
-          <article key={card.key} className="rounded-lg border border-amber-200 bg-gradient-to-br from-[#fffdf3] to-[#fff7e3] p-3">
+          <article key={card.key} className="rounded-lg border border-amber-200 bg-gradient-to-br from-[color-mix(in_oklch,var(--warn,oklch(0.65_0.18_75))_14%,var(--s1,#fffdf3))] to-[color-mix(in_oklch,var(--warn,oklch(0.65_0.18_75))_14%,var(--s1,#fff7e3))] p-3">
             <div className="flex items-start gap-2">
               <Lightbulb className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" aria-hidden />
               <div className="min-w-0">

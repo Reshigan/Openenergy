@@ -188,7 +188,7 @@ export function IppEnvClosureTab() {
                   <td className={`py-2 pr-4 text-xs ${ec.sla_breached ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                     {ec.sla_breached ? '⚠ BREACHED' : fmtDate(ec.sla_due_at)}
                   </td>
-                  <td className="py-2 text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>View →</td>
+                  <td className="py-2 text-xs" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>View →</td>
                 </tr>
               ))}
               {items.length === 0 && <tr><td colSpan={8} className="py-6 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No environmental closure records found</td></tr>}
@@ -225,7 +225,7 @@ export function IppEnvClosureTab() {
                     onClick={() => doAction(selected.id, a.action)}
                     className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[var(--border-subtle, #dde4ec)] text-[var(--ink, #2d3748)] hover:bg-[var(--s2, #eef2f7)] hover:border-[#c2873a]'}`}>
                     {a.label}
-                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : ''}`} style={a.tag.includes('REGULATOR') ? {} : { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' }}>{a.tag}</span>}
+                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : ''}`} style={a.tag.includes('REGULATOR') ? {} : { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>{a.tag}</span>}
                   </button>
                 ))}
               </div>

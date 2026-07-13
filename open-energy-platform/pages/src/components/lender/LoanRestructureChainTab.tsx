@@ -807,17 +807,17 @@ function renderDetail(row: LrsRow): React.ReactNode {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {row.bridges_to_covenant_certificate_chain_live && (
-              <span style={{ borderRadius: 4, background: 'oklch(0.88 0.04 250)', color: TX1, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
+              <span style={{ borderRadius: 4, background: 'var(--s2, oklch(0.88 0.04 250))', color: TX1, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
                 Covenant {row.covenant_breach_ref ?? ''}
               </span>
             )}
             {row.bridges_to_dscr_monitoring_chain_live && (
-              <span style={{ borderRadius: 4, background: 'oklch(0.88 0.04 250)', color: TX1, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
+              <span style={{ borderRadius: 4, background: 'var(--s2, oklch(0.88 0.04 250))', color: TX1, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
                 DSCR {row.dscr_shortfall_ref ?? ''}
               </span>
             )}
             {row.bridges_to_default_chain_live && (
-              <span style={{ borderRadius: 4, background: 'oklch(0.90 0.06 20)', color: BAD, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
+              <span style={{ borderRadius: 4, background: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, oklch(0.90 0.06 20)))', color: BAD, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
                 Default {row.default_chain_ref ?? '(new)'}
               </span>
             )}

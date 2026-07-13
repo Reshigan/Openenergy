@@ -34,10 +34,10 @@ export function SetupChecklist({ role }: { role: string }) {
         <button type="button" onClick={() => void dismiss()} style={{ fontSize: 11, color: 'var(--ink-2, #6b7685)', background: 'none', border: 'none', cursor: 'pointer' }}>Hide</button>
       </div>
       <button type="button" onClick={() => navigate(next.href)}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', marginTop: 10, padding: '10px 12px', borderRadius: 8, border: '1px solid #cfe0f0', background: '#eaf3fb', cursor: 'pointer' }}>
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', marginTop: 10, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-subtle, #cfe0f0)', background: 'var(--s2, #eaf3fb)', cursor: 'pointer' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, color: '#0f3a5c', fontWeight: 600 }}>Recommended next: {next.label}</div>
-          <div style={{ fontSize: 11, color: '#3a4658', marginTop: 2 }}>{next.description}</div>
+          <div style={{ fontSize: 12, color: 'var(--ink, #0f3a5c)', fontWeight: 600 }}>Recommended next: {next.label}</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-2, #3a4658)', marginTop: 2 }}>{next.description}</div>
         </div>
         <ArrowRight size={14} style={{ flexShrink: 0 }} />
       </button>
@@ -45,7 +45,7 @@ export function SetupChecklist({ role }: { role: string }) {
         {items.map((i) => (
           <button type="button" key={i.id} onClick={() => !i.done && navigate(i.href)} disabled={i.done}
             style={{ display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', padding: '6px 4px', border: 'none', background: 'none', cursor: i.done ? 'default' : 'pointer' }}>
-            {i.done ? <CheckCircle2 size={16} style={{ color: 'var(--good, #1f6b3a)', flexShrink: 0 }} /> : <Circle size={16} style={{ color: '#9aa6b4', flexShrink: 0 }} />}
+            {i.done ? <CheckCircle2 size={16} style={{ color: 'var(--good, #1f6b3a)', flexShrink: 0 }} /> : <Circle size={16} style={{ color: 'var(--ink-2, #9aa6b4)', flexShrink: 0 }} />}
             <span style={{ fontSize: 13, color: i.done ? 'var(--ink-2, #7a8a9a)' : 'var(--ink, #0f1c2e)', textDecoration: i.done ? 'line-through' : 'none' }}>{i.label}</span>
           </button>
         ))}

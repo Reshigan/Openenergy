@@ -30,9 +30,9 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   survey_commissioned:   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
-  field_survey:          'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
-  diagram_drafted:       'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
-  sg_approved:           'bg-[oklch(0.90_0.015_250)] text-[oklch(0.17_0.010_250)]',
+  field_survey:          'bg-[var(--s2, oklch(0.94_0.008_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  diagram_drafted:       'bg-[var(--s2, oklch(0.94_0.008_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
+  sg_approved:           'bg-[var(--s2, oklch(0.90_0.015_250))] text-[var(--ink, oklch(0.17_0.010_250))]',
   servitude_notarised:   'bg-lime-100 text-lime-800',
   deeds_lodged:          'bg-yellow-100 text-yellow-800',
   deeds_registered:      'bg-green-200 text-green-900',
@@ -44,7 +44,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
-  moderate:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  moderate:     'bg-[var(--s2, oklch(0.94_0.008_250))] text-[var(--accent, oklch(0.46_0.16_55))]',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
   material:     'bg-red-100 text-red-800',
@@ -143,7 +143,7 @@ export function IppLandRegisterTab() {
         ))}
         <span className="ml-1 text-[var(--ink-2, #9aa5b4)]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`} style={filterTier === t ? { background: 'oklch(0.46 0.16 55)' } : undefined}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`} style={filterTier === t ? { background: 'var(--accent, oklch(0.46 0.16 55))' } : undefined}>{t}</button>
         ))}
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New Survey</button>
         <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border">Refresh</button>
@@ -178,7 +178,7 @@ export function IppLandRegisterTab() {
                   <td className={`py-2 pr-4 text-xs ${lr.sla_breached ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                     {lr.sla_breached ? '⚠ BREACHED' : fmtDate(lr.sla_due_at)}
                   </td>
-                  <td className="py-2 text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>View →</td>
+                  <td className="py-2 text-xs" style={{ color: 'var(--accent, oklch(0.46 0.16 55))' }}>View →</td>
                 </tr>
               ))}
               {items.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No land register records found</td></tr>}
@@ -214,7 +214,7 @@ export function IppLandRegisterTab() {
                     onClick={() => doAction(selected.id, a.action)}
                     className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[var(--border-subtle, #dde4ec)] text-[var(--ink, #2d3748)]'}`}>
                     {a.label}
-                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : ''}`} style={!a.tag.includes('REGULATOR') ? { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } : undefined}>{a.tag}</span>}
+                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : ''}`} style={!a.tag.includes('REGULATOR') ? { background: 'var(--s2, oklch(0.94 0.006 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } : undefined}>{a.tag}</span>}
                   </button>
                 ))}
               </div>

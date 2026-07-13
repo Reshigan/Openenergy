@@ -33,9 +33,9 @@ export function ConfirmDialog({
   if (!open) return null;
 
   const variantStyles = {
-    danger: 'border-red-200 bg-[#fff5f5]',
-    warning: 'border-yellow-200 bg-[#fffbf0]',
-    info: 'bg-[oklch(0.96_0.008_250)] border-[oklch(0.82_0.03_250)]',
+    danger: 'border-red-200 bg-[color-mix(in_oklch,var(--bad,oklch(0.55_0.22_25))_14%,var(--s1,#fff5f5))]',
+    warning: 'border-yellow-200 bg-[color-mix(in_oklch,var(--warn,oklch(0.65_0.18_75))_14%,var(--s1,#fffbf0))]',
+    info: 'bg-[var(--s1,oklch(0.96_0.008_250))] border-[var(--border-subtle,oklch(0.82_0.03_250))]',
   };
 
   const buttonStyles = {
@@ -59,7 +59,7 @@ export function ConfirmDialog({
         <div className="p-6">
           <p style={{ color: 'var(--ink-2, #3d4756)' }}>{message}</p>
         </div>
-        <div className="flex justify-end gap-3 p-4 rounded-b-xl" style={{ background: 'oklch(0.96 0.003 250)' }}>
+        <div className="flex justify-end gap-3 p-4 rounded-b-xl" style={{ background: 'var(--s1, oklch(0.96 0.003 250))' }}>
           <button
             type="button"
             onClick={onCancel}
