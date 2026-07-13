@@ -91,8 +91,18 @@ export function InboxTab() {
   const drillRow = useMemo(() => rows.find((r) => r.id === drillId) || null, [rows, drillId]);
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return rows;
-    return rows.filter((r) => r.ack_status === filter);
+    const base = filter === 'all' ? rows : rows.filter((r) => r.ack_status === filter);
+    // Primary view: attention-first (overdue → status urgency → severity → newest).
+    const sevRank: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+    const statusRank: Record<AckStatus, number> = { pending: 0, escalated: 1, acknowledged: 2, dismissed: 3 };
+    const overdue = (r: InboxRow) =>
+      r.ack_status === 'pending' && r.sla_due_at && new Date(r.sla_due_at).getTime() < Date.now() ? 0 : 1;
+    return [...base].sort((a, b) =>
+      overdue(a) - overdue(b) ||
+      statusRank[a.ack_status] - statusRank[b.ack_status] ||
+      sevRank[a.severity] - sevRank[b.severity] ||
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }, [rows, filter]);
 
   const kpis = useMemo(() => {

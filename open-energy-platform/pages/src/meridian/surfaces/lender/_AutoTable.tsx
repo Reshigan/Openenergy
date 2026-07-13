@@ -49,6 +49,17 @@ function fmt(key: string, v: any): React.ReactNode {
   return String(v);
 }
 
+// Shared KPI cell for the lender surfaces' journey headers. accent = attention (amber).
+export function KpiCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+  return (
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 px-4 py-3 min-w-[150px]">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
+      <div className={`text-[20px] font-semibold tabular-nums ${accent ? 'text-[var(--amber-deep,#d9a441)]' : 'text-[var(--ink)]'}`}>{value}</div>
+      {sub && <div className="text-[11px] text-[var(--ink3)]">{sub}</div>}
+    </div>
+  );
+}
+
 // Pull the first array we can find out of the {success,data} envelope, tolerating
 // data:[], data:{items:[]}, data:{<name>:[]}, or a bare array.
 function unwrap(payload: any): any[] {
@@ -62,9 +73,12 @@ function unwrap(payload: any): any[] {
 }
 
 export function AutoTable({
-  endpoint, prefer = [], hide = [], maxCols = 8, empty = 'No rows.', refreshKey = 0,
+  endpoint, prefer = [], hide = [], maxCols = 8, empty = 'No rows.', refreshKey = 0, sortBy, header,
 }: {
   endpoint: string; prefer?: string[]; hide?: string[]; maxCols?: number; empty?: string; refreshKey?: number;
+  // sortBy: order rows worst/biggest-first before render. header: journey KPI card rendered above
+  // the table, receiving the loaded rows so KPIs are derived from the same single fetch.
+  sortBy?: (a: any, b: any) => number; header?: (rows: any[]) => React.ReactNode;
 }) {
   const [rows, setRows] = useState<any[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -104,21 +118,25 @@ export function AutoTable({
     ...prefer.filter((k) => seen.has(k)),
     ...allKeys.filter((k) => !prefer.includes(k) && !hidden.has(k)),
   ].slice(0, maxCols);
+  const display = sortBy ? [...rows].sort(sortBy) : rows;
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-surface-v2">
+    <>
+      {header?.(rows)}
+      <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-surface-v2">
       <table className="w-full text-[12px]">
         <thead className="bg-[var(--raised)] text-[var(--ink3)] text-[10px] uppercase tracking-wide">
           <tr>{ordered.map((k) => <th key={k} className="text-left px-3 py-2 font-semibold">{prettify(k)}</th>)}</tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
+          {display.map((r, i) => (
             <tr key={r.id ?? i} className="border-t border-[var(--line)]">
               {ordered.map((k) => <td key={k} className="px-3 py-2">{fmt(k, r[k])}</td>)}
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }

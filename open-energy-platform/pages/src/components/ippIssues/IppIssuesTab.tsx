@@ -192,12 +192,21 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    if (filterPriority && r.priority !== filterPriority) return false;
-    if (filterCategory && r.category !== filterCategory) return false;
-    return true;
-  }), [rows, filterStatus, filterPriority, filterCategory]);
+  const filtered = useMemo(() => {
+    const term = (s: IssueStatus) => ['closed', 'archived', 'cancelled'].includes(s) ? 1 : 0;
+    // primary view: open first, then breached, then priority (P1→P5), then least SLA remaining
+    return rows.filter(r => {
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      if (filterPriority && r.priority !== filterPriority) return false;
+      if (filterCategory && r.category !== filterCategory) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      if (PRIORITIES.indexOf(a.priority) !== PRIORITIES.indexOf(b.priority)) return PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority);
+      return (a.sla_remaining_hours_live ?? Infinity) - (b.sla_remaining_hours_live ?? Infinity);
+    });
+  }, [rows, filterStatus, filterPriority, filterCategory]);
 
   async function handleAction(action: string) {
     if (!selected) return;

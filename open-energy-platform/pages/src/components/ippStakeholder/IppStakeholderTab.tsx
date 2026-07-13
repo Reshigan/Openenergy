@@ -219,12 +219,21 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    if (filterTier && r.stakeholder_tier !== filterTier) return false;
-    if (filterType && r.stakeholder_type !== filterType) return false;
-    return true;
-  }), [rows, filterStatus, filterTier, filterType]);
+  const filtered = useMemo(() => {
+    const term = (s: StakeholderStatus) => s === 'archived' ? 1 : 0;
+    // primary view: active first, then high-power-resistant, then breached, then most overdue engagement first
+    return rows.filter(r => {
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      if (filterTier && r.stakeholder_tier !== filterTier) return false;
+      if (filterType && r.stakeholder_type !== filterType) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (a.is_high_power_resistant_live !== b.is_high_power_resistant_live) return a.is_high_power_resistant_live ? -1 : 1;
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      return (a.sla_remaining_hours_live ?? Infinity) - (b.sla_remaining_hours_live ?? Infinity);
+    });
+  }, [rows, filterStatus, filterTier, filterType]);
 
   async function handleAction(action: string) {
     if (!selected) return;

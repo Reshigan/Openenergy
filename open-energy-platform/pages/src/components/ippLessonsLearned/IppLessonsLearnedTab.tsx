@@ -227,13 +227,23 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    if (filterTier && r.impact_tier !== filterTier) return false;
-    if (filterType && r.lesson_type !== filterType) return false;
-    if (filterCategory && r.lesson_category !== filterCategory) return false;
-    return true;
-  }), [rows, filterStatus, filterTier, filterType, filterCategory]);
+  const filtered = useMemo(() => {
+    const term = (s: LessonStatus) => ['archived', 'rejected', 'duplicate'].includes(s) ? 1 : 0;
+    const safety = (r: LessonRow) => (r.lesson_type === 'safety' || !!r.prevents_fatality) ? 0 : 1;
+    // primary view: active first, then safety/fatality-preventing, then breached, then most overdue first
+    return rows.filter(r => {
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      if (filterTier && r.impact_tier !== filterTier) return false;
+      if (filterType && r.lesson_type !== filterType) return false;
+      if (filterCategory && r.lesson_category !== filterCategory) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (safety(a) !== safety(b)) return safety(a) - safety(b);
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      return (a.sla_remaining_hours_live ?? Infinity) - (b.sla_remaining_hours_live ?? Infinity);
+    });
+  }, [rows, filterStatus, filterTier, filterType, filterCategory]);
 
   async function handleAction(action: string) {
     if (!selected) return;

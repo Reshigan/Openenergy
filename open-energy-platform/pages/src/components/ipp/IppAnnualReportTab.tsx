@@ -94,6 +94,7 @@ export function IppAnnualReportTab() {
   const [items, setItems] = useState<IppAnnualReport[]>([]);
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterTier, setFilterTier] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -102,7 +103,7 @@ export function IppAnnualReportTab() {
   const [form, setForm] = useState({ project_id: '', reporting_year: new Date().getFullYear(), capacity_mw: '', report_category: 'annual_returns', description: '' });
 
   async function load(status = filterStatus, tier = filterTier, category = filterCategory) {
-    setLoading(true);
+    setLoading(true); setError(null);
     try {
       const params = new URLSearchParams();
       if (status)   params.set('status', status);
@@ -111,10 +112,14 @@ export function IppAnnualReportTab() {
       const res = await fetch(`/api/ipp-annual-report?${params}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const d = json?.data ?? json;
       setItems(d?.items ?? []);
       setKpis(d?.kpis ?? null);
+    } catch {
+      setError('Could not load annual compliance reports. Retry.');
+      setItems([]); setKpis(null);
     } finally {
       setLoading(false);
     }
@@ -138,6 +143,16 @@ export function IppAnnualReportTab() {
       setCreatePending(false);
     }
   }
+
+  // primary view: overdue first, then open (non-terminal), then earliest due first
+  const TERMINAL = new Set(['accepted', 'rejected', 'appeal_determined']);
+  const isOverdue = (r: IppAnnualReport) => !!(r.sla_breached || (r.sla_due_at && new Date(r.sla_due_at) < new Date()));
+  const sorted = [...items].sort((a, b) => {
+    if (isOverdue(a) !== isOverdue(b)) return isOverdue(a) ? -1 : 1;
+    const at = TERMINAL.has(a.chain_status) ? 1 : 0, bt = TERMINAL.has(b.chain_status) ? 1 : 0;
+    if (at !== bt) return at - bt;
+    return (a.sla_due_at ? new Date(a.sla_due_at).getTime() : Infinity) - (b.sla_due_at ? new Date(b.sla_due_at).getTime() : Infinity);
+  });
 
   return (
     <div className="p-4 space-y-4">
@@ -175,7 +190,9 @@ export function IppAnnualReportTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center" aria-busy="true">Loading&hellip;</div>
+      ) : error ? (
+        <div role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg py-8 px-4 text-center">{error}</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -193,7 +210,7 @@ export function IppAnnualReportTab() {
               </tr>
             </thead>
             <tbody>
-              {items.map(item => {
+              {sorted.map(item => {
                 const overdue = !!(item.sla_breached || (item.sla_due_at && new Date(item.sla_due_at) < new Date()));
                 const regulator = hasRegulatorFlag(item);
                 const outcome = item.accepted_at ? '✓ Accepted' : item.rejected_at ? '✗ Rejected' : '—';
@@ -220,8 +237,8 @@ export function IppAnnualReportTab() {
                   </tr>
                 );
               })}
-              {items.length === 0 && (
-                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No annual compliance reports found</td></tr>
+              {sorted.length === 0 && (
+                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No annual compliance reports yet. Use &ldquo;+ New Annual Report&rdquo; to open an ERA 2006 &sect;33 submission &mdash; overdue and open reports will surface here first.</td></tr>
               )}
             </tbody>
           </table>

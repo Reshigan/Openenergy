@@ -70,7 +70,15 @@ export function NoticesTab() {
   useEffect(() => { load(); }, [load]);
 
   const drillRow = useMemo(() => rows.find((r) => r.id === drillId) || null, [rows, drillId]);
-  const filtered = useMemo(() => filter === 'all' ? rows : rows.filter((r) => r.status === filter), [rows, filter]);
+  const filtered = useMemo(() => {
+    const base = filter === 'all' ? rows : rows.filter((r) => r.status === filter);
+    // Primary view: attention-first (overdue/escalated → open → nearest deadline).
+    const rank: Record<NoticeStatus, number> = { overdue: 0, escalated: 1, issued: 2, acknowledged: 3, satisfied: 4, withdrawn: 5 };
+    return [...base].sort((a, b) =>
+      rank[a.status] - rank[b.status] ||
+      new Date(a.remedy_deadline_at || '9999').getTime() - new Date(b.remedy_deadline_at || '9999').getTime()
+    );
+  }, [rows, filter]);
 
   const kpis = useMemo(() => {
     const total = rows.length;

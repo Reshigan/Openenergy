@@ -44,6 +44,9 @@ const NEXT: Record<string, string[]> = {
   submitted: ['accepted', 'rejected'], accepted: [], rejected: ['in_review'],
 };
 
+// Attention order: rejected (rework) → generated (needs review) → in_review → submitted (external) → accepted.
+const ORDER: Record<string, number> = { rejected: 0, generated: 1, in_review: 2, submitted: 3, accepted: 4 };
+
 const STATUS_TONE: Record<string, { c: string; b: string }> = {
   generated: { c: '#475569', b: '#f1f5f9' },
   in_review: { c: '#b45309', b: '#fef3c7' },
@@ -138,8 +141,45 @@ export default function DocStudioSurface(_: { role: string }) {
 
   const subjectHint = DOC_TYPES.find((d) => d.value === docType)?.subject ?? 'subject ID';
 
+  const byStatus = (s: string) => jobs.filter((j) => j.status === s).length;
+  const awaiting = byStatus('generated') + byStatus('in_review') + byStatus('rejected');
+  const submitted = byStatus('submitted');
+  const accepted = byStatus('accepted');
+  const sortedJobs = [...jobs].sort(
+    (a, b) => (ORDER[a.status] ?? 9) - (ORDER[b.status] ?? 9) || (b.created_at || '').localeCompare(a.created_at || ''),
+  );
+  const kpi = (label: string, value: number, urgent = false) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink3)' }}>{label}</span>
+      <span style={{ fontSize: 20, fontWeight: 700, color: urgent && value > 0 ? 'var(--amber-deep)' : 'var(--ink)' }}>{value}</span>
+    </div>
+  );
+
   return (
-    <div className="p-4 grid gap-4 lg:grid-cols-[380px_1fr]">
+    <div className="p-4 space-y-4">
+      {/* Summary — document pipeline at a glance */}
+      <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '16px 18px',
+        background: 'linear-gradient(135deg, color-mix(in oklab, var(--petrol) 14%, transparent), transparent)' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[13px] font-bold text-[var(--ink)]">Document Studio</span>
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ color: 'var(--ink2)', background: 'var(--paper)' }}>
+            {jobs.length} {jobs.length === 1 ? 'document' : 'documents'}
+          </span>
+          {awaiting > 0 && (
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ color: 'var(--amber-deep)', background: 'var(--amber-tint)' }}>
+              {awaiting} need attention
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16 }}>
+          {kpi('Documents', jobs.length)}
+          {kpi('Awaiting action', awaiting, true)}
+          {kpi('Submitted', submitted)}
+          {kpi('Accepted', accepted)}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
       {/* Generator */}
       <div className="space-y-3">
         <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: 'var(--line)' }}>
@@ -196,7 +236,7 @@ export default function DocStudioSurface(_: { role: string }) {
             <div className="p-6 text-[13px] text-[var(--ink3)]">No documents yet. Generate your first one.</div>
           ) : (
             <ul className="divide-y">
-              {jobs.map((j) => (
+              {sortedJobs.map((j) => (
                 <li key={j.id} className="px-4 py-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <button type="button" onClick={() => openPreview(j.id)}
@@ -223,6 +263,7 @@ export default function DocStudioSurface(_: { role: string }) {
             </ul>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

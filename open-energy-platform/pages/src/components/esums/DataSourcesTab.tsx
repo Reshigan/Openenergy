@@ -1,6 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
+import { Pill as WsPill } from '../launch/WorkstationShell';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -237,6 +238,7 @@ function Pill({ status }: { status: string }) {
 export function DataSourcesTab() {
   const [sources, setSources] = useState<DataSource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [liveSource, setLiveSource] = useState<DataSource | null>(null);
   const [editingInterval, setEditingInterval] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<{ id: string; msg: string } | null>(null);
@@ -245,7 +247,8 @@ export function DataSourcesTab() {
     try {
       const res = await api.get('/esums/data-sources');
       setSources(res.data ?? res ?? []);
-    } catch { /* swallow */ } finally { setLoading(false); }
+      setError(null);
+    } catch (e: unknown) { setError((e as Error).message || 'Could not load data sources'); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -260,7 +263,8 @@ export function DataSourcesTab() {
     }
   }
 
-  if (loading) return <div className="p-6 text-sm text-[var(--ink-2, #9aa5b4)]">Loading data sources…</div>;
+  if (loading) return <div className="p-6 text-sm text-[var(--ink-2, #9aa5b4)]" aria-busy="true">Loading data sources…</div>;
+  if (error) return <div className="p-6 text-sm text-red-600" role="alert">Could not load data sources — {error}</div>;
   if (sources.length === 0) {
     return (
       <div className="p-8 text-center">
@@ -270,9 +274,40 @@ export function DataSourcesTab() {
     );
   }
 
+  // ── Journey KPIs: derived client-side from already-fetched rows ──────────────
+  const connected = sources.filter(s => s.status === 'active').length;
+  const errored   = sources.filter(s => s.status === 'error' || !!s.last_error).length;
+  const offline   = sources.length - connected;
+  const attention = sources.filter(s => s.status !== 'active' || !!s.last_error).length;
+  // attention-first: errored, then offline, then active; stable by label
+  const rank = (s: DataSource) => (s.status === 'error' || s.last_error ? 0 : s.status !== 'active' ? 1 : 2);
+  const ordered = [...sources].sort((a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label));
+
   return (
     <>
       {liveSource && <LiveModal source={liveSource} onClose={() => setLiveSource(null)} />}
+
+      <div className="m-4 rounded-lg border border-[var(--s2, #eef2f7)] bg-[var(--s1, #f8fafc)] p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-[var(--ink-2, #6b7685)] uppercase tracking-wide">Connectivity</span>
+          <WsPill tone={attention > 0 ? (errored > 0 ? 'bad' : 'warn') : 'good'}>
+            {attention > 0 ? `${attention} need attention` : 'all connected'}
+          </WsPill>
+        </div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+          {[
+            { k: 'Sources',   v: sources.length },
+            { k: 'Connected', v: connected },
+            { k: 'Offline',   v: offline },
+            { k: 'Errors',    v: errored },
+          ].map(c => (
+            <div key={c.k}>
+              <div className="text-[10.5px] uppercase tracking-wide text-[var(--ink-2, #9aa5b4)]">{c.k}</div>
+              <div className="text-xl font-bold text-[var(--ink, #0f1c2e)]">{c.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -289,7 +324,7 @@ export function DataSourcesTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {sources.map(src => (
+            {ordered.map(src => (
               <tr key={src.id} className="hover:bg-[var(--s2, #eef2f7)]/60 transition-colors">
                 <td className="px-4 py-3 font-medium text-[var(--ink, #0f1c2e)]">{src.label}</td>
                 <td className="px-4 py-3 text-[var(--ink-2, #3d4756)]">{src.source_type}</td>

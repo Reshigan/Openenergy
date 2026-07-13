@@ -206,12 +206,20 @@ export default function IppRiskTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterTier && r.risk_tier !== filterTier) return false;
-    if (filterCat && r.risk_category !== filterCat) return false;
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    return true;
-  }), [rows, filterTier, filterCat, filterStatus]);
+  const filtered = useMemo(() => {
+    const term = (s: RiskStatus) => ['closed', 'archived', 'cancelled'].includes(s) ? 1 : 0;
+    // primary view: open first, then breached, then biggest exposure (risk_score) first
+    return rows.filter(r => {
+      if (filterTier && r.risk_tier !== filterTier) return false;
+      if (filterCat && r.risk_category !== filterCat) return false;
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      return (b.risk_score ?? 0) - (a.risk_score ?? 0);
+    });
+  }, [rows, filterTier, filterCat, filterStatus]);
 
   async function handleAction(action: string) {
     if (!selected) return;

@@ -63,8 +63,37 @@ export default function InvitePartnersSurface(_props: { role: string }) {
 
   const selectedPartner = PARTNER_ROLES.find(r => r.role === selectedRole)!;
 
+  // KPIs derived client-side from the invitation history already fetched.
+  const invited = history.length;
+  const accepted = history.filter((i: any) => i.status === 'accepted').length;
+  const pending = history.filter((i: any) => i.status === 'pending').length;
+  // Primary view: partners needing follow-up (still pending) surface first.
+  const historyView = [...history].sort((a: any, b: any) =>
+    (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1));
+  const kpi = (label: string, value: number) => (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10.5px] uppercase tracking-wider text-[var(--ink3)]">{label}</span>
+      <span className="text-[20px] font-bold text-[var(--ink)]">{histLoading ? '—' : value.toLocaleString('en-ZA')}</span>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
+      {/* Outreach summary */}
+      <div className="rounded-lg border border-[var(--line)] p-5" style={{ background: 'linear-gradient(135deg, color-mix(in oklab, var(--petrol) 14%, transparent), transparent)' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[13px] font-bold text-[var(--ink)]">Partner outreach</span>
+          {!histLoading && pending > 0 && (
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[var(--petrol-tint)] text-[var(--petrol)]">{pending} need follow-up</span>
+          )}
+        </div>
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+          {kpi('Invited', invited)}
+          {kpi('Accepted', accepted)}
+          {kpi('Pending', pending)}
+        </div>
+      </div>
+
       {/* Send invite form */}
       <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-5">
         <h3 className="text-sm font-semibold text-[var(--ink)] mb-1">Invite a partner</h3>
@@ -189,7 +218,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
         {histLoading ? (
           <div className="px-4 py-4 text-xs text-[var(--ink3)]">Loading…</div>
         ) : history.length === 0 ? (
-          <div className="px-4 py-6 text-xs text-[var(--ink3)] text-center">No partner invitations sent yet.</div>
+          <div className="px-4 py-6 text-xs text-[var(--ink3)] text-center">No partner invitations sent yet. Invite a lender, offtaker, or carbon fund above and each one appears here with its acceptance status.</div>
         ) : (
           <table className="w-full text-xs">
             <thead className="bg-[var(--raised)] text-[var(--ink3)]">
@@ -202,7 +231,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
               </tr>
             </thead>
             <tbody>
-              {history.map((inv: any) => (
+              {historyView.map((inv: any) => (
                 <tr key={inv.id} className="border-t border-[var(--raised)]">
                   <td className="px-4 py-2 font-medium capitalize">{(inv.role || '').replace(/_/g, ' ')}</td>
                   <td className="px-4 py-2 text-[var(--ink3)]">{inv.email || inv.organization || '—'}</td>
