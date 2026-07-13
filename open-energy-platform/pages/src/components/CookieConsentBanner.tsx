@@ -53,9 +53,13 @@ export function CookieConsentBanner() {
   };
 
   if (!show) return null;
+  // On authed pages the whole app wears v2 dark chrome; add the `v2` class so the
+  // dark tokens (--s1/--ink/…) resolve and the var(…, lightFallback) below flip
+  // dark. On public pages (no token) there's no `.v2`, so the light fallbacks win.
+  const dark = typeof localStorage !== 'undefined' && !!localStorage.getItem('token');
   return (
-    <div className="fixed inset-x-3 bottom-3 z-[200] left-auto right-3 max-w-md md:right-4 md:bottom-4">
-      <div className="rounded-xl bg-white border border-[var(--border-subtle, #dde4ec)] shadow-xl p-4">
+    <div className={`fixed inset-x-3 bottom-3 z-[200] left-auto right-3 max-w-md md:right-4 md:bottom-4${dark ? ' v2' : ''}`} style={{ background: 'transparent' }}>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] shadow-xl p-4" style={{ background: 'var(--s1, #fff)' }}>
         <div className="flex items-start gap-2">
           <Cookie size={18} className="text-[#b04e0f] mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
@@ -80,9 +84,11 @@ export function CookieConsentBanner() {
               <button type="button" onClick={() => record({ analytics, marketing })}
                       className="h-8 px-3 rounded bg-[#996428] text-white text-[12px] font-semibold">Save preferences</button>
               <button type="button" onClick={() => record({ analytics: true, marketing: true })}
-                      className="h-8 px-3 rounded bg-white border border-[var(--border-subtle, #dde4ec)] text-[var(--ink-2, #3d4756)] text-[12px] font-semibold">Accept all</button>
+                      style={{ background: 'var(--s2, #fff)' }}
+                      className="h-8 px-3 rounded border border-[var(--border-subtle, #dde4ec)] text-[var(--ink-2, #3d4756)] text-[12px] font-semibold">Accept all</button>
               <button type="button" onClick={() => record({ analytics: false, marketing: false })}
-                      className="h-8 px-3 rounded bg-white border border-[var(--border-subtle, #dde4ec)] text-[var(--ink-2, #3d4756)] text-[12px] font-semibold">Necessary only</button>
+                      style={{ background: 'var(--s2, #fff)' }}
+                      className="h-8 px-3 rounded border border-[var(--border-subtle, #dde4ec)] text-[var(--ink-2, #3d4756)] text-[12px] font-semibold">Necessary only</button>
             </div>
           </div>
           <button type="button"
