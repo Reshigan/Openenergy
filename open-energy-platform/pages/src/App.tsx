@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useL
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
-import { MeridianFrame } from './meridian/MeridianFrame';
+import { Shell } from './v2/Shell';
+import { SurfaceBoundary } from './meridian/MeridianSurfacePage';
+import './v2/surface-skin.css';
 
 // Page components — all lazy so each route only pays for its chunk on first visit.
 const DesignGallery         = React.lazy(() => import('./components/pages/DesignGallery').then(m => ({ default: m.DesignGallery })));
@@ -221,10 +223,19 @@ function PrototypeGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Layout — all authenticated pages wear the single CEC (Meridian) chrome via MeridianFrame.
-// AppShell retired and deleted; MeridianFrame is the single authed-page chrome.
+// Layout — all authenticated pages wear the v2 dark chrome via <Shell>, wrapped
+// in the `.v2-surface` skin (surface-skin.css) so the shared WorkstationShell
+// primitives resolve onto the dark v2 token system. This is what makes every
+// legacy authed route actually BE v2 instead of the old Meridian frame with v2
+// painted on top. Mirrors v2/Surface.tsx's non-title wrapping.
 function Layout({ children }: { children: ReactNode }) {
-  return <MeridianFrame>{children}</MeridianFrame>;
+  return (
+    <Shell>
+      <div className="v2-surface">
+        <SurfaceBoundary>{children}</SurfaceBoundary>
+      </div>
+    </Shell>
+  );
 }
 
 // AppShellLayout — alias kept so workstation routes compile without touching each line

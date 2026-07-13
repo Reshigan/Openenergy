@@ -341,3 +341,49 @@
   background: linear-gradient(90deg, var(--s1) 0%, var(--s2) 50%, var(--s1) 100%);
   background-size: 200% 100%;
 }
+
+/* ── Fiori / CEC (`--oe-*`) surfaces ──────────────────────────────────────────
+   The other legacy family (FioriTile, FioriShell master-data pages, KPI strips)
+   is driven by the `--oe-*` token palette in index.css, all light literals
+   (#fff cards, near-black ink). Remap the surface / ink / border / semantic-
+   container tokens onto the v2 dark system — exactly like --ws-* above — so
+   every `--oe-*`-driven surface (and .fiori-tile / .kpi-value / .kpi-label,
+   which read these tokens) re-skins at once. Brand hues (--oe-primary/
+   secondary/tertiary base) stay saturated: readable on dark, used as accents. */
+.v2-surface {
+  --oe-surface:                   var(--s0);
+  --oe-surface-bright:            var(--s2);
+  --oe-surface-dim:               var(--s0);
+  --oe-surface-container-lowest:  var(--s1);
+  --oe-surface-container-low:     var(--s1);
+  --oe-surface-container:         var(--s2);
+  --oe-surface-container-high:    var(--s2);
+  --oe-surface-container-highest: var(--s-panel);
+  --oe-on-surface:                var(--ink);
+  --oe-on-surface-variant:        var(--ink-2);
+  --oe-outline:                   var(--border-strong);
+  --oe-outline-variant:           var(--border-subtle);
+  --oe-outline-strong:            var(--border-strong);
+  --oe-error:                     var(--bad);
+  --oe-warning:                   var(--warn);
+  --oe-success:                   var(--good);
+  --oe-error-container:           color-mix(in oklab, var(--bad) 14%, var(--s1));
+  --oe-warning-container:         color-mix(in oklab, var(--warn) 14%, var(--s1));
+  --oe-success-container:         color-mix(in oklab, var(--good) 14%, var(--s1));
+  --oe-primary-container:         var(--s2);
+  --oe-secondary-container:       color-mix(in oklab, var(--accent) 16%, var(--s1));
+  --oe-tertiary-container:        color-mix(in oklab, var(--info) 14%, var(--s1));
+}
+
+/* .fiori-tile carries a light box-shadow + hairline that read as a grey haze on
+   dark; flatten onto the card surface and lean on the border instead. The ::before
+   accent strip stays — it's the tile's signature and reads well on dark. */
+.v2-surface .fiori-tile, .v2-surface .oe-tile {
+  box-shadow: none;
+  background: var(--s1);
+  border-color: var(--border-subtle);
+}
+.v2-surface .fiori-tile:hover, .v2-surface .oe-tile:hover {
+  box-shadow: 0 12px 24px rgba(0,0,0,0.35);
+  border-color: var(--border-strong);
+}
