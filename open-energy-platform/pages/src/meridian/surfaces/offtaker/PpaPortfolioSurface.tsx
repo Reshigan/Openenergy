@@ -33,7 +33,7 @@ function MasterPpaCard({ s }: { s: ReturnType<typeof summarise> }) {
   const cell = (label: string, value: string) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3, #8a8f98)' }}>{label}</span>
-      <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text1, #fff)' }}>{value}</span>
+      <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>{value}</span>
     </div>
   );
   return (
