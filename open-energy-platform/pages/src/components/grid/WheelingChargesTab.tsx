@@ -183,7 +183,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
-              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : 'var(--s2, #fff)',
               color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}

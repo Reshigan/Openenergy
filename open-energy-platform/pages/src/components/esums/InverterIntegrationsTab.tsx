@@ -79,7 +79,7 @@ const MFR_LABEL: Record<string, string> = {
 const TECH_GROUPS: { tech: Tech; label: string; colour: string; bg: string; border: string }[] = [
   { tech: 'solar', label: 'Solar',         colour: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200' },
   { tech: 'wind',  label: 'Wind',          colour: 'text-sky-700',    bg: 'bg-sky-50',    border: 'border-sky-200' },
-  { tech: 'hydro', label: 'Hydro / Water', colour: 'text-[oklch(0.46_0.16_55)]',   bg: 'bg-[oklch(0.97_0.003_250)]',   border: 'border-[oklch(0.87_0.012_250)]' },
+  { tech: 'hydro', label: 'Hydro / Water', colour: 'text-[oklch(0.46_0.16_55)]',   bg: 'bg-[var(--s2,oklch(0.97_0.003_250))]',   border: 'border-[var(--border-subtle,oklch(0.87_0.012_250))]' },
   { tech: 'waste', label: 'Waste / Biomass', colour: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200' },
 ];
 
@@ -690,7 +690,7 @@ function AccrualsPanel() {
     {
       label: 'Customer savings', sublabel: 'Customer — vs Eskom grid rate',
       value: totals ? fmtZar(totals.savings_zar) : '—',
-      colour: 'text-[oklch(0.46_0.16_55)]', bg: 'bg-[oklch(0.97_0.003_250)]', border: 'border-[oklch(0.87_0.012_250)]',
+      colour: 'text-[oklch(0.46_0.16_55)]', bg: 'bg-[var(--s2,oklch(0.97_0.003_250))]', border: 'border-[var(--border-subtle,oklch(0.87_0.012_250))]',
     },
     {
       label: 'Generation', sublabel: 'Fleet total',
@@ -1059,7 +1059,7 @@ export function InverterIntegrationsTab() {
                           setPrefillMfr(m);
                           setShowModal(true);
                         }}
-                        className="border border-dashed border-[var(--border-subtle, #dde4ec)] rounded-lg p-4 text-left hover:border-[oklch(0.80_0.015_250)] hover:bg-[oklch(0.97_0.003_250)]/30 transition-colors group"
+                        className="border border-dashed border-[var(--border-subtle, #dde4ec)] rounded-lg p-4 text-left hover:border-[oklch(0.80_0.015_250)] hover:bg-[var(--s2,oklch(0.97_0.003_250))]/30 transition-colors group"
                       >
                         <div className="text-sm font-medium text-[var(--ink-2, #9aa5b4)] group-hover:text-[oklch(0.46_0.16_55)]">
                           {MFR_LABEL[m] ?? m}
