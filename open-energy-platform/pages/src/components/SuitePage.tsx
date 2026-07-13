@@ -724,6 +724,26 @@ function templateUrl(template: string, row: Record<string, unknown>): string {
   });
 }
 
+// snake_case detail key → human label, with SA-energy acronyms preserved.
+const ACRONYMS = /\b(zar|sla|id|wo|mw|kwp|kw|ppa|om|mtd|kl)\b/gi;
+function humanizeKey(k: string): string {
+  return k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(ACRONYMS, (m) => (m.toUpperCase() === 'KWP' ? 'kWp' : m.toUpperCase()));
+}
+// Format a raw detail value: ISO timestamps → local, *_zar → ZAR, arrays → count.
+function fmtDetailVal(k: string, v: unknown): string {
+  if (Array.isArray(v)) return `${v.length} item${v.length === 1 ? '' : 's'}`;
+  if (v && typeof v === 'object') return JSON.stringify(v);
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
+    const d = new Date(v);
+    if (!Number.isNaN(d.getTime())) return d.toLocaleString('en-ZA');
+  }
+  if (/_zar$/.test(k) && Number.isFinite(Number(v))) {
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(Number(v));
+  }
+  return String(v);
+}
+
 // ─── Form modal ────────────────────────────────────────────────────────────
 function FormModal({
   title, form, onClose, onSubmitted, onError,
@@ -1081,9 +1101,9 @@ function DetailDrawer({
                     if (v == null || v === '') return null;
                     return (
                       <div key={k}>
-                        <dt className="text-[11px]" style={{ color: TX2 }}>{k}</dt>
+                        <dt className="text-[11px]" style={{ color: TX2 }}>{humanizeKey(k)}</dt>
                         <dd className="break-all" style={{ color: TX1 }}>
-                          {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                          {fmtDetailVal(k, v)}
                         </dd>
                       </div>
                     );

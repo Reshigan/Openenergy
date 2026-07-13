@@ -15,8 +15,17 @@ export default function SitesSurface(_props: { role: string }) {
       key: 'sites',
       label: 'Sites',
       endpoint: '/esums/sites',
-      description: 'Generation sites with live KPIs. Click into a site for the asset-level dashboard.',
+      description: 'Generation sites with live KPIs. Click a site for the full asset record — capacity, commissioning lifecycle, live faults and revenue impact.',
       viz: sitesViz,
+      detail: {
+        summaryFields: [
+          'name', 'technology', 'capacity_mw', 'capacity_kwp', 'province', 'status', 'commissioning_status',
+          'device_count', 'open_faults', 'open_wos', 'revenue_lost_mtd_zar',
+          'ppa_tariff_zar_mwh', 'water_tariff_zar_kl', 'latitude', 'longitude',
+          'commissioning_date', 'commissioning_due_at', 'commissioning_started_at', 'devices_registered_at',
+          'ingestion_wired_at', 'first_telemetry_at', 'energised_at', 'in_om_at', 'commissioning_failure_reason',
+        ],
+      },
       columns: [
         { key: 'name', label: 'Site' },
         { key: 'technology', label: 'Tech' },

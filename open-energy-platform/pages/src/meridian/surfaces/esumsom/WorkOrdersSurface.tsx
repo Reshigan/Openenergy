@@ -15,8 +15,18 @@ export default function WorkOrdersSurface(_props: { role: string }) {
       key: 'workorders',
       label: 'Work orders',
       endpoint: '/esums/work-orders',
-      description: '12-state WO lifecycle. Tap a row to drill into the timeline, parts, photos and SLA tracking.',
+      description: '12-state WO lifecycle. Tap a row for the full record — lifecycle timeline, parts, costs, SLA and resolution.',
       viz: workOrdersViz,
+      detail: {
+        summaryFields: [
+          'wo_number', 'title', 'category', 'priority', 'status', 'chain_status',
+          'site_name', 'technician_name', 'fault_severity', 'description',
+          'sla_response_minutes', 'sla_resolve_hours', 'sla_deadline', 'sla_breached', 'escalation_level',
+          'created_at', 'assigned_at', 'acknowledged_at', 'en_route_at', 'on_site_at', 'completed_at', 'verified_at', 'closed_at',
+          'parts_used', 'parts_cost_zar', 'labour_hours', 'labour_cost_zar', 'travel_km', 'total_cost_zar', 'revenue_recovered_zar',
+          'photos', 'first_time_fix', 'difficulty_rating', 'resolution_notes',
+        ],
+      },
       columns: [
         { key: 'wo_number',     label: 'WO #' },
         { key: 'site_id',       label: 'Site' },
