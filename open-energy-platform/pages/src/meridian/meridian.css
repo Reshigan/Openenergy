@@ -2378,3 +2378,39 @@
   .mer .ja-charge { width:100%; }
 }
 .mer .ja-saved td { background:var(--moss-tint); transition:background .4s; }
+
+/* ── Deal Desk dark chrome ───────────────────────────────────────────────────
+   DealDeskPage is the last authed .mer surface still mounted (every other
+   Meridian route now redirects to /v2). The rest of the platform is the dark v2
+   chrome, so the Deal Desk must match. Rather than fork the whole light .mer
+   system, remap its tokens to the v2 dark ladder on the .mer.deal-desk root —
+   var inheritance cascades the flip to every descendant (.mer-tour, .deal-empty,
+   .tile, .chip, .board-new, …). Scoped to .deal-desk: no other .mer consumer is
+   touched. ponytail: token remap, not a rewrite — deepen to a v2-native surface
+   only if Deal Desk grows past this. */
+.mer.deal-desk {
+  --paper:  oklch(0.14 0.008 250);
+  --raised: oklch(0.185 0.007 250);
+  --ink:    oklch(0.93 0.01 250);
+  --ink2:   oklch(0.72 0.012 250);
+  --ink3:   oklch(0.60 0.012 250);
+  --line:   oklch(0.30 0.012 250);
+  /* brand indigo lifts on dark so tint/text read; base --petrol stays mid so
+     white-on-petrol CTAs (.chip.best-chip, .board-new) keep AA. */
+  --petrol:      oklch(0.58 0.15 265);
+  --petrol-deep: oklch(0.72 0.13 265);
+  --petrol-tint: color-mix(in oklch, oklch(0.58 0.15 265) 22%, oklch(0.185 0.007 250));
+  --copper:      oklch(0.66 0.11 55);
+  --copper-deep: oklch(0.74 0.10 55);
+  --copper-tint: color-mix(in oklch, oklch(0.66 0.11 55) 20%, oklch(0.185 0.007 250));
+  /* semantic: fills keep hue, *-deep lifts for text AA on dark, *-tint darkens */
+  --amber:      oklch(0.72 0.15 70);
+  --amber-deep: oklch(0.82 0.13 75);
+  --amber-tint: color-mix(in oklch, oklch(0.72 0.15 70) 18%, oklch(0.14 0.008 250));
+  --oxide:      oklch(0.62 0.19 30);
+  --oxide-deep: oklch(0.74 0.17 32);
+  --oxide-tint: color-mix(in oklch, oklch(0.62 0.19 30) 18%, oklch(0.14 0.008 250));
+  --moss:       oklch(0.66 0.12 165);
+  --moss-deep:  oklch(0.78 0.11 165);
+  --moss-tint:  color-mix(in oklch, oklch(0.66 0.12 165) 18%, oklch(0.14 0.008 250));
+}

@@ -480,3 +480,16 @@
   border-color: var(--border-subtle);
 }
 .v2-surface select option { background-color: var(--s2); color: var(--ink); }
+
+/* RoleShell (signature design-system) sets its own --role-* surface tokens and
+   defaults to a LIGHT surface (#ffffff) unless it carries data-chrome='dark'.
+   Inside the v2 dark chrome it must inherit the dark ladder regardless of that
+   attr — remap the role tokens onto the v2 tokens. ponytail: one chokepoint;
+   covers every RoleShell mounted under Layout, not just the route that surfaced it. */
+.v2-surface [data-role-shell] {
+  --role-surface: var(--s0);
+  --role-surface-raised: var(--s1);
+  --role-on-surface: var(--ink);
+  --role-on-surface-muted: var(--ink-2);
+  --role-border: var(--border-subtle);
+}
