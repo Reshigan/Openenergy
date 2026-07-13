@@ -15,9 +15,14 @@ import {
 export const GOOD = '#1a8a5b';
 export const WARN = '#b04e0f';
 export const BAD = '#c0392b';
-const GRID = '#eef2f7';
+// GRID/MUTED are dual-mode: recharts passes them as SVG stroke/fill *attributes*
+// where var() does NOT resolve — so use a translucent gray that reads subtle on
+// both light and dark. INK (dark navy) is only used as a Bar fill attribute here;
+// text uses var(--ink, …) inline where var() DOES resolve (style context).
+const GRID = 'rgba(128,128,128,0.18)';
 const MUTED = '#6b7685';
 const INK = '#0f1c2e';
+const INK_TX = 'var(--ink, #0f1c2e)';    // for text (style context) — dark under .v2
 const TICK = { fontSize: 10, fill: MUTED };
 const zar = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 });
 
@@ -38,7 +43,7 @@ export function Panel({ title, subtitle, children }: { title: string; subtitle?:
   return (
     <section className="widget-card" style={{ border: `1px solid ${GRID}`, borderRadius: 12, background: 'var(--s1, #fff)', overflow: 'hidden' }}>
       <header className="px-4 py-3" style={{ borderBottom: `1px solid ${GRID}` }}>
-        <h3 className="text-[13px] font-semibold" style={{ color: INK }}>{title}</h3>
+        <h3 className="text-[13px] font-semibold" style={{ color: INK_TX }}>{title}</h3>
         {subtitle && <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>{subtitle}</p>}
       </header>
       <div style={{ height: 260 }} className="px-2 pt-3 pb-1">
@@ -116,7 +121,7 @@ function PredictionsCharts({ rows }: { rows: Record<string, unknown>[] }) {
               if (!p) return null;
               return (
                 <div style={{ background: 'var(--s1, #fff)', border: `1px solid ${GRID}`, borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
-                  <div style={{ fontWeight: 600, color: INK }}>{p.site} · {p.type}</div>
+                  <div style={{ fontWeight: 600, color: INK_TX }}>{p.site} · {p.type}</div>
                   <div style={{ color: MUTED }}>{p.y}% confidence · ~{p.x}d out</div>
                   <div style={{ color: BAD }}>{zar.format(p.z)} at risk</div>
                 </div>

@@ -35,25 +35,29 @@ import { useTour } from '../../lib/useTour';
 // match the .mer chrome. Values are literal (not var(--…)) on purpose: these
 // components render both inside and outside a .mer ancestor, and .mer's tokens are
 // scoped — literals stay correct everywhere. Mirror of meridian.css :root.
-const BG     = '#f4f6fa';                  // --paper (input/field surface)
-const BG1    = '#ffffff';                  // --raised (modal/card surface)
-const BG2    = '#eef1f7';                  // hover wash (between paper and line)
+// v2 reskin: each literal is now var(--token, #lightFallback) — resolves to the
+// dark .v2 token under a .v2 ancestor, falls back to the light hex on public
+// pages. Tints use color-mix over the surface token so pills stay subtle on
+// dark and light alike (fallback args keep them correct with no .v2 ancestor).
+const BG     = 'var(--s0, #f4f6fa)';       // --paper (input/field surface)
+const BG1    = 'var(--s1, #ffffff)';       // --raised (modal/card surface)
+const BG2    = 'var(--s2, #eef1f7)';       // hover wash (between paper and line)
 const BORDER = 'var(--border-subtle, #dde3ee)';                  // --line
-const BORDERS= '#c3cdde';                  // stronger divider
-const TX1    = '#0e1726';                  // --ink
-const TX2    = '#3a4760';                  // --ink2
+const BORDERS= 'var(--border-strong, #c3cdde)';                  // stronger divider
+const TX1    = 'var(--ink, #0e1726)';      // --ink
+const TX2    = 'var(--ink-2, #3a4760)';    // --ink2
 const TX3    = 'var(--ink-2, #5b6b85)';                  // --ink3 (WCAG-AA muted)
-const ACC    = '#1f3bb3';                  // --petrol (primary)
-const ACC_BG = '#e8ecfb';                  // --petrol-tint
-const ACC_BDR= 'oklch(0.80 0.07 265)';     // petrol-tinted border
-const GOOD   = 'oklch(0.46 0.085 165)';    // --moss-deep (AA text)
-const GOOD_BG= 'oklch(0.955 0.028 165)';   // --moss-tint
-const BAD    = 'oklch(0.42 0.17 30)';      // --oxide-deep (AA text)
-const BAD_BG = 'oklch(0.95 0.02 30)';      // --oxide-tint
-const WARN   = 'oklch(0.45 0.12 50)';      // --amber-deep (AA text)
-const WARN_BG= 'oklch(0.95 0.03 55)';      // --amber-tint
-const INFO   = '#18309a';                  // --petrol-deep
-const INFO_BG= '#e8ecfb';                  // --petrol-tint
+const ACC    = 'var(--accent, #1f3bb3)';   // --petrol (primary)
+const ACC_BG = 'color-mix(in oklch, var(--accent, #1f3bb3) 15%, var(--s1, #e8ecfb))';   // --petrol-tint
+const ACC_BDR= 'color-mix(in oklch, var(--accent, oklch(0.80 0.07 265)) 40%, var(--s1, #ffffff))';     // petrol-tinted border
+const GOOD   = 'var(--good, oklch(0.46 0.085 165))';    // --moss-deep (AA text)
+const GOOD_BG= 'color-mix(in oklch, var(--good, oklch(0.46 0.085 165)) 15%, var(--s1, #f2fbf6))';   // --moss-tint
+const BAD    = 'var(--bad, oklch(0.42 0.17 30))';      // --oxide-deep (AA text)
+const BAD_BG = 'color-mix(in oklch, var(--bad, oklch(0.42 0.17 30)) 15%, var(--s1, #fdf2f2))';      // --oxide-tint
+const WARN   = 'var(--warn, oklch(0.45 0.12 50))';      // --amber-deep (AA text)
+const WARN_BG= 'color-mix(in oklch, var(--warn, oklch(0.45 0.12 50)) 15%, var(--s1, #fdf6ec))';      // --amber-tint
+const INFO   = 'var(--info, #18309a)';                  // --petrol-deep
+const INFO_BG= 'color-mix(in oklch, var(--info, #18309a) 15%, var(--s1, #e8ecfb))';                  // --petrol-tint
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 const EASE   = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
