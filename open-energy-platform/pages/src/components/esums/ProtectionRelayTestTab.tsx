@@ -248,7 +248,7 @@ export function ProtectionRelayTestTab() {
       if (cls)         params.set('protection_class', cls);
       if (slaBreached) params.set('sla_breached', '1');
       params.set('per_page', '200');
-      const res = await fetch(`/api/protection-relay-chain?${params}`, {
+      const res = await fetch(`/api/protection-relay-tests?${params}`, {
         headers: { Authorization: `Bearer ${token()}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -274,7 +274,7 @@ export function ProtectionRelayTestTab() {
     setTimeline([]);
     setTimelineLoading(true);
     try {
-      const res = await fetch(`/api/protection-relay-chain/${item.id}`, {
+      const res = await fetch(`/api/protection-relay-tests/${item.id}`, {
         headers: { Authorization: `Bearer ${token()}` },
       });
       if (!res.ok) return;
@@ -310,7 +310,7 @@ export function ProtectionRelayTestTab() {
       if (formEngineerId.trim()) body.test_engineer_id = formEngineerId.trim();
       if (formWitnessId.trim())  body.grid_witness_id  = formWitnessId.trim();
 
-      const res = await fetch('/api/protection-relay-chain', {
+      const res = await fetch('/api/protection-relay-tests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -370,7 +370,7 @@ export function ProtectionRelayTestTab() {
         if (actionNextDue.trim()) body.next_test_due      = actionNextDue.trim();
       }
 
-      const res = await fetch(`/api/protection-relay-chain/${actionItem.id}/action`, {
+      const res = await fetch(`/api/protection-relay-tests/${actionItem.id}/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

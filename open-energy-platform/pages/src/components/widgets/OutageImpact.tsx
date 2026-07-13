@@ -4,7 +4,7 @@
 // Inputs (operator can override every default):
 //   • affected_load_mw — pulled from latest grid_outage_update if present
 //   • duration_hours   — derived from response timeline or operator entry
-//   • spot_price       — fetched from latest VWAP mark via /trading/marks
+//   • spot_price       — fetched from latest VWAP mark via /trader-risk/mark-prices
 //                        (falls back to 1500 R/MWh)
 //
 // Outputs: lost MWh, revenue at risk (R), CO₂-tonne avoided if it's a
@@ -35,11 +35,11 @@ export function OutageImpact({ affectedLoadMw, durationHours, techType }: Props)
   useEffect(() => {
     if (priceFetched) return;
     setPriceFetched(true);
-    api.get('/trading/marks')
+    api.get('/trader-risk/mark-prices')
       .then((r) => {
-        const marks = (r.data?.data?.marks || r.data?.data || []) as Array<{ mark_zar_per_mwh?: number; energy_type?: string }>;
+        const marks = (r.data?.data?.marks || r.data?.data || []) as Array<{ mark_price_zar_mwh?: number; energy_type?: string }>;
         const power = marks.find((m) => (m.energy_type || '').includes('power'));
-        if (power?.mark_zar_per_mwh && power.mark_zar_per_mwh > 0) setPrice(Math.round(power.mark_zar_per_mwh));
+        if (power?.mark_price_zar_mwh && power.mark_price_zar_mwh > 0) setPrice(Math.round(power.mark_price_zar_mwh));
       })
       .catch(() => { /* keep default */ });
   }, [priceFetched]);

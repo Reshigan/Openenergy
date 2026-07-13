@@ -329,7 +329,7 @@ mr.get('/stations', async (c) => {
   const manufacturer = c.req.query('manufacturer');
 
   let sql = `
-    SELECT ss.*, s.name AS site_name, s.installed_capacity_kw,
+    SELECT ss.*, s.name AS site_name,
            snap.ac_kw, snap.dc_kw, snap.daily_kwh, snap.total_kwh,
            snap.battery_soc, snap.temperature_c, snap.online AS snapshot_online,
            snap.ts AS snapshot_ts,
