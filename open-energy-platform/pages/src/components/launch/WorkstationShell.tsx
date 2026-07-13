@@ -768,8 +768,12 @@ export function ListingTable({
     try {
       const res = await api.get(endpoint);
       const raw = res.data?.data;
-      if (raw && typeof raw === 'object' && !Array.isArray(raw) && Array.isArray(raw.allocations)) {
-        setRows(raw.allocations as any[]);
+      // Chain-style endpoints nest the list under a named key alongside aggregates
+      // ({ data: { items|allocations: [...], ...counts } }); unwrap it to the rows array.
+      if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+        const arr = Array.isArray(raw.items) ? raw.items
+          : Array.isArray(raw.allocations) ? raw.allocations : [];
+        setRows(arr as any[]);
       } else {
         setRows(Array.isArray(raw) ? raw : []);
       }
