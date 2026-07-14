@@ -103,7 +103,14 @@ export async function unreadCount(): Promise<number> {
 export async function listNotifications(limit = 20): Promise<NotifRow[]> {
   try {
     const { data } = await api.get('/notifications', { params: { status: 'unread', limit } });
-    return (data?.data?.notifications ?? []) as NotifRow[];
+    const rows = (data?.data?.notifications ?? []) as NotifRow[];
+    // the v1 route ships `data` as a raw JSON string — parse so notifTxnId works
+    for (const r of rows) {
+      if (typeof r.data === 'string') {
+        try { r.data = JSON.parse(r.data); } catch { r.data = null; }
+      }
+    }
+    return rows;
   } catch {
     return [];
   }
