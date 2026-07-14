@@ -162,6 +162,7 @@ import { warrantyClaim } from '../v2/domain/chains/warranty_claim';
 import { warrantyRecovery } from '../v2/domain/chains/warranty_recovery';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
+import { IMPORTABLE_CHAINS, fetchLegacyRows, importChain } from '../v2/import/legacy';
 import { sealPendingEvents } from '../v2/domain/merkle-seal';
 // D1Store is authored in a parallel workstream (src/v2/store/d1.ts). Until it
 // lands, tsc reports "cannot find module '../v2/store/d1'" — that error is
@@ -551,6 +552,28 @@ v2.post('/seal', async (c) => {
   }
   const row = await sealPendingEvents(buildDeps(c).store, clock);
   return c.json({ sealed: row });
+});
+
+// ── POST /import/:chain_key — REBUILD_PLAN §11 legacy backfill ───────────────
+// Gated to admin/operator like /seal. Body: { limit?, dry_run? }. Pulls not-
+// yet-imported v1 rows (resumable NOT EXISTS query over idempotency keys) and
+// writes one seq-1 `.imported` event per row. Table/column identifiers come
+// from the static MERIDIAN_CHAINS descriptor via the IMPORTABLE_CHAINS
+// allow-list — the :chain_key request value never reaches identifier position.
+v2.post('/import/:chain_key', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'operator'].includes(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  const chain_key = c.req.param('chain_key');
+  if (!(chain_key in IMPORTABLE_CHAINS)) {
+    return c.json({ success: false, error: `chain '${chain_key}' is not importable` }, 400);
+  }
+  const body = await c.req.json().catch(() => ({}));
+  const limit = Math.max(1, Math.min(Number(body?.limit) || 200, 500));
+  const rows = await fetchLegacyRows(c.env.DB, chain_key, limit);
+  const report = await importChain(rows, chain_key, buildDeps(c), { dry_run: body?.dry_run === true });
+  return c.json({ success: true, data: report });
 });
 
 // ── Cron seams — called by runCron() in src/index.ts, not by HTTP ────────────

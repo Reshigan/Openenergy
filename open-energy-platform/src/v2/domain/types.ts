@@ -19,7 +19,7 @@ export interface IdSource {
 }
 
 export type RoleOnTxn = string;
-export type ActorKind = 'user' | 'system:timer' | 'system:cascade' | 'connector';
+export type ActorKind = 'user' | 'system:timer' | 'system:cascade' | 'system:import' | 'connector';
 export type Visibility = 'public' | 'party' | 'owner';
 
 export interface Duration {
