@@ -191,5 +191,5 @@ export const creditOrigination: ChainDecl = {
 
   // offer validity time-bar: an unaccepted facility offer lapses. record-only stub;
   // the sweep computes the real bar off the facility_offered sla days.
-  timers: [{ onState: 'facility_offered', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'facility_offered', after: { days: 30 }, fire: 'lapse', kind: 'time_bar' }],
 };

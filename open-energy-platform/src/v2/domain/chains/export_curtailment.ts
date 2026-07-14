@@ -173,10 +173,10 @@ export const exportCurtailment: ChainDecl = {
       id: 'cancel_directive',
       from: ['directive_issued', 'acknowledged', 'curtailing'],
       to: 'cancelled',
-      by: ['operator'],
+      by: ['operator', 'system'],
       label: 'Cancel directive',
       intent: 'destructive',
-      requiresReason: ['constraint_cleared', 'issued_in_error', 'superseded', 'system_normalised'],
+      requiresReason: ['constraint_cleared', 'issued_in_error', 'superseded', 'system_normalised', 'directive_expired'],
       guards: [],
     },
   ],
@@ -184,5 +184,5 @@ export const exportCurtailment: ChainDecl = {
   // unacknowledged-directive SLA: a curtailment instruction left unacknowledged
   // is an operational risk. record-only stub; the sweep computes the real bar off
   // the state sla hours (ppa_contract pattern).
-  timers: [{ onState: 'directive_issued', after: { hours: 0 }, fire: 'cancel_directive', kind: 'sla' }],
+  timers: [{ onState: 'directive_issued', after: { hours: 24 }, fire: 'cancel_directive', kind: 'sla', reason: 'directive_expired' }],
 };

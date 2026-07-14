@@ -164,15 +164,15 @@ export const eopActivation: ChainDecl = {
       id: 'stand_down',
       from: ['contingency_detected', 'eop_active'],
       to: 'stood_down',
-      by: ['operator', 'regulator'],
+      by: ['operator', 'regulator', 'system'],
       label: 'Stand down',
       intent: 'destructive',
-      requiresReason: ['false_alarm', 'self_cleared', 'superseded_incident', 'no_action_required'],
+      requiresReason: ['false_alarm', 'self_cleared', 'superseded_incident', 'no_action_required', 'activation_window_elapsed'],
       guards: [],
     },
   ],
 
   // a detected contingency left unactioned stales — record-only time-bar stub;
   // the sweep computes the real bar off state sla (permit_to_work pattern).
-  timers: [{ onState: 'contingency_detected', after: { minutes: 0 }, fire: 'stand_down', kind: 'time_bar' }],
+  timers: [{ onState: 'contingency_detected', after: { hours: 4 }, fire: 'stand_down', kind: 'time_bar', reason: 'activation_window_elapsed' }],
 };

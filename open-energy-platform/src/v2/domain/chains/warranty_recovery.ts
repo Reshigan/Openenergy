@@ -155,7 +155,7 @@ export const warrantyRecovery: ChainDecl = {
       id: 'deny_recovery',
       from: ['recovery_filed', 'under_assessment', 'info_requested'],
       to: 'recovery_denied',
-      by: ['vendor'],
+      by: ['vendor', 'system'],
       label: 'Deny recovery',
       intent: 'destructive',
       requiresReason: ['out_of_warranty', 'no_fault_found', 'misuse_exclusion', 'time_barred', 'insufficient_evidence'],
@@ -176,5 +176,5 @@ export const warrantyRecovery: ChainDecl = {
   // info-requested time-bar: a recovery left with the claimant for more
   // information lapses if never answered. record-only stub; the sweep computes
   // the real bar off the state sla hours (ppa_contract pattern).
-  timers: [{ onState: 'info_requested', after: { hours: 0 }, fire: 'deny_recovery', kind: 'time_bar' }],
+  timers: [{ onState: 'info_requested', after: { days: 30 }, fire: 'deny_recovery', kind: 'time_bar', reason: 'time_barred' }],
 };

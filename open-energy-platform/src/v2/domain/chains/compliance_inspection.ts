@@ -152,10 +152,10 @@ export const complianceInspection: ChainDecl = {
       id: 'refer_enforcement',
       from: ['findings_issued', 'response_received'],
       to: 'referred_enforcement',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Refer to enforcement',
       intent: 'destructive',
-      requiresReason: ['material_non_compliance', 'remediation_inadequate', 'repeat_offence', 'safety_risk'],
+      requiresReason: ['material_non_compliance', 'remediation_inadequate', 'repeat_offence', 'safety_risk', 'no_response'],
       guards: [],
     },
     {
@@ -170,8 +170,8 @@ export const complianceInspection: ChainDecl = {
     },
   ],
 
-  // findings-response time-bar: an issued findings pack left unanswered stales out
-  // to an enforcement referral. record-only stub; the sweep computes the real bar
-  // off the findings_issued state sla days (ppa_contract pattern).
-  timers: [{ onState: 'findings_issued', after: { days: 0 }, fire: 'refer_enforcement', kind: 'time_bar' }],
+  // findings-response time-bar: an issued findings pack left unanswered for 28
+  // days (double the 14-day response SLA) stales out to an enforcement referral
+  // (no_response).
+  timers: [{ onState: 'findings_issued', after: { days: 28 }, fire: 'refer_enforcement', kind: 'time_bar', reason: 'no_response' }],
 };

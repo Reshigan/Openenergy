@@ -170,10 +170,10 @@ export const esgDisclosure: ChainDecl = {
       id: 'reject',
       from: ['internal_review', 'under_assurance', 'board_review'],
       to: 'rejected',
-      by: ['board', 'regulator'],
+      by: ['board', 'regulator', 'system'],
       label: 'Reject disclosure',
       intent: 'destructive',
-      requiresReason: ['adverse_assurance_opinion', 'material_misstatement', 'framework_non_conformance', 'governance_failure'],
+      requiresReason: ['adverse_assurance_opinion', 'material_misstatement', 'framework_non_conformance', 'governance_failure', 'review_deadline_passed'],
       guards: [],
     },
     {
@@ -191,5 +191,5 @@ export const esgDisclosure: ChainDecl = {
   // filing-deadline time-bar: a disclosure stuck at board review past the
   // regulatory filing window is a compliance failure. record-only stub; the
   // sweep computes the real bar off the state sla days (ppa_contract pattern).
-  timers: [{ onState: 'board_review', after: { days: 0 }, fire: 'reject', kind: 'time_bar' }],
+  timers: [{ onState: 'board_review', after: { days: 60 }, fire: 'reject', kind: 'time_bar', reason: 'review_deadline_passed' }],
 };

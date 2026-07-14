@@ -136,15 +136,15 @@ export const collateralSubstitution: ChainDecl = {
       id: 'withdraw',
       from: ['requested', 'under_review'],
       to: 'withdrawn',
-      by: ['pledgor', 'operator'],
+      by: ['pledgor', 'operator', 'system'],
       label: 'Withdraw request',
       intent: 'destructive',
-      requiresReason: ['no_longer_required', 'alternative_posted', 'error_corrected'],
+      requiresReason: ['no_longer_required', 'alternative_posted', 'error_corrected', 'no_response'],
       guards: [],
     },
   ],
 
-  // review time-bar: a substitution request left un-reviewed stales out. Record-
-  // only stub — the sweep computes the real bar off the state sla days.
-  timers: [{ onState: 'requested', after: { days: 0 }, fire: 'withdraw', kind: 'time_bar' }],
+  // review time-bar: a substitution request the secured party never picks up
+  // stales out after 30 days and auto-withdraws (no_response).
+  timers: [{ onState: 'requested', after: { days: 30 }, fire: 'withdraw', kind: 'time_bar', reason: 'no_response' }],
 };

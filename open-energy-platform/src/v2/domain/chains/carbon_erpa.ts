@@ -157,7 +157,7 @@ export const carbonErpa: ChainDecl = {
       id: 'declare_shortfall',
       from: 'delivery_scheduled',
       to: 'delivery_shortfall',
-      by: ['buyer', 'seller'],
+      by: ['buyer', 'seller', 'system'],
       label: 'Declare shortfall',
       intent: 'destructive',
       requiresReason: ['under_delivery', 'project_underperformance', 'force_majeure', 'registry_delay'],
@@ -185,8 +185,7 @@ export const carbonErpa: ChainDecl = {
     },
   ],
 
-  // inverted-SLA delivery time-bar: a scheduled forward past its delivery date
-  // stales into a shortfall. record-only stub; the sweep computes the real bar
-  // off delivery_date / state sla (ppa_contract pattern).
-  timers: [{ onState: 'delivery_scheduled', after: { days: 0 }, fire: 'declare_shortfall', kind: 'time_bar' }],
+  // inverted-SLA delivery time-bar: a scheduled forward left unconfirmed for the
+  // full delivery year plus a 30-day grace stales into a shortfall.
+  timers: [{ onState: 'delivery_scheduled', after: { days: 395 }, fire: 'declare_shortfall', kind: 'time_bar', reason: 'under_delivery' }],
 };

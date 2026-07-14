@@ -145,10 +145,10 @@ export const carbonMrv: ChainDecl = {
       id: 'reject_report',
       from: ['submitted', 'under_verification'],
       to: 'rejected',
-      by: ['verifier'],
+      by: ['verifier', 'system'],
       label: 'Reject report',
       intent: 'destructive',
-      requiresReason: ['insufficient_evidence', 'methodology_deviation', 'quantification_error', 'monitoring_gap', 'double_counting'],
+      requiresReason: ['insufficient_evidence', 'methodology_deviation', 'quantification_error', 'monitoring_gap', 'double_counting', 'verification_window_expired'],
       guards: [],
     },
     {
@@ -163,8 +163,7 @@ export const carbonMrv: ChainDecl = {
     },
   ],
 
-  // verification time-bar: a report sitting under_verification past the assurance
-  // window stales out. record-only stub; the sweep computes the real bar off the
-  // state sla days (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'under_verification', after: { days: 0 }, fire: 'reject_report', kind: 'time_bar' }],
+  // verification time-bar: a report sitting under_verification 90 days past the
+  // assurance window stales out.
+  timers: [{ onState: 'under_verification', after: { days: 90 }, fire: 'reject_report', kind: 'time_bar', reason: 'verification_window_expired' }],
 };

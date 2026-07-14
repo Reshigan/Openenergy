@@ -203,7 +203,7 @@ export const greenBond: ChainDecl = {
       id: 'reject_report',
       from: ['submitted_jse', 'under_review', 'queries_raised'],
       to: 'rejected',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Reject report',
       intent: 'destructive',
       requiresReason: ['material_misstatement', 'ineligible_allocation', 'review_deficient', 'non_responsive'],
@@ -223,5 +223,5 @@ export const greenBond: ChainDecl = {
 
   // queries-raised response time-bar: an unanswered JSE query stales the filing.
   // record-only stub; the sweep computes the real bar off the state sla days.
-  timers: [{ onState: 'queries_raised', after: { days: 0 }, fire: 'reject_report', kind: 'time_bar' }],
+  timers: [{ onState: 'queries_raised', after: { days: 30 }, fire: 'reject_report', kind: 'time_bar', reason: 'non_responsive' }],
 };

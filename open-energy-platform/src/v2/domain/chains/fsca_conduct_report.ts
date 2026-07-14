@@ -156,10 +156,10 @@ export const fscaConductReport: ChainDecl = {
       id: 'reject',
       from: ['filed', 'acknowledged'],
       to: 'rejected',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Reject report',
       intent: 'destructive',
-      requiresReason: ['out_of_jurisdiction', 'vexatious', 'insufficient_particulars', 'anonymous_unverifiable', 'duplicate'],
+      requiresReason: ['out_of_jurisdiction', 'vexatious', 'insufficient_particulars', 'anonymous_unverifiable', 'duplicate', 'time_barred'],
       guards: [],
     },
     {
@@ -178,5 +178,5 @@ export const fscaConductReport: ChainDecl = {
   // SLA is administratively rejected (the reporter may re-file). Record-only
   // stub, same as ppa/permit — the sweep computes the real bar off state sla days
   // and supplies the reason_code the reject edge requires.
-  timers: [{ onState: 'filed', after: { days: 0 }, fire: 'reject', kind: 'time_bar' }],
+  timers: [{ onState: 'filed', after: { days: 365 }, fire: 'reject', kind: 'time_bar', reason: 'time_barred' }],
 };

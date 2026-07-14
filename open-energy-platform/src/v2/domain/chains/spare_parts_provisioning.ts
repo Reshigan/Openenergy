@@ -266,17 +266,17 @@ export const sparePartsProvisioning: ChainDecl = {
       id: 'cancel',
       from: ['demand_identified', 'requisition_raised', 'requisition_approved', 'po_issued', 'backordered'],
       to: 'cancelled',
-      by: ['planner', 'approver'],
+      by: ['planner', 'approver', 'system'],
       label: 'Cancel provisioning',
       intent: 'destructive',
-      requiresReason: ['demand_withdrawn', 'asset_decommissioned', 'duplicate_line', 'budget_withheld'],
+      requiresReason: ['demand_withdrawn', 'asset_decommissioned', 'duplicate_line', 'budget_withheld', 'approval_window_elapsed'],
       guards: [],
       derive: (_f, at: Instant) => ({ cancelled_at: isoUtc(at) }),
     },
   ],
 
-  // requisition-approval SLA: a raised requisition left unapproved breaches its
-  // approval window (a vital-spare demand cannot wait indefinitely). record-only
-  // stub; the sweep computes the real bar off the state's sla hours.
-  timers: [{ onState: 'requisition_raised', after: { hours: 0 }, fire: 'approve_requisition', kind: 'sla' }],
+  // requisition staleness bar: a requisition left unapproved for 30 days is a
+  // stale demand — auto-cancel (never auto-approve) and the planner re-raises if
+  // the need still stands; escalate keeps the planner in the loop.
+  timers: [{ onState: 'requisition_raised', after: { days: 30 }, fire: 'cancel', escalate: 'planner', kind: 'time_bar', reason: 'approval_window_elapsed' }],
 };

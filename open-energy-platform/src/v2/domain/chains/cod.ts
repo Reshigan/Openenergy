@@ -153,7 +153,7 @@ export const cod: ChainDecl = {
       id: 'reject_cod',
       from: ['cod_declared', 'commissioning_review', 'reliability_run', 'reliability_complete'],
       to: 'cod_rejected',
-      by: ['certifier', 'regulator'],
+      by: ['certifier', 'regulator', 'system'],
       label: 'Reject COD',
       intent: 'destructive',
       requiresReason: ['reliability_run_failed', 'grid_code_non_compliance', 'cp_unmet', 'capacity_shortfall', 'safety_defect'],
@@ -172,7 +172,7 @@ export const cod: ChainDecl = {
   ],
 
   // reliability-run time-bar: a run that overruns its declared window without a
-  // completion is a failed run. Record-only stub; the sweep computes the real
-  // bar off state sla days (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'reliability_run', after: { days: 0 }, fire: 'reject_cod', kind: 'time_bar' }],
+  // completion is a failed run. 30 days covers the standard 14-day run plus
+  // certifier margin; a shorter declared reliability_run_days tightens it.
+  timers: [{ onState: 'reliability_run', after: { days: 30 }, fire: 'reject_cod', kind: 'time_bar', reason: 'reliability_run_failed' }],
 };

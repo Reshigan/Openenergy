@@ -159,8 +159,8 @@ export const licenceApplication: ChainDecl = {
     },
   ],
 
-  // additional-info requests time-bar: if the applicant does not respond, the
-  // application lapses. after:{days:0} = record-only stub; the sweep computes the
-  // real bar off state sla days (same pattern as ppa_contract's auto_expire).
-  timers: [{ onState: 'additional_info_requested', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  // additional-info requests time-bar: if the applicant does not respond within
+  // the 60-day ERA 2006 information window (state sla), the application lapses
+  // (same pattern as ppa_contract's auto_expire).
+  timers: [{ onState: 'additional_info_requested', after: { days: 60 }, fire: 'lapse', kind: 'time_bar', reason: 'info_deadline_missed' }],
 };

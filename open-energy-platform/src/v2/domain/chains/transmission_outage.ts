@@ -249,10 +249,10 @@ export const transmissionOutage: ChainDecl = {
       id: 'emergency_cancel',
       from: ['outage_approved', 'outage_window_open', 'outage_in_progress', 'suspended'],
       to: 'emergency_cancelled',
-      by: ['operator', 'regulator'],
+      by: ['operator', 'regulator', 'system'],
       label: 'Emergency cancel',
       intent: 'destructive',
-      requiresReason: ['grid_emergency', 'security_breach', 'load_shedding_stage_escalation', 'regulator_directive'],
+      requiresReason: ['grid_emergency', 'security_breach', 'load_shedding_stage_escalation', 'regulator_directive', 'validity_lapsed'],
       guards: [],
     },
   ],
@@ -261,5 +261,5 @@ export const transmissionOutage: ChainDecl = {
   // its scheduled start stales out — an authorised switching cannot sit valid
   // indefinitely. record-only stub; the sweep computes the real bar off state sla
   // hours (permit_to_work pattern).
-  timers: [{ onState: 'outage_approved', after: { hours: 0 }, fire: 'emergency_cancel', kind: 'time_bar' }],
+  timers: [{ onState: 'outage_approved', after: { hours: 48 }, fire: 'emergency_cancel', kind: 'time_bar', reason: 'validity_lapsed' }],
 };

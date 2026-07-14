@@ -134,7 +134,7 @@ export const wayleaveConsent: ChainDecl = {
       id: 'lapse',
       from: ['applied', 'negotiating'],
       to: 'lapsed',
-      by: ['applicant', 'operator'],
+      by: ['applicant', 'operator', 'system'],
       label: 'Lapse application',
       intent: 'destructive',
       requiresReason: ['no_response', 'route_abandoned', 'landowner_untraceable'],
@@ -144,5 +144,5 @@ export const wayleaveConsent: ChainDecl = {
 
   // application time-bar: an un-negotiated application stales out. Record-only
   // stub — the sweep computes the real bar off the state sla (isda pattern).
-  timers: [{ onState: 'applied', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'applied', after: { days: 90 }, fire: 'lapse', kind: 'time_bar', reason: 'no_response' }],
 };

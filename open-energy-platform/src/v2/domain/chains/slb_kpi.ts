@@ -233,16 +233,15 @@ export const slbKpi: ChainDecl = {
       id: 'withdraw',
       from: ['kpi_pending', 'kpi_measurement'],
       to: 'withdrawn',
-      by: ['issuer'],
+      by: ['issuer', 'system'],
       label: 'Withdraw KPI period',
       intent: 'destructive',
-      requiresReason: ['period_superseded', 'bond_redeemed', 'kpi_reframed', 'entered_in_error'],
+      requiresReason: ['period_superseded', 'bond_redeemed', 'kpi_reframed', 'entered_in_error', 'period_expired'],
       guards: [],
     },
   ],
 
-  // period time-bar: a KPI period that never gets measured stales out. record-only
-  // stub; the sweep computes the real bar off the state sla days (ppa_contract
-  // pattern). The sweep supplies withdraw's reason_code on fire.
-  timers: [{ onState: 'kpi_pending', after: { days: 0 }, fire: 'withdraw', kind: 'time_bar' }],
+  // period time-bar: a KPI period that never gets measured within 30 days stales
+  // out and withdraws as period_expired.
+  timers: [{ onState: 'kpi_pending', after: { days: 30 }, fire: 'withdraw', kind: 'time_bar', reason: 'period_expired' }],
 };

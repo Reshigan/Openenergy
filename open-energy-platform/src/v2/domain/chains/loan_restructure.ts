@@ -302,7 +302,7 @@ export const loanRestructure: ChainDecl = {
       id: 'escalate_to_default',
       from: ['trigger_event', 'preliminary_assessment', 'committee_review', 'term_negotiation', 'consent_solicitation', 'signing'],
       to: 'escalated_to_default',
-      by: ['lender_agent', 'regulator'],
+      by: ['lender_agent', 'regulator', 'system'],
       label: 'Escalate to default',
       intent: 'destructive',
       requiresReason: ['cure_failed', 'consent_lapsed', 'further_deterioration', 'acceleration_triggered'],
@@ -310,8 +310,8 @@ export const loanRestructure: ChainDecl = {
     },
   ],
 
-  // consent-solicitation time-bar: an un-consented solicitation lapses and the
-  // uncured restructure escalates back to default. record-only stub; the sweep
-  // computes the real bar off the state's sla (ppa_contract pattern).
-  timers: [{ onState: 'consent_solicitation', after: { days: 0 }, fire: 'escalate_to_default', kind: 'time_bar' }],
+  // consent-solicitation time-bar: a solicitation un-consented 30 days out (well
+  // past the 10-day state sla) lapses and the uncured restructure escalates back
+  // to default (ppa_contract pattern).
+  timers: [{ onState: 'consent_solicitation', after: { days: 30 }, fire: 'escalate_to_default', kind: 'time_bar', reason: 'consent_lapsed' }],
 };

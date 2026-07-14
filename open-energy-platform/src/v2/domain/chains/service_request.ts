@@ -217,7 +217,7 @@ export const serviceRequest: ChainDecl = {
       id: 'cancel_request',
       from: ['submitted', 'entitlement_checked', 'approval_pending', 'assigned', 'fulfilment_in_progress', 'awaiting_user'],
       to: 'cancelled',
-      by: ['requester', 'operator'],
+      by: ['requester', 'operator', 'system'],
       label: 'Cancel request',
       intent: 'destructive',
       requiresReason: ['no_longer_needed', 'raised_in_error', 'resolved_elsewhere', 'user_non_response'],
@@ -226,7 +226,6 @@ export const serviceRequest: ChainDecl = {
   ],
 
   // awaiting-user non-response time-bar: a request left waiting on the user
-  // auto-cancels. record-only stub; the sweep computes the real bar off state
-  // sla hours (ppa_contract pattern).
-  timers: [{ onState: 'awaiting_user', after: { hours: 0 }, fire: 'cancel_request', kind: 'time_bar' }],
+  // past its 48h window auto-cancels.
+  timers: [{ onState: 'awaiting_user', after: { hours: 48 }, fire: 'cancel_request', kind: 'time_bar', reason: 'user_non_response' }],
 };

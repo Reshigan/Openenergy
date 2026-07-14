@@ -199,5 +199,5 @@ export const enforcementActionS35: ChainDecl = {
   // representations; on expiry the regulator may proceed to review. record-only
   // stub — the sweep computes the real bar off the state sla (ppa_contract
   // pattern).
-  timers: [{ onState: 'notice_issued', after: { days: 0 }, fire: 'note_lapsed', kind: 'time_bar' }],
+  timers: [{ onState: 'notice_issued', after: { days: 30 }, fire: 'note_lapsed', kind: 'time_bar' }],
 };

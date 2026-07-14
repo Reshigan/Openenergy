@@ -138,7 +138,7 @@ export const takeOrPay: ChainDecl = {
       id: 'invoice',
       from: 'shortfall_computed',
       to: 'invoiced_instructed',
-      by: ['seller', 'operator'],
+      by: ['seller', 'operator', 'system'],
       label: 'Instruct take-or-pay invoice',
       intent: 'primary',
       guards: [],
@@ -176,7 +176,7 @@ export const takeOrPay: ChainDecl = {
       id: 'cancel',
       from: ['period_open', 'volume_measured'],
       to: 'cancelled',
-      by: ['seller', 'operator'],
+      by: ['seller', 'operator', 'system'],
       label: 'Cancel period',
       intent: 'destructive',
       requiresReason: ['ppa_terminated', 'period_superseded', 'opened_in_error', 'no_offtake_obligation'],
@@ -186,7 +186,7 @@ export const takeOrPay: ChainDecl = {
 
   // record-only SLA stubs; the sweep computes the real bar off each state's sla.
   timers: [
-    { onState: 'period_open', after: { days: 0 }, fire: 'cancel', kind: 'sla' },
-    { onState: 'shortfall_computed', after: { days: 0 }, fire: 'invoice', kind: 'sla' },
+    { onState: 'period_open', after: { days: 60 }, fire: 'cancel', kind: 'sla', reason: 'period_superseded' },
+    { onState: 'shortfall_computed', after: { days: 14 }, fire: 'invoice', kind: 'sla' },
   ],
 };

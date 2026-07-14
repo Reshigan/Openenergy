@@ -177,8 +177,8 @@ const OPERATOR_ROLES = ['admin', 'operator', 'regulator', 'support'];
 
 // The chain registry lives inline in deps, chains-as-data. More chains get
 // added to this Record as they are transcribed; there is no separate registry
-// file by design.
-const CHAINS = {
+// file by design. Exported for the cron sweeps below and the bundle tests.
+export const CHAINS = {
   ppa_contract: ppaContract,
   drawdown,
   carbon_retirement: carbonRetirement,
@@ -552,5 +552,71 @@ v2.post('/seal', async (c) => {
   const row = await sealPendingEvents(buildDeps(c).store, clock);
   return c.json({ sealed: row });
 });
+
+// ── Cron seams — called by runCron() in src/index.ts, not by HTTP ────────────
+// v2TimerSweep drains due v2_timers rows (SLA auto-fires + time-bars). Design
+// (plan §timers): no claimed_at column — delete-after-attempt is safe because
+// the idempotency key `timer:${key}:${due_at}` is deterministic and the engine
+// replays duplicates instead of double-writing. One dueTimers call per class so
+// a noisy SLA backlog can't starve time-bars. A transient throw leaves the row
+// in place for the next 15-min sweep; a definitive engine rejection deletes it
+// (state moved on, guard says no — refiring forever would just spam the log).
+export async function sweepTimers(
+  deps: EngineDeps,
+  nowIso: string,
+): Promise<{ fired: number; rejected: number; stale: number; errors: number }> {
+  const { store } = deps;
+  const out = { fired: 0, rejected: 0, stale: 0, errors: 0 };
+  for (const cls of ['sla', 'time_bar'] as const) {
+    for (const t of await store.dueTimers(nowIso, 200, cls)) {
+      try {
+        const bundle = await store.getTxn(t.txn_id);
+        if (!bundle || bundle.txn.closed_at !== null) {
+          await store.deleteTimer(t.id); // orphan or already-terminal txn
+          out.stale++;
+          continue;
+        }
+        const chain = deps.chains[bundle.txn.chain_key];
+        // recover the declaring TimerDecl (for its reason_code) by re-deriving
+        // the row key the engine armed: `${txn_id}:${onState}:${fire}`
+        const decl = (chain?.timers ?? []).find(
+          (d) => t.key === `${t.txn_id}:${d.onState}:${d.fire}`,
+        );
+        const cmd: Command = {
+          txn_id: t.txn_id,
+          chain_key: bundle.txn.chain_key,
+          edge: t.fire,
+          actor: { id: 'system:timer', kind: 'system:timer', participant_id: null, on_behalf_of: null },
+          input: {},
+          expected_seq: { [t.txn_id]: bundle.txn.seq },
+          idempotency_key: `timer:${t.key}:${t.due_at}`,
+          ...(decl?.reason ? { reason_code: decl.reason } : {}),
+        };
+        const r = await applyTransition(cmd, deps);
+        if (r.ok) out.fired++;
+        else out.rejected++;
+        // success already cleared the txn's timers (re-arm semantics); this
+        // covers the rejected path so a dead timer can't refire every 15 min
+        await store.deleteTimer(t.id);
+      } catch {
+        out.errors++; // leave the row — next sweep retries
+      }
+    }
+  }
+  return out;
+}
+
+export async function v2TimerSweep(
+  env: HonoEnv['Bindings'],
+): Promise<{ fired: number; rejected: number; stale: number; errors: number }> {
+  const store = new D1Store(env.DB);
+  const deps: EngineDeps = { store, clock, ids, chains: CHAINS, guards: GUARDS };
+  return sweepTimers(deps, new Date(clock.now().epoch_ms).toISOString());
+}
+
+// Nightly merkle seal — same call the manual POST /seal makes.
+export async function v2NightlySeal(env: HonoEnv['Bindings']): Promise<void> {
+  await sealPendingEvents(new D1Store(env.DB), clock);
+}
 
 export default v2;

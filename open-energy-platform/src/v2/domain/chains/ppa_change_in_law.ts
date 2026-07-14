@@ -103,7 +103,7 @@ export const ppaChangeInLaw: ChainDecl = {
       id: 'begin_assessment',
       from: 'notified',
       to: 'assessing',
-      by: ['counterparty', 'operator'],
+      by: ['counterparty', 'operator', 'system'],
       label: 'Begin assessment',
       intent: 'primary',
       guards: [],
@@ -191,9 +191,8 @@ export const ppaChangeInLaw: ChainDecl = {
       guards: [],
     },
     {
-      // a rejected claim not escalated within the time-bar lapses. record-only
-      // stub; the sweep computes the real bar off the state sla (ppa_contract
-      // pattern).
+      // a rejected claim not escalated within the 30-day time-bar lapses
+      // (ppa_contract pattern).
       id: 'lapse',
       from: 'rejected',
       to: 'lapsed',
@@ -205,7 +204,9 @@ export const ppaChangeInLaw: ChainDecl = {
   ],
 
   timers: [
-    { onState: 'rejected', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' },
-    { onState: 'notified', after: { days: 0 }, fire: 'begin_assessment', kind: 'sla' },
+    // escalation window: matches the rejected state's 30-day sla.
+    { onState: 'rejected', after: { days: 30 }, fire: 'lapse', kind: 'time_bar' },
+    // notice unactioned at its 30-day sla auto-advances to assessment.
+    { onState: 'notified', after: { days: 30 }, fire: 'begin_assessment', kind: 'sla' },
   ],
 };

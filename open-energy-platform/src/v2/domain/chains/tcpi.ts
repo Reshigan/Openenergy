@@ -166,10 +166,10 @@ export const tcpi: ChainDecl = {
       id: 'reject_index',
       from: ['index_raised', 'under_review', 'recovery_required', 'recovery_submitted'],
       to: 'index_rejected',
-      by: ['reviewer', 'sponsor'],
+      by: ['reviewer', 'sponsor', 'system'],
       label: 'Reject assessment',
       intent: 'destructive',
-      requiresReason: ['baseline_invalid', 'data_incomplete', 'recovery_infeasible', 'superseded'],
+      requiresReason: ['baseline_invalid', 'data_incomplete', 'recovery_infeasible', 'superseded', 'recovery_plan_overdue'],
       guards: [],
     },
     {
@@ -187,5 +187,5 @@ export const tcpi: ChainDecl = {
   // recovery-required time-bar: a flagged assessment left without a submitted
   // recovery plan stales out and is rejected. record-only stub; the sweep computes
   // the real bar off the state's sla (ppa_contract pattern).
-  timers: [{ onState: 'recovery_required', after: { days: 0 }, fire: 'reject_index', kind: 'time_bar' }],
+  timers: [{ onState: 'recovery_required', after: { days: 10 }, fire: 'reject_index', kind: 'time_bar', reason: 'recovery_plan_overdue' }],
 };

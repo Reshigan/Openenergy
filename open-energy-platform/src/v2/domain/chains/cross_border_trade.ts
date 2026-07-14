@@ -143,10 +143,10 @@ export const crossBorderTrade: ChainDecl = {
       id: 'reject',
       from: 'customs_review',
       to: 'rejected',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Reject at customs',
       intent: 'destructive',
-      requiresReason: ['export_licence_missing', 'sanctions_hit', 'grid_security', 'documentation_incomplete', 'quota_exceeded'],
+      requiresReason: ['export_licence_missing', 'sanctions_hit', 'grid_security', 'documentation_incomplete', 'quota_exceeded', 'review_window_expired'],
       guards: [],
     },
     {
@@ -167,10 +167,10 @@ export const crossBorderTrade: ChainDecl = {
       id: 'cancel',
       from: ['approved', 'scheduled'],
       to: 'cancelled',
-      by: ['exporter', 'grid', 'regulator', 'operator'],
+      by: ['exporter', 'grid', 'regulator', 'operator', 'system'],
       label: 'Cancel trade',
       intent: 'destructive',
-      requiresReason: ['force_majeure', 'grid_constraint', 'counterparty_default', 'regulatory_direction'],
+      requiresReason: ['force_majeure', 'grid_constraint', 'counterparty_default', 'regulatory_direction', 'validity_lapsed'],
       guards: [],
     },
   ],
@@ -179,7 +179,7 @@ export const crossBorderTrade: ChainDecl = {
     // an unreviewed submission time-bars back out; a customs-cleared trade left
     // unscheduled stales out. record-only stubs — the sweep computes the real bar
     // off state sla days (ppa_contract / permit_to_work pattern).
-    { onState: 'customs_review', after: { days: 0 }, fire: 'reject', kind: 'time_bar' },
-    { onState: 'approved', after: { days: 0 }, fire: 'cancel', kind: 'sla' },
+    { onState: 'customs_review', after: { days: 14 }, fire: 'reject', kind: 'time_bar', reason: 'review_window_expired' },
+    { onState: 'approved', after: { days: 7 }, fire: 'cancel', kind: 'sla', reason: 'validity_lapsed' },
   ],
 };

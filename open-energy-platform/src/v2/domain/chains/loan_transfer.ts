@@ -170,10 +170,10 @@ export const loanTransfer: ChainDecl = {
       id: 'decline_transfer',
       from: ['transfer_proposed', 'consent_obtained', 'cp_satisfied'],
       to: 'transfer_declined',
-      by: ['agent', 'transferee', 'borrower'],
+      by: ['agent', 'transferee', 'borrower', 'system'],
       label: 'Decline transfer',
       intent: 'destructive',
-      requiresReason: ['consent_refused', 'credit_declined', 'cp_not_met', 'kyc_failed', 'sanctions_hit'],
+      requiresReason: ['consent_refused', 'credit_declined', 'cp_not_met', 'kyc_failed', 'sanctions_hit', 'consent_window_lapsed'],
       guards: [],
     },
     {
@@ -188,9 +188,9 @@ export const loanTransfer: ChainDecl = {
     },
   ],
 
-  // consent time-bar: a proposed transfer left without consent stales out (the
-  // borrower/agent consent window is finite). Record-only stub; the sweep
-  // computes the real bar off the state sla (ppa_contract / permit_to_work
-  // pattern). Fires the declined exit.
-  timers: [{ onState: 'transfer_proposed', after: { days: 0 }, fire: 'decline_transfer', kind: 'time_bar' }],
+  // consent time-bar: a proposed transfer left without consent for 30 days
+  // stales out (the borrower/agent consent window is finite; well past the
+  // 10-day state sla — ppa_contract / permit_to_work pattern). Fires the
+  // declined exit.
+  timers: [{ onState: 'transfer_proposed', after: { days: 30 }, fire: 'decline_transfer', kind: 'time_bar', reason: 'consent_window_lapsed' }],
 };

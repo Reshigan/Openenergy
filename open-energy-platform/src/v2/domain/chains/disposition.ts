@@ -161,7 +161,7 @@ export const disposition: ChainDecl = {
       id: 'refuse_consent',
       from: ['disposition_requested', 'under_review', 'conditions_pending', 'conditions_cleared'],
       to: 'refused',
-      by: ['lender'],
+      by: ['lender', 'system'],
       label: 'Refuse consent',
       intent: 'destructive',
       requiresReason: ['undervalue', 'security_shortfall', 'covenant_breach', 'proceeds_misapplied', 'cp_long_stop_missed'],
@@ -182,5 +182,5 @@ export const disposition: ChainDecl = {
   // CP long-stop: conditions left unsatisfied past the deadline lapse into a
   // refusal. record-only stub; the sweep computes the real bar off state sla
   // days (ppa_contract / permit_to_work pattern).
-  timers: [{ onState: 'conditions_pending', after: { days: 0 }, fire: 'refuse_consent', kind: 'time_bar' }],
+  timers: [{ onState: 'conditions_pending', after: { days: 90 }, fire: 'refuse_consent', kind: 'time_bar', reason: 'cp_long_stop_missed' }],
 };

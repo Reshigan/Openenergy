@@ -191,10 +191,10 @@ export const gtia: ChainDecl = {
       id: 'withdraw',
       from: ['gtia_initiated', 'so_under_review', 'queries_raised'],
       to: 'withdrawn',
-      by: ['ipp'],
+      by: ['ipp', 'system'],
       label: 'Withdraw GTIA',
       intent: 'destructive',
-      requiresReason: ['project_cancelled', 'resubmission_required', 'commercial_change'],
+      requiresReason: ['project_cancelled', 'resubmission_required', 'commercial_change', 'no_response'],
       guards: [],
     },
   ],
@@ -202,5 +202,5 @@ export const gtia: ChainDecl = {
   // queries-raised time-bar: an IPP that never answers the SO's queries lapses
   // out (a connection application cannot sit open indefinitely). record-only
   // stub; the sweep computes the real bar off the state sla hours.
-  timers: [{ onState: 'queries_raised', after: { hours: 0 }, fire: 'withdraw', kind: 'time_bar' }],
+  timers: [{ onState: 'queries_raised', after: { days: 30 }, fire: 'withdraw', kind: 'time_bar', reason: 'no_response' }],
 };

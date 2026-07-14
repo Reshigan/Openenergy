@@ -174,7 +174,6 @@ export const recLifecycle: ChainDecl = {
   ],
 
   // vintage/redemption time-bar: an active certificate left unredeemed past its
-  // window expires. Record-only stub — the sweep computes the real bar off state
-  // sla days (ppa_contract pattern).
-  timers: [{ onState: 'active', after: { days: 0 }, fire: 'expire', kind: 'time_bar' }],
+  // 12-month vintage window expires (I-REC Standard vintage validity).
+  timers: [{ onState: 'active', after: { days: 365 }, fire: 'expire', kind: 'time_bar', reason: 'vintage_lapsed' }],
 };

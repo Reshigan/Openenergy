@@ -97,17 +97,19 @@ export const hseIncident: ChainDecl = {
       id: 'classify',
       from: 'reported',
       to: 'triaged',
-      by: ['investigator', 'operator'],
+      by: ['investigator', 'operator', 'system'],
       label: 'Classify incident',
       intent: 'primary',
       input: {
-        priority: { type: 'string', required: true },
+        priority: { type: 'string' },
         severity_score: { type: 'number', min: 0, max: 10 },
         reportable: { type: 'boolean' },
       },
       // a critical (s24 reportable) incident needs a regulator on the txn.
       guards: ['regulatorPresentIfCritical'],
-      derive: (f, at: Instant) => ({ severity_tier: severityTier(f.severity_score), classified_at: isoUtc(at) }),
+      // unclassified past the triage SLA defaults to conservative 'high' (not 'critical':
+      // the s24 regulator gate stays a human decision).
+      derive: (f, at: Instant) => ({ priority: f.priority ?? 'high', severity_tier: severityTier(f.severity_score), classified_at: isoUtc(at) }),
     },
     {
       id: 'open_investigation',
@@ -180,5 +182,5 @@ export const hseIncident: ChainDecl = {
   // triage SLA: a reported incident awaiting classification stales out (a fresh
   // report cannot sit unassessed). record-only stub; the sweep computes the real
   // bar off state sla hours (permit_to_work pattern).
-  timers: [{ onState: 'reported', after: { hours: 0 }, fire: 'classify', kind: 'sla' }],
+  timers: [{ onState: 'reported', after: { hours: 24 }, fire: 'classify', kind: 'sla' }],
 };

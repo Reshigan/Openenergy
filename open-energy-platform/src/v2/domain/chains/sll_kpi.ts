@@ -264,7 +264,7 @@ export const sllKpi: ChainDecl = {
       id: 'fail_cure',
       from: 'cure_period',
       to: 'cure_failed',
-      by: ['lender'],
+      by: ['lender', 'system'],
       label: 'Fail cure',
       intent: 'destructive',
       requiresReason: ['cure_window_elapsed', 'remediation_insufficient', 'no_response'],
@@ -294,7 +294,6 @@ export const sllKpi: ChainDecl = {
     },
   ],
 
-  // cure time-bar: an uncured breach fails out at the cure window. record-only
-  // stub; the sweep computes the real bar off the cure_period state sla.
-  timers: [{ onState: 'cure_period', after: { days: 0 }, fire: 'fail_cure', kind: 'time_bar' }],
+  // cure time-bar: an uncured breach fails out at the 30-day cure window.
+  timers: [{ onState: 'cure_period', after: { days: 30 }, fire: 'fail_cure', kind: 'time_bar', reason: 'cure_window_elapsed' }],
 };

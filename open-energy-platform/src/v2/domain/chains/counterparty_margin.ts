@@ -203,5 +203,5 @@ export const counterpartyMargin: ChainDecl = {
   // response-deadline time-bar: a call left unposted stales into default. record-
   // only stub; the sweep computes the real bar off the margin_called sla hours
   // (ppa_contract pattern).
-  timers: [{ onState: 'margin_called', after: { hours: 0 }, fire: 'auto_default', kind: 'time_bar' }],
+  timers: [{ onState: 'margin_called', after: { hours: 24 }, fire: 'auto_default', kind: 'time_bar' }],
 };

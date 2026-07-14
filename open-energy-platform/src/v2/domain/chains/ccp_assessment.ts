@@ -197,8 +197,8 @@ export const ccpAssessment: ChainDecl = {
     },
   ],
 
-  // periodic-review time-bar: an approved counterparty left unreviewed stales
-  // out (an approval cannot be trusted indefinitely). record-only stub; the
-  // sweep computes the real cadence off review_frequency_months (ppa pattern).
-  timers: [{ onState: 'approved', after: { days: 0 }, fire: 'initiate_review', kind: 'time_bar' }],
+  // periodic-review time-bar: an approved counterparty left unreviewed for a year
+  // stales out (an approval cannot be trusted indefinitely). 365d is the annual
+  // PFMI default; a shorter review_frequency_months on the txn tightens it.
+  timers: [{ onState: 'approved', after: { days: 365 }, fire: 'initiate_review', kind: 'time_bar' }],
 };

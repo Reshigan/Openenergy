@@ -198,8 +198,7 @@ export const carbonRegistration: ChainDecl = {
     },
   ],
 
-  // info-request time-bar: an unanswered information request lapses the project.
-  // after:{days:0} = record-only stub; the sweep computes the real bar off state
-  // sla days (same pattern as licence_application's lapse).
-  timers: [{ onState: 'info_requested', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  // info-request time-bar: an information request unanswered for 90 days lapses
+  // the project (same pattern as licence_application's lapse).
+  timers: [{ onState: 'info_requested', after: { days: 90 }, fire: 'lapse', kind: 'time_bar', reason: 'info_deadline_missed' }],
 };

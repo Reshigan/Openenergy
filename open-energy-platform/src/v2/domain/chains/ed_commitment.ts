@@ -213,7 +213,7 @@ export const edCommitment: ChainDecl = {
       id: 'escalate',
       from: ['variance_flagged', 'cure_plan_required', 'cure_plan_submitted', 'cure_executing'],
       to: 'escalated',
-      by: ['authority', 'regulator'],
+      by: ['authority', 'regulator', 'system'],
       label: 'Escalate',
       intent: 'secondary',
       requiresReason: ['cure_overdue', 'cure_inadequate', 'repeat_breach', 'regulator_referral'],
@@ -273,5 +273,5 @@ export const edCommitment: ChainDecl = {
 
   // cure_plan_required time-bar: an unfiled cure plan stales out and escalates.
   // record-only stub; the sweep computes the real bar off state sla days.
-  timers: [{ onState: 'cure_plan_required', after: { days: 0 }, fire: 'escalate', kind: 'time_bar' }],
+  timers: [{ onState: 'cure_plan_required', after: { days: 30 }, fire: 'escalate', kind: 'time_bar', reason: 'cure_overdue' }],
 };

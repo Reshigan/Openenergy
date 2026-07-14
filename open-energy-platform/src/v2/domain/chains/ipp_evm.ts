@@ -251,16 +251,16 @@ export const ippEvm: ChainDecl = {
       id: 'cancel_book',
       from: ['budget_set', 'committed', 'incurred', 'measured', 'variance_detected', 'reforecast_drafted', 'reforecast_rejected'],
       to: 'cancelled',
-      by: ['cost_engineer', 'finance_director'],
+      by: ['cost_engineer', 'finance_director', 'system'],
       label: 'Cancel cost book',
       intent: 'destructive',
-      requiresReason: ['project_cancelled', 'duplicate_book', 'data_error', 'superseded'],
+      requiresReason: ['project_cancelled', 'duplicate_book', 'data_error', 'superseded', 'reforecast_deadline_missed'],
       guards: [],
     },
   ],
 
   // variance-detected time-bar: a flagged variance left without a reforecast
-  // draft stales out and escalates. record-only stub; the sweep computes the real
-  // bar off the state sla hours (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'variance_detected', after: { hours: 0 }, fire: 'cancel_book', kind: 'time_bar' }],
+  // draft for 30 days stales out and escalates (permit_to_work / ppa_contract
+  // pattern).
+  timers: [{ onState: 'variance_detected', after: { days: 30 }, fire: 'cancel_book', kind: 'time_bar', reason: 'reforecast_deadline_missed' }],
 };

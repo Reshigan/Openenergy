@@ -106,7 +106,7 @@ export const levyAssessment: ChainDecl = {
       id: 'accept_assessment',
       from: 'assessment_issued',
       to: 'payment_pending',
-      by: ['levy_payer'],
+      by: ['levy_payer', 'system'],
       label: 'Accept assessment',
       intent: 'primary',
       guards: [],
@@ -172,7 +172,7 @@ export const levyAssessment: ChainDecl = {
   ],
 
   // objection/payment window: an issued assessment left unanswered is deemed
-  // accepted once the statutory window closes. record-only stub; the sweep
-  // computes the real bar off the assessment_issued state sla (permit pattern).
-  timers: [{ onState: 'assessment_issued', after: { days: 0 }, fire: 'accept_assessment', kind: 'time_bar' }],
+  // accepted once the 30-day statutory objection window closes (matches the
+  // assessment_issued state sla; permit pattern).
+  timers: [{ onState: 'assessment_issued', after: { days: 30 }, fire: 'accept_assessment', kind: 'time_bar' }],
 };

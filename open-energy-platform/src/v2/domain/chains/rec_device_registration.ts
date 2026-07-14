@@ -161,10 +161,10 @@ export const recDeviceRegistration: ChainDecl = {
       id: 'reject',
       from: ['submitted', 'screening', 'audit_pending', 'audit_verified'],
       to: 'rejected',
-      by: ['issuer', 'regulator'],
+      by: ['issuer', 'regulator', 'system'],
       label: 'Reject registration',
       intent: 'destructive',
-      requiresReason: ['incomplete_application', 'device_not_eligible', 'audit_failed', 'duplicate_device', 'metering_inadequate'],
+      requiresReason: ['incomplete_application', 'device_not_eligible', 'audit_failed', 'duplicate_device', 'metering_inadequate', 'audit_window_elapsed'],
       guards: [],
     },
     {
@@ -179,8 +179,7 @@ export const recDeviceRegistration: ChainDecl = {
     },
   ],
 
-  // audit-pending time-bar: an audit request left unactioned stales the
-  // application out (a stale inspection cannot be trusted). record-only stub;
-  // the sweep computes the real bar off the state's sla days (ppa_contract pattern).
-  timers: [{ onState: 'audit_pending', after: { days: 0 }, fire: 'reject', kind: 'time_bar' }],
+  // audit-pending time-bar: an audit request left unactioned for 90 days stales
+  // the application out (a stale inspection cannot be trusted).
+  timers: [{ onState: 'audit_pending', after: { days: 90 }, fire: 'reject', kind: 'time_bar', reason: 'audit_window_elapsed' }],
 };

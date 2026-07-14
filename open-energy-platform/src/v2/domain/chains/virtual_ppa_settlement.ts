@@ -134,7 +134,7 @@ export const virtualPpaSettlement: ChainDecl = {
       id: 'instruct_settlement',
       from: 'difference_computed',
       to: 'settled_instructed',
-      by: ['offtaker', 'operator'],
+      by: ['offtaker', 'operator', 'system'],
       label: 'Instruct settlement',
       intent: 'primary',
       // a platform-wide compliance halt blocks NEW money instructions.
@@ -168,7 +168,7 @@ export const virtualPpaSettlement: ChainDecl = {
       id: 'cancel',
       from: ['period_open', 'strike_computed', 'difference_computed', 'disputed'],
       to: 'cancelled',
-      by: ['generator', 'offtaker', 'operator'],
+      by: ['generator', 'offtaker', 'operator', 'system'],
       label: 'Cancel period',
       intent: 'destructive',
       requiresReason: ['contract_terminated', 'period_superseded', 'duplicate_period', 'mutual_agreement'],
@@ -180,7 +180,7 @@ export const virtualPpaSettlement: ChainDecl = {
   // sweep computes the real bar off each state's sla; the fired edge id is the
   // one a sweep would run, subject to normal authz.
   timers: [
-    { onState: 'period_open', after: { days: 0 }, fire: 'cancel', kind: 'time_bar' },
-    { onState: 'difference_computed', after: { days: 0 }, fire: 'instruct_settlement', kind: 'sla' },
+    { onState: 'period_open', after: { days: 30 }, fire: 'cancel', kind: 'time_bar', reason: 'period_superseded' },
+    { onState: 'difference_computed', after: { days: 5 }, fire: 'instruct_settlement', kind: 'sla' },
   ],
 };

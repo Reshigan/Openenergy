@@ -149,7 +149,7 @@ export const wheelingAccess: ChainDecl = {
       id: 'reject_access',
       from: ['access_requested', 'capacity_study', 'terms_offered'],
       to: 'access_rejected',
-      by: ['operator'],
+      by: ['operator', 'system'],
       label: 'Reject access',
       intent: 'destructive',
       requiresReason: ['no_network_capacity', 'incompatible_connection', 'offer_lapsed', 'applicant_ineligible'],
@@ -170,5 +170,5 @@ export const wheelingAccess: ChainDecl = {
   // terms-offer time-bar: an unaccepted wheeling offer lapses (capacity cannot be
   // reserved indefinitely). record-only stub; the sweep computes the real bar off
   // the terms_offered state sla (ppa_contract pattern).
-  timers: [{ onState: 'terms_offered', after: { days: 0 }, fire: 'reject_access', kind: 'time_bar' }],
+  timers: [{ onState: 'terms_offered', after: { days: 30 }, fire: 'reject_access', kind: 'time_bar', reason: 'offer_lapsed' }],
 };

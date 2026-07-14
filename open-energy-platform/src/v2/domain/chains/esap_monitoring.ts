@@ -250,7 +250,7 @@ export const esapMonitoring: ChainDecl = {
         'partial_close',
       ],
       to: 'closed_escalated',
-      by: ['lender', 'regulator'],
+      by: ['lender', 'regulator', 'system'],
       label: 'Escalate to lender committee / regulator',
       intent: 'destructive',
       requiresReason: ['cap_overdue', 'remediation_stalled', 'material_breach', 'covenant_trigger'],
@@ -283,5 +283,5 @@ export const esapMonitoring: ChainDecl = {
   // remediation time-bar: a corrective action plan left un-remediated past its
   // due date escalates. record-only stub; the sweep computes the real bar off the
   // state sla days (permit_to_work pattern).
-  timers: [{ onState: 'remediation_in_progress', after: { days: 0 }, fire: 'escalate', kind: 'time_bar' }],
+  timers: [{ onState: 'remediation_in_progress', after: { days: 90 }, fire: 'escalate', kind: 'time_bar', reason: 'remediation_stalled' }],
 };

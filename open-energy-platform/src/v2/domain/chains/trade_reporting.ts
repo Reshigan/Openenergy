@@ -177,10 +177,11 @@ export const tradeReporting: ChainDecl = {
     },
   ],
 
-  // record-only stubs; the sweep computes the real bar off each state's sla days
-  // (ppa_contract / permit_to_work pattern). `after:{days:0}` is a placeholder.
+  // reporting-window bars (ppa_contract / permit_to_work pattern): EMIR Art. 9
+  // T+1 reporting deadline on the pending report; a submitted report with no TR
+  // ACK/NACK inside a day lapses on-platform (statutory duty survives).
   timers: [
-    { onState: 'reporting_pending', after: { days: 0 }, fire: 'auto_lapse', kind: 'time_bar' },
-    { onState: 'submitted', after: { days: 0 }, fire: 'auto_lapse', kind: 'sla' },
+    { onState: 'reporting_pending', after: { days: 1 }, fire: 'auto_lapse', kind: 'time_bar' },
+    { onState: 'submitted', after: { hours: 24 }, fire: 'auto_lapse', kind: 'sla' },
   ],
 };

@@ -179,5 +179,5 @@ export const creditingRenewal: ChainDecl = {
   // period-expiry time-bar: a renewal not actioned before the crediting period
   // ends lapses (a project cannot issue on an expired, un-renewed period).
   // record-only stub; the sweep computes the real bar off state sla (ppa pattern).
-  timers: [{ onState: 'renewal_requested', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'renewal_requested', after: { days: 90 }, fire: 'lapse', kind: 'time_bar', reason: 'period_expired' }],
 };

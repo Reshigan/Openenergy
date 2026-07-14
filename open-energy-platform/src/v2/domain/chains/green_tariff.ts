@@ -137,20 +137,20 @@ export const greenTariff: ChainDecl = {
       id: 'reject',
       from: ['requested', 'verified'],
       to: 'rejected',
-      by: ['utility', 'operator', 'regulator'],
+      by: ['utility', 'operator', 'regulator', 'system'],
       label: 'Reject enrollment',
       intent: 'destructive',
-      requiresReason: ['ineligible', 'incomplete_application', 'no_renewable_capacity', 'account_in_arrears'],
+      requiresReason: ['ineligible', 'incomplete_application', 'no_renewable_capacity', 'account_in_arrears', 'application_lapsed'],
       guards: [],
     },
     {
       id: 'cancel',
       from: ['requested', 'verified', 'approved'],
       to: 'cancelled',
-      by: ['customer', 'operator'],
+      by: ['customer', 'operator', 'system'],
       label: 'Cancel request',
       intent: 'destructive',
-      requiresReason: ['withdrawn_by_customer', 'duplicate', 'terms_declined'],
+      requiresReason: ['withdrawn_by_customer', 'duplicate', 'terms_declined', 'acceptance_window_lapsed'],
       guards: [],
     },
   ],
@@ -158,7 +158,7 @@ export const greenTariff: ChainDecl = {
   // record-only time-bars. The sweep computes the real bar off state sla days
   // (ppa_contract pattern); an unactioned request/approval stales out.
   timers: [
-    { onState: 'requested', after: { days: 0 }, fire: 'reject', kind: 'time_bar' },
-    { onState: 'approved', after: { days: 0 }, fire: 'cancel', kind: 'time_bar' },
+    { onState: 'requested', after: { days: 90 }, fire: 'reject', kind: 'time_bar', reason: 'application_lapsed' },
+    { onState: 'approved', after: { days: 30 }, fire: 'cancel', kind: 'time_bar', reason: 'acceptance_window_lapsed' },
   ],
 };

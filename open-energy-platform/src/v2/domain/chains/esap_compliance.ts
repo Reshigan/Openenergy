@@ -167,7 +167,7 @@ export const esapCompliance: ChainDecl = {
       id: 'declare_breach',
       from: ['findings_review', 'remediation_required', 'remediation_submitted'],
       to: 'breach_declared',
-      by: ['monitor', 'regulator'],
+      by: ['monitor', 'regulator', 'system'],
       label: 'Declare breach',
       intent: 'destructive',
       requiresReason: ['unresolved_major', 'remediation_overdue', 'systemic_non_compliance', 'material_harm'],
@@ -189,5 +189,5 @@ export const esapCompliance: ChainDecl = {
   // remediation-required time-bar: a corrective-action plan left unsubmitted past
   // its deadline escalates to a declared breach. record-only stub; the sweep
   // computes the real bar off the remediation_deadline / state sla.
-  timers: [{ onState: 'remediation_required', after: { days: 0 }, fire: 'declare_breach', kind: 'time_bar' }],
+  timers: [{ onState: 'remediation_required', after: { days: 60 }, fire: 'declare_breach', kind: 'time_bar', reason: 'remediation_overdue' }],
 };

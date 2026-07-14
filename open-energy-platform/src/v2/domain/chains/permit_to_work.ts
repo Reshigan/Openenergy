@@ -191,10 +191,10 @@ export const permitToWork: ChainDecl = {
       id: 'revoke_permit',
       from: ['isolation_pending', 'isolation_confirmed', 'permit_issued', 'work_in_progress', 'suspended'],
       to: 'permit_revoked',
-      by: ['authority', 'regulator'],
+      by: ['authority', 'regulator', 'system'],
       label: 'Revoke permit',
       intent: 'destructive',
-      requiresReason: ['safety_breach', 'isolation_compromised', 'emergency_recall', 'scope_exceeded'],
+      requiresReason: ['safety_breach', 'isolation_compromised', 'emergency_recall', 'scope_exceeded', 'permit_window_expired'],
       guards: [],
     },
     {
@@ -209,8 +209,8 @@ export const permitToWork: ChainDecl = {
     },
   ],
 
-  // isolation-pending time-bar: an approved isolation left unverified stales out
-  // (physical isolation state cannot be trusted indefinitely). record-only stub;
-  // the sweep computes the real bar off state sla hours (ppa_contract pattern).
-  timers: [{ onState: 'isolation_pending', after: { hours: 0 }, fire: 'revoke_permit', kind: 'time_bar' }],
+  // isolation-pending time-bar: an approved isolation left unverified for 24
+  // hours stales out — physical isolation state cannot be trusted past a shift
+  // cycle (triple the 8-hour state sla; ppa_contract pattern).
+  timers: [{ onState: 'isolation_pending', after: { hours: 24 }, fire: 'revoke_permit', kind: 'time_bar', reason: 'permit_window_expired' }],
 };

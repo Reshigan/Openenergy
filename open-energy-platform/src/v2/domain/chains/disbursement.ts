@@ -163,7 +163,7 @@ export const disbursement: ChainDecl = {
       id: 'lapse',
       from: ['authorised'],
       to: 'lapsed',
-      by: ['lender', 'operator'],
+      by: ['lender', 'operator', 'system'],
       label: 'Lapse authorisation',
       intent: 'destructive',
       requiresReason: ['value_date_passed', 'reauthorisation_required'],
@@ -174,5 +174,5 @@ export const disbursement: ChainDecl = {
   // authorised funds not released by the value date lapse — an authorisation
   // cannot be trusted indefinitely. Record-only stub; the sweep computes the
   // real bar off the state sla hours (ppa_contract pattern).
-  timers: [{ onState: 'authorised', after: { hours: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'authorised', after: { hours: 48 }, fire: 'lapse', kind: 'time_bar', reason: 'value_date_passed' }],
 };

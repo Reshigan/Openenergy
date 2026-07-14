@@ -166,7 +166,7 @@ export const imbalance: ChainDecl = {
       id: 'confirm_settlement',
       from: ['statement_published', 'dispute_resolved'],
       to: 'settlement_confirmed',
-      by: ['settlement_agent'],
+      by: ['settlement_agent', 'system'],
       label: 'Confirm settlement',
       intent: 'primary',
       guards: [],
@@ -199,5 +199,5 @@ export const imbalance: ChainDecl = {
   // dispute-window time-bar: an unchallenged published statement is deemed
   // accepted once the window closes (SA balancing settlement). record-only stub;
   // the sweep computes the real bar off the state sla days (ppa_contract pattern).
-  timers: [{ onState: 'statement_published', after: { days: 0 }, fire: 'confirm_settlement', kind: 'time_bar' }],
+  timers: [{ onState: 'statement_published', after: { days: 14 }, fire: 'confirm_settlement', kind: 'time_bar' }],
 };

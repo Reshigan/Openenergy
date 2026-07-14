@@ -131,7 +131,7 @@ export const plannedOutage: ChainDecl = {
       id: 'begin_restoration',
       from: 'outage_in_progress',
       to: 'restoration_pending',
-      by: ['requester', 'asset_owner'],
+      by: ['requester', 'asset_owner', 'system'],
       label: 'Work complete — begin restoration',
       intent: 'primary',
       guards: [],
@@ -181,8 +181,7 @@ export const plannedOutage: ChainDecl = {
     },
   ],
 
-  // outage-overrun time-bar: an asset out of service past its planned window is a
-  // grid risk. record-only stub; the sweep computes the real bar off state sla
-  // hours (ppa_contract pattern).
-  timers: [{ onState: 'outage_in_progress', after: { hours: 0 }, fire: 'begin_restoration', kind: 'time_bar' }],
+  // outage-overrun time-bar: an asset out of service 7 days past the start of
+  // its window is a grid risk — restoration is forced (ppa_contract pattern).
+  timers: [{ onState: 'outage_in_progress', after: { days: 7 }, fire: 'begin_restoration', kind: 'time_bar' }],
 };

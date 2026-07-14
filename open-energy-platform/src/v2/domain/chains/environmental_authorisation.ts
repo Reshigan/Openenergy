@@ -134,10 +134,10 @@ export const environmentalAuthorisation: ChainDecl = {
       id: 'refuse_authorisation',
       from: 'under_review',
       to: 'refused',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Refuse authorisation',
       intent: 'destructive',
-      requiresReason: ['unacceptable_impact', 'inadequate_assessment', 'no_go_alternative', 'public_objection_upheld'],
+      requiresReason: ['unacceptable_impact', 'inadequate_assessment', 'no_go_alternative', 'public_objection_upheld', 'deadline_passed'],
       guards: [],
     },
     {
@@ -155,5 +155,5 @@ export const environmentalAuthorisation: ChainDecl = {
   // decision time-bar: an application left under review past the regulated window
   // stales out. Record-only stub — the sweep computes the real bar off the state
   // sla days (contract_execution / isda_agreement pattern).
-  timers: [{ onState: 'under_review', after: { days: 0 }, fire: 'refuse_authorisation', kind: 'time_bar' }],
+  timers: [{ onState: 'under_review', after: { days: 107 }, fire: 'refuse_authorisation', kind: 'time_bar', reason: 'deadline_passed' }],
 };

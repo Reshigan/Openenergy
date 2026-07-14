@@ -187,6 +187,7 @@ export const ppaContract: ChainDecl = {
   ],
 
   timers: [
-    { onState: 'in_force', after: { days: 0 }, fire: 'auto_expire', kind: 'time_bar' },
+    // default 20-year term (contract_term_years spans 1–40; per-txn expiry rides expiry_date).
+    { onState: 'in_force', after: { days: 7300 }, fire: 'auto_expire', kind: 'time_bar' },
   ],
 };

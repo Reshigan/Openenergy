@@ -118,7 +118,7 @@ export const securityRemediation: ChainDecl = {
       id: 'triage',
       from: 'advisory_received',
       to: 'triaged',
-      by: ['support'],
+      by: ['support', 'system'],
       label: 'Triage advisory',
       intent: 'primary',
       // priority carries the escalation tier the regulator gate reads later.
@@ -250,7 +250,6 @@ export const securityRemediation: ChainDecl = {
   ],
 
   // triage SLA on a freshly received advisory: a critical CVE left un-triaged past
-  // the window escalates. Record-only stub; the sweep computes the real bar off the
-  // state's sla hours (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'advisory_received', after: { hours: 0 }, fire: 'triage', kind: 'sla' }],
+  // the 8h window is force-triaged (severity defaults to unassessed until scored).
+  timers: [{ onState: 'advisory_received', after: { hours: 8 }, fire: 'triage', kind: 'sla' }],
 };

@@ -220,10 +220,10 @@ export const methodologyAmendment: ChainDecl = {
       id: 'reject_amendment',
       from: ['materiality_assessment', 'minor_deviation', 'major_deviation', 'methodology_update', 'dna_notified', 'validator_assigned', 'revalidation'],
       to: 'amendment_rejected',
-      by: ['validator', 'regulator'],
+      by: ['validator', 'regulator', 'system'],
       label: 'Reject amendment',
       intent: 'destructive',
-      requiresReason: ['integrity_risk', 'insufficient_evidence', 'baseline_invalidated', 'additionality_lost', 'dna_objection'],
+      requiresReason: ['integrity_risk', 'insufficient_evidence', 'baseline_invalidated', 'additionality_lost', 'dna_objection', 'revalidation_deadline_missed'],
       guards: [],
       derive: (_f, at: Instant) => ({ rejected_at: isoUtc(at) }),
     },
@@ -239,8 +239,8 @@ export const methodologyAmendment: ChainDecl = {
     },
   ],
 
-  // revalidation time-bar: an assigned validator that never completes staleness
-  // out (a crediting integrity control cannot hang open indefinitely). record-only
-  // stub; the sweep computes the real bar off state sla days (ppa_contract pattern).
-  timers: [{ onState: 'revalidation', after: { days: 0 }, fire: 'reject_amendment', kind: 'time_bar' }],
+  // revalidation time-bar: an assigned validator that never completes within 90
+  // days (double the 45-day state sla) stales out — a crediting integrity
+  // control cannot hang open indefinitely (ppa_contract pattern).
+  timers: [{ onState: 'revalidation', after: { days: 90 }, fire: 'reject_amendment', kind: 'time_bar', reason: 'revalidation_deadline_missed' }],
 };

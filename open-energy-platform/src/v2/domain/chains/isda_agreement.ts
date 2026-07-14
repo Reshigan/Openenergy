@@ -164,15 +164,15 @@ export const isdaAgreement: ChainDecl = {
       id: 'cancel',
       from: ['drafted', 'negotiating'],
       to: 'cancelled',
-      by: ['party_a', 'operator'],
+      by: ['party_a', 'operator', 'system'],
       label: 'Cancel',
       intent: 'destructive',
-      requiresReason: ['withdrawn', 'relationship_not_pursued', 'superseded'],
+      requiresReason: ['withdrawn', 'relationship_not_pursued', 'superseded', 'negotiation_lapsed'],
       guards: [],
     },
   ],
 
-  // negotiation time-bar: a schedule left un-negotiated stales out. Record-only
-  // stub — the sweep computes the real bar off the state sla (ppa_contract pattern).
-  timers: [{ onState: 'negotiating', after: { days: 0 }, fire: 'cancel', kind: 'time_bar' }],
+  // negotiation time-bar: a schedule left un-negotiated for 90 days (well past
+  // the 60-day negotiating sla) stales out (ppa_contract pattern).
+  timers: [{ onState: 'negotiating', after: { days: 90 }, fire: 'cancel', kind: 'time_bar', reason: 'negotiation_lapsed' }],
 };

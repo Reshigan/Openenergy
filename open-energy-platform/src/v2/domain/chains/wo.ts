@@ -95,7 +95,7 @@ export const wo: ChainDecl = {
       id: 'assign',
       from: ['new', 'assigned'],
       to: 'assigned',
-      by: ['dispatcher', 'operator'],
+      by: ['dispatcher', 'operator', 'system'],
       label: 'Assign',
       intent: 'primary',
       input: {

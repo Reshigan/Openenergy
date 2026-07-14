@@ -208,7 +208,7 @@ export const facilityAmendment: ChainDecl = {
       id: 'lapse',
       from: ['amendment_requested', 'eligibility_assessed', 'lender_circulated', 'majority_response', 'unanimous_required'],
       to: 'lapsed',
-      by: ['agent'],
+      by: ['agent', 'system'],
       label: 'Lapse (consent deadline passed)',
       intent: 'destructive',
       requiresReason: ['consent_deadline_passed', 'quorum_not_reached', 'no_response'],
@@ -228,5 +228,5 @@ export const facilityAmendment: ChainDecl = {
 
   // consent-deadline time-bar: a circulation left unresolved past the deadline
   // lapses. record-only stub; the sweep computes the real bar off state sla.
-  timers: [{ onState: 'lender_circulated', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'lender_circulated', after: { days: 30 }, fire: 'lapse', kind: 'time_bar', reason: 'consent_deadline_passed' }],
 };

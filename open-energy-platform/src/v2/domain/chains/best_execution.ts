@@ -99,7 +99,7 @@ export const bestExecution: ChainDecl = {
       id: 'begin_review',
       from: 'submitted',
       to: 'under_review',
-      by: ['compliance', 'operator'],
+      by: ['compliance', 'operator', 'system'],
       label: 'Begin review',
       intent: 'primary',
       guards: [],
@@ -154,12 +154,12 @@ export const bestExecution: ChainDecl = {
     // --- exits --------------------------------------------------------------
     {
       id: 'reject',
-      from: 'under_review',
+      from: ['under_review', 'flagged'],
       to: 'rejected',
-      by: ['compliance', 'operator'],
+      by: ['compliance', 'operator', 'system'],
       label: 'Reject attestation',
       intent: 'destructive',
-      requiresReason: ['systemic_failure', 'unremediable', 'material_misstatement'],
+      requiresReason: ['systemic_failure', 'unremediable', 'material_misstatement', 'remediation_deadline_missed'],
       guards: [],
     },
     {
@@ -185,10 +185,9 @@ export const bestExecution: ChainDecl = {
   ],
 
   timers: [
-    // a submitted attestation left unreviewed breaches the conduct SLA; a flagged
-    // record left un-remediated stales the deficiency. record-only stubs; the
-    // sweep computes the real bar off each state's sla (ppa_contract pattern).
-    { onState: 'submitted', after: { days: 0 }, fire: 'begin_review', kind: 'sla' },
-    { onState: 'flagged', after: { days: 0 }, fire: 'reject', kind: 'time_bar' },
+    // a submitted attestation left unreviewed for 5 days breaches the conduct SLA;
+    // a flagged record left un-remediated for 30 days time-bars into rejection.
+    { onState: 'submitted', after: { days: 5 }, fire: 'begin_review', kind: 'sla' },
+    { onState: 'flagged', after: { days: 30 }, fire: 'reject', kind: 'time_bar', reason: 'remediation_deadline_missed' },
   ],
 };

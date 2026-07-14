@@ -153,9 +153,9 @@ export const complaintResolution: ChainDecl = {
     // --- exits ----------------------------------------------------------------
     {
       id: 'escalate',
-      from: ['acknowledged', 'under_investigation', 'resolution_proposed'],
+      from: ['lodged', 'acknowledged', 'under_investigation', 'resolution_proposed'],
       to: 'escalated',
-      by: ['complainant', 'handler', 'regulator'],
+      by: ['complainant', 'handler', 'regulator', 'system'],
       label: 'Escalate',
       intent: 'destructive',
       requiresReason: ['unresolved_deadlock', 'regulatory_referral', 'ombud_referral', 'sla_breach'],
@@ -183,7 +183,7 @@ export const complaintResolution: ChainDecl = {
     },
   ],
 
-  // acknowledgement SLA: a complaint left un-acknowledged escalates. record-only
-  // stub; the sweep computes the real bar off the lodged-state sla hours.
-  timers: [{ onState: 'lodged', after: { hours: 0 }, fire: 'escalate', kind: 'sla' }],
+  // acknowledgement SLA: a complaint left un-acknowledged past 72 hours (the
+  // 48h lodged SLA plus a day's grace) escalates as an sla_breach.
+  timers: [{ onState: 'lodged', after: { hours: 72 }, fire: 'escalate', kind: 'sla', reason: 'sla_breach' }],
 };

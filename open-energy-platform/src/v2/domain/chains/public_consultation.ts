@@ -108,7 +108,7 @@ export const publicConsultation: ChainDecl = {
       id: 'close_comments',
       from: 'open_for_comment',
       to: 'comments_closed',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Close comment window',
       intent: 'primary',
       guards: [],
@@ -165,7 +165,6 @@ export const publicConsultation: ChainDecl = {
   ],
 
   // comment-window time-bar: an open consultation closes when the published
-  // comment period elapses (PAJA fair-notice window). record-only stub; the
-  // sweep computes the real bar off the state sla (permit_to_work pattern).
-  timers: [{ onState: 'open_for_comment', after: { days: 0 }, fire: 'close_comments', kind: 'time_bar' }],
+  // comment period elapses (PAJA fair-notice window; NERSA standard 30 days).
+  timers: [{ onState: 'open_for_comment', after: { days: 30 }, fire: 'close_comments', kind: 'time_bar' }],
 };

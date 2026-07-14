@@ -202,7 +202,7 @@ export const punchList: ChainDecl = {
       id: 'close_punch',
       from: 'accepted',
       to: 'closed',
-      by: ['owner'],
+      by: ['owner', 'system'],
       label: 'Close punch',
       intent: 'primary',
       guards: [],
@@ -246,7 +246,6 @@ export const punchList: ChainDecl = {
   ],
 
   // accepted-not-closed time-bar: an accepted defect left unclosed auto-closes at
-  // the bar (the remediation is signed off; closure is administrative). record-only
-  // stub; the sweep computes the real bar off the state sla hours.
-  timers: [{ onState: 'accepted', after: { hours: 0 }, fire: 'close_punch', kind: 'time_bar' }],
+  // the bar (the remediation is signed off; closure is administrative).
+  timers: [{ onState: 'accepted', after: { hours: 24 }, fire: 'close_punch', kind: 'time_bar' }],
 };

@@ -112,7 +112,7 @@ export const capitalAdequacyReturn: ChainDecl = {
       id: 'begin_review',
       from: 'submitted',
       to: 'under_review',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Begin review',
       intent: 'primary',
       guards: [],
@@ -169,8 +169,8 @@ export const capitalAdequacyReturn: ChainDecl = {
   ],
 
   timers: [
-    { onState: 'draft', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' },
-    { onState: 'remediating', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' },
-    { onState: 'submitted', after: { days: 0 }, fire: 'begin_review', escalate: 'flag_deficiency', kind: 'sla' },
+    { onState: 'draft', after: { days: 90 }, fire: 'lapse', kind: 'time_bar' },
+    { onState: 'remediating', after: { days: 60 }, fire: 'lapse', kind: 'time_bar' },
+    { onState: 'submitted', after: { days: 10 }, fire: 'begin_review', escalate: 'flag_deficiency', kind: 'sla' },
   ],
 };

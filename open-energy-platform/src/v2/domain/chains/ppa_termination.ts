@@ -172,7 +172,7 @@ export const ppaTermination: ChainDecl = {
       id: 'accept_cure',
       from: 'cured',
       to: 'withdrawn',
-      by: ['terminating', 'operator'],
+      by: ['terminating', 'operator', 'system'],
       label: 'Accept cure & withdraw notice',
       intent: 'primary',
       guards: [],
@@ -192,10 +192,10 @@ export const ppaTermination: ChainDecl = {
   ],
 
   // cure-period time_bar: an unremedied cure window lapses and the termination is
-  // effected. record-only stub (after:{days:0}); the sweep computes the real bar
-  // off the state sla days, ppa_contract pattern.
+  // effected (default cure_period_days = 30); a cure the terminating party sits on
+  // for 10 days is deemed accepted and the notice withdraws.
   timers: [
-    { onState: 'cure_period', after: { days: 0 }, fire: 'auto_effect_on_lapse', kind: 'time_bar' },
-    { onState: 'cured', after: { days: 0 }, fire: 'accept_cure', escalate: 'terminating', kind: 'sla' },
+    { onState: 'cure_period', after: { days: 30 }, fire: 'auto_effect_on_lapse', kind: 'time_bar' },
+    { onState: 'cured', after: { days: 10 }, fire: 'accept_cure', escalate: 'terminating', kind: 'sla' },
   ],
 };

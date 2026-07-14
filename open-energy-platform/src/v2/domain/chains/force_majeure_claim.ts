@@ -135,15 +135,15 @@ export const forceMajeureClaim: ChainDecl = {
       id: 'withdraw_claim',
       from: ['notified', 'under_assessment'],
       to: 'withdrawn',
-      by: ['affected_party', 'operator'],
+      by: ['affected_party', 'operator', 'system'],
       label: 'Withdraw claim',
       intent: 'destructive',
-      requiresReason: ['event_resolved', 'performance_resumed', 'claim_in_error'],
+      requiresReason: ['event_resolved', 'performance_resumed', 'claim_in_error', 'claim_not_pursued'],
       guards: [],
     },
   ],
 
   // assessment time-bar: an unassessed notice stales out. Record-only stub — the
   // sweep computes the real bar off the state sla days (isda_agreement pattern).
-  timers: [{ onState: 'notified', after: { days: 0 }, fire: 'withdraw_claim', kind: 'time_bar' }],
+  timers: [{ onState: 'notified', after: { days: 90 }, fire: 'withdraw_claim', kind: 'time_bar', reason: 'claim_not_pursued' }],
 };

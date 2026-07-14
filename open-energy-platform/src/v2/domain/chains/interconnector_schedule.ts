@@ -169,10 +169,10 @@ export const interconnectorSchedule: ChainDecl = {
       id: 'curtail_schedule',
       from: ['confirmed', 'dispatched'],
       to: 'curtailed',
-      by: ['operator', 'regulator'],
+      by: ['operator', 'regulator', 'system'],
       label: 'Curtail schedule',
       intent: 'destructive',
-      requiresReason: ['grid_emergency', 'transmission_constraint', 'security_of_supply', 'interconnector_trip'],
+      requiresReason: ['grid_emergency', 'transmission_constraint', 'security_of_supply', 'interconnector_trip', 'dispatch_window_missed'],
       guards: [],
     },
     {
@@ -190,5 +190,5 @@ export const interconnectorSchedule: ChainDecl = {
   // confirmed-window time-bar: a firm schedule not dispatched by its delivery
   // window stales out (the reserved headroom cannot be held indefinitely).
   // record-only stub; the sweep computes the real bar off the state sla hours.
-  timers: [{ onState: 'confirmed', after: { hours: 0 }, fire: 'curtail_schedule', kind: 'time_bar' }],
+  timers: [{ onState: 'confirmed', after: { hours: 48 }, fire: 'curtail_schedule', kind: 'time_bar', reason: 'dispatch_window_missed' }],
 };

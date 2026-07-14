@@ -218,5 +218,5 @@ export const demandResponse: ChainDecl = {
     },
   ],
 
-  timers: [{ onState: 'called', after: { hours: 0 }, fire: 'auto_lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'called', after: { hours: 4 }, fire: 'auto_lapse', kind: 'time_bar' }],
 };

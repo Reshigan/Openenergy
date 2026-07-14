@@ -136,7 +136,7 @@ export const carbonReversal: ChainDecl = {
       id: 'cancel_buffer',
       from: 'compensation_pending',
       to: 'compensated',
-      by: ['registry'],
+      by: ['registry', 'system'],
       label: 'Cancel buffer serials',
       intent: 'primary',
       guards: ['complianceHaltClear', 'serialRangeConsistent'],
@@ -168,7 +168,7 @@ export const carbonReversal: ChainDecl = {
   ],
 
   // compensation-pending make-good deadline: an authorised reversal left
-  // uncompensated breaches buffer-pool rules. record-only stub; the sweep
-  // computes the real bar off the state sla days (ppa_contract pattern).
-  timers: [{ onState: 'compensation_pending', after: { days: 0 }, fire: 'cancel_buffer', kind: 'sla' }],
+  // uncompensated for 14 days breaches buffer-pool rules — the sweep executes the
+  // already-authorised buffer cancellation (serials were named at authorisation).
+  timers: [{ onState: 'compensation_pending', after: { days: 14 }, fire: 'cancel_buffer', kind: 'sla' }],
 };

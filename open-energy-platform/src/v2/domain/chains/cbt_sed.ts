@@ -258,7 +258,7 @@ export const cbtSed: ChainDecl = {
       id: 'escalate',
       from: ['queries_issued', 'under_review', 'non_compliant', 'remediation_submitted'],
       to: 'escalated',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Escalate to Enforcement / BBBEE Commission',
       intent: 'destructive',
       requiresReason: ['persistent_non_compliance', 'no_response', 'remediation_rejected', 'material_misstatement'],
@@ -266,7 +266,7 @@ export const cbtSed: ChainDecl = {
     },
   ],
 
-  // query-response time-bar: an unanswered DMRE query stales out and escalates.
-  // record-only stub; the sweep computes the real bar off state sla days.
-  timers: [{ onState: 'queries_issued', after: { days: 0 }, fire: 'escalate', kind: 'time_bar' }],
+  // query-response time-bar: a DMRE query unanswered for 60 days stales out and
+  // escalates (no_response).
+  timers: [{ onState: 'queries_issued', after: { days: 60 }, fire: 'escalate', kind: 'time_bar', reason: 'no_response' }],
 };

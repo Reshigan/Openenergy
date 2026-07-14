@@ -181,10 +181,10 @@ export const pmCompliance: ChainDecl = {
       id: 'skip_pm',
       from: ['work_assigned', 'deferral_requested', 'deferred'],
       to: 'skipped',
-      by: ['planner', 'regulator'],
+      by: ['planner', 'regulator', 'system'],
       label: 'Skip PM',
       intent: 'destructive',
-      requiresReason: ['asset_decommissioned', 'redundant_task', 'risk_accepted', 'superseded_by_upgrade'],
+      requiresReason: ['asset_decommissioned', 'redundant_task', 'risk_accepted', 'superseded_by_upgrade', 'due_window_expired'],
       guards: ['regulatorPresentIfCritical'],
       derive: (_f, at: Instant) => ({ skipped_at: isoUtc(at) }),
     },
@@ -200,8 +200,8 @@ export const pmCompliance: ChainDecl = {
     },
   ],
 
-  // PM-overdue time-bar: an assigned PM left past its due window stales into a
-  // skip decision. Record-only stub; the sweep computes the real bar off the
-  // state sla hours (ppa_contract / permit_to_work pattern).
-  timers: [{ onState: 'work_assigned', after: { hours: 0 }, fire: 'skip_pm', kind: 'time_bar' }],
+  // PM-overdue time-bar: an assigned PM left unstarted 30 days past assignment
+  // has missed its maintenance cycle and stales into a skip decision
+  // (ppa_contract / permit_to_work pattern).
+  timers: [{ onState: 'work_assigned', after: { days: 30 }, fire: 'skip_pm', kind: 'time_bar', reason: 'due_window_expired' }],
 };

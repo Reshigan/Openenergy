@@ -103,12 +103,19 @@ export const settlementFail: ChainDecl = {
       id: 'instruct_buy_in',
       from: 'investigating',
       to: 'buy_in_instructed',
-      by: ['clearing', 'operator'],
+      by: ['clearing', 'operator', 'system'],
       label: 'Instruct buy-in',
       intent: 'primary',
-      input: { buy_in_reference: { type: 'string', required: true } },
+      // optional: the timer sweep supplies a derived reference when absent.
+      input: { buy_in_reference: { type: 'string' } },
       guards: [],
-      derive: (_f, at: Instant) => ({ buy_in_instructed_at: isoUtc(at) }),
+      derive: (f, at: Instant) => ({
+        buy_in_instructed_at: isoUtc(at),
+        buy_in_reference:
+          typeof f.buy_in_reference === 'string' && f.buy_in_reference.length > 0
+            ? f.buy_in_reference
+            : `BUYIN-${(f.trade_ref as string) ?? 'UNREF'}-${isoUtc(at)}`,
+      }),
     },
     {
       id: 'resolve',
@@ -137,8 +144,7 @@ export const settlementFail: ChainDecl = {
   ],
 
   // T+4 mandatory-buy-in time-bar: a fail left in investigation past the bar
-  // triggers the buy-in instruction. record-only stub — the sweep computes the
-  // real bar off state sla days and supplies the buy_in_reference (ppa_contract
-  // / permit_to_work timer pattern).
-  timers: [{ onState: 'investigating', after: { days: 0 }, fire: 'instruct_buy_in', kind: 'time_bar' }],
+  // triggers the buy-in instruction; the edge derives the buy_in_reference when
+  // the sweep fires it without one (JSE-SRL buy-in convention).
+  timers: [{ onState: 'investigating', after: { days: 4 }, fire: 'instruct_buy_in', kind: 'time_bar' }],
 };

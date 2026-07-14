@@ -96,7 +96,7 @@ export const marketConductExam: ChainDecl = {
       id: 'commence_fieldwork',
       from: 'scheduled',
       to: 'fieldwork',
-      by: ['regulator', 'operator'],
+      by: ['regulator', 'operator', 'system'],
       label: 'Commence fieldwork',
       intent: 'primary',
       guards: [],
@@ -173,7 +173,7 @@ export const marketConductExam: ChainDecl = {
       id: 'refer_enforcement',
       from: ['findings_issued', 'remediation'],
       to: 'referred_enforcement',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Refer to enforcement',
       intent: 'destructive',
       requiresReason: ['persistent_breach', 'remediation_failed', 'material_misconduct', 'non_cooperation'],
@@ -191,11 +191,12 @@ export const marketConductExam: ChainDecl = {
     },
   ],
 
-  // SLA + response time-bars. Record-only stubs: the sweep computes the real bar
-  // off state sla days (ppa_contract/permit_to_work pattern); an entity that
-  // lets the findings-response bar lapse surfaces for enforcement referral.
+  // SLA + response time-bars (aligned to the state slas —
+  // ppa_contract/permit_to_work pattern): a scheduled exam auto-commences at its
+  // 14-day sla; an entity that lets the 30-day findings-response bar lapse
+  // surfaces for enforcement referral as non-cooperation.
   timers: [
-    { onState: 'scheduled', after: { days: 0 }, fire: 'commence_fieldwork', kind: 'sla' },
-    { onState: 'findings_issued', after: { days: 0 }, fire: 'refer_enforcement', kind: 'time_bar' },
+    { onState: 'scheduled', after: { days: 14 }, fire: 'commence_fieldwork', kind: 'sla' },
+    { onState: 'findings_issued', after: { days: 30 }, fire: 'refer_enforcement', kind: 'time_bar', reason: 'non_cooperation' },
   ],
 };

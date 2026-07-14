@@ -218,13 +218,21 @@ export const milestoneVariance: ChainDecl = {
       id: 'report_critical_delay',
       from: ['draft', 'ie_review', 'ie_certified', 'dfi_submitted', 'dfi_queries', 'dfi_queries_responded', 'remediation_plan', 'remediation_submitted'],
       to: 'critical_delay',
-      by: ['developer', 'dfi', 'regulator'],
+      by: ['developer', 'dfi', 'regulator', 'system'],
       label: 'Escalate critical delay',
       intent: 'destructive',
-      requiresReason: ['cod_at_risk', 'force_majeure', 'grid_connection_delay', 'funding_shortfall', 'contractor_default'],
-      input: { critical_delay_description: { type: 'string', required: true } },
+      requiresReason: ['cod_at_risk', 'force_majeure', 'grid_connection_delay', 'funding_shortfall', 'contractor_default', 'remediation_deadline_missed'],
+      // optional at coercion so the remediation time-bar can fire without an
+      // author; derive defaults the description when the sweep escalates.
+      input: { critical_delay_description: { type: 'string' } },
       guards: ['regulatorPresentIfCritical'],
-      derive: (_f, at: Instant) => ({ critical_delay_reported_at: isoUtc(at) }),
+      derive: (f, at: Instant) => ({
+        critical_delay_reported_at: isoUtc(at),
+        critical_delay_description:
+          typeof f.critical_delay_description === 'string' && f.critical_delay_description !== ''
+            ? f.critical_delay_description
+            : 'Remediation plan not submitted within the required window; escalated automatically.',
+      }),
     },
     {
       id: 'withdraw',
@@ -238,7 +246,8 @@ export const milestoneVariance: ChainDecl = {
     },
   ],
 
-  // remediation time-bar: an outstanding remediation plan left unsubmitted stales
-  // out. record-only stub; the sweep computes the real bar off the state sla days.
-  timers: [{ onState: 'remediation_plan', after: { days: 0 }, fire: 'report_critical_delay', kind: 'time_bar' }],
+  // remediation time-bar: an outstanding remediation plan left unsubmitted 14
+  // days out (the remediation_plan state sla) stales into a critical-delay
+  // escalation.
+  timers: [{ onState: 'remediation_plan', after: { days: 14 }, fire: 'report_critical_delay', kind: 'time_bar', reason: 'remediation_deadline_missed' }],
 };

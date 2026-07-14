@@ -112,7 +112,7 @@ export const insuranceClaim: ChainDecl = {
       id: 'begin_assessment',
       from: 'notified',
       to: 'assessing',
-      by: ['insurer'],
+      by: ['insurer', 'system'],
       label: 'Begin assessment',
       intent: 'primary',
       guards: [],
@@ -223,5 +223,5 @@ export const insuranceClaim: ChainDecl = {
   // acknowledgement SLA: a notified loss the insurer leaves unactioned breaches
   // the fair-treatment window. record-only stub; the sweep computes the real bar
   // off the state sla hours (permit_to_work pattern).
-  timers: [{ onState: 'notified', after: { hours: 0 }, fire: 'begin_assessment', kind: 'sla' }],
+  timers: [{ onState: 'notified', after: { hours: 72 }, fire: 'begin_assessment', kind: 'sla' }],
 };

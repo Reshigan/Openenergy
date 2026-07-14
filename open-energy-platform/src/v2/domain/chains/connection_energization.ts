@@ -167,12 +167,13 @@ export const connectionEnergization: ChainDecl = {
     // --- exits ----------------------------------------------------------------
     {
       id: 'reject_connection',
-      from: ['energization_requested', 'inspection', 'witness_testing', 'defect_hold'],
+      // cleared_to_energize included so the 7-day validity time-bar can fire
+      from: ['energization_requested', 'inspection', 'witness_testing', 'defect_hold', 'cleared_to_energize'],
       to: 'connection_rejected',
-      by: ['operator', 'regulator'],
+      by: ['operator', 'regulator', 'system'],
       label: 'Reject connection',
       intent: 'destructive',
-      requiresReason: ['non_compliant', 'unresolved_defects', 'capacity_unavailable', 'gca_breach', 'safety_risk'],
+      requiresReason: ['non_compliant', 'unresolved_defects', 'capacity_unavailable', 'gca_breach', 'safety_risk', 'validity_lapsed'],
       guards: [],
     },
     {
@@ -190,5 +191,5 @@ export const connectionEnergization: ChainDecl = {
   // cleared-to-energize is a bounded authorization: an energization clearance
   // left unacted stales out (network state cannot be assumed indefinitely).
   // record-only stub; the sweep computes the real bar off the state's sla hours.
-  timers: [{ onState: 'cleared_to_energize', after: { hours: 0 }, fire: 'reject_connection', kind: 'time_bar' }],
+  timers: [{ onState: 'cleared_to_energize', after: { days: 7 }, fire: 'reject_connection', kind: 'time_bar', reason: 'validity_lapsed' }],
 };

@@ -106,17 +106,23 @@ export const cyberIncident: ChainDecl = {
       id: 'triage',
       from: 'reported',
       to: 'triaged',
-      by: ['responder', 'operator'],
+      by: ['responder', 'operator', 'system'],
       label: 'Triage incident',
       intent: 'primary',
       input: {
-        priority: { type: 'string', required: true },
+        priority: { type: 'string' },
         severity_score: { type: 'number', min: 0, max: 10 },
         incident_category: { type: 'string' },
       },
       // critical-priority incidents cross to the regulator (POPIA/NERSA).
       guards: ['regulatorPresentIfCritical'],
-      derive: (f, at: Instant) => ({ severity_tier: severityTier(f.severity_score), triaged_at: isoUtc(at) }),
+      // priority defaults to 'high' when absent (timer-fired triage of an
+      // un-triaged incident — a live compromise cannot sit unowned).
+      derive: (f, at: Instant) => ({
+        priority: typeof f.priority === 'string' ? f.priority : 'high',
+        severity_tier: severityTier(f.severity_score),
+        triaged_at: isoUtc(at),
+      }),
     },
     {
       id: 'contain',
@@ -198,5 +204,5 @@ export const cyberIncident: ChainDecl = {
   // triage-SLA time-bar: a reported incident left un-triaged breaches the
   // acknowledgement window (a live compromise cannot sit unowned). record-only
   // stub; the sweep computes the real deadline off state sla hours.
-  timers: [{ onState: 'reported', after: { hours: 0 }, fire: 'triage', kind: 'sla' }],
+  timers: [{ onState: 'reported', after: { hours: 4 }, fire: 'triage', kind: 'sla' }],
 };

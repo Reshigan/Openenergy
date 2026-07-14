@@ -218,10 +218,10 @@ export const carbonOffsetClaim: ChainDecl = {
       id: 'reject_claim',
       from: ['claim_submitted', 'sars_review', 'sars_query'],
       to: 'rejected',
-      by: ['sars'],
+      by: ['sars', 'system'],
       label: 'Reject claim',
       intent: 'destructive',
-      requiresReason: ['credits_ineligible', 'cap_exceeded', 'evidence_insufficient', 'double_counted'],
+      requiresReason: ['credits_ineligible', 'cap_exceeded', 'evidence_insufficient', 'double_counted', 'time_barred'],
       guards: [],
     },
     {
@@ -246,7 +246,7 @@ export const carbonOffsetClaim: ChainDecl = {
     },
   ],
 
-  // submitted claims sit on a SARS statutory clock; record-only stub — the sweep
-  // computes the real bar off the state sla days (ppa_contract pattern).
-  timers: [{ onState: 'claim_submitted', after: { days: 0 }, fire: 'reject_claim', kind: 'time_bar' }],
+  // submitted claims sit on a SARS statutory clock; a claim left unassessed for
+  // 180 days time-bars out of the offset cycle.
+  timers: [{ onState: 'claim_submitted', after: { days: 180 }, fire: 'reject_claim', kind: 'time_bar', reason: 'time_barred' }],
 };

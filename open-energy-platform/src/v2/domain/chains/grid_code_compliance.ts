@@ -197,7 +197,7 @@ export const gridCodeCompliance: ChainDecl = {
       id: 'refer_enforcement',
       from: ['under_assessment', 'remediation_required', 'remediation_submitted'],
       to: 'enforcement_referred',
-      by: ['operator', 'regulator'],
+      by: ['operator', 'regulator', 'system'],
       label: 'Refer for enforcement',
       intent: 'destructive',
       requiresReason: ['persistent_breach', 'remediation_failed', 'safety_risk', 'repeat_offender'],
@@ -218,5 +218,5 @@ export const gridCodeCompliance: ChainDecl = {
   // remediation time-bar: a directive left un-remediated past its window escalates
   // to enforcement (a persistent grid-code breach cannot sit open indefinitely).
   // record-only stub; the sweep computes the real bar off state sla days.
-  timers: [{ onState: 'remediation_required', after: { days: 0 }, fire: 'refer_enforcement', kind: 'time_bar' }],
+  timers: [{ onState: 'remediation_required', after: { days: 90 }, fire: 'refer_enforcement', kind: 'time_bar', reason: 'remediation_failed' }],
 };

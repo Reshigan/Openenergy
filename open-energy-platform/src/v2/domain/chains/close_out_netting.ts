@@ -128,7 +128,7 @@ export const closeOutNetting: ChainDecl = {
       id: 'record_netting',
       from: 'statement_served',
       to: 'netted',
-      by: ['determining_party', 'operator'],
+      by: ['determining_party', 'operator', 'system'],
       label: 'Record netted amount',
       intent: 'primary',
       guards: [],
@@ -149,8 +149,7 @@ export const closeOutNetting: ChainDecl = {
     },
   ],
 
-  // statement-response time-bar: a served statement left unaddressed past the
-  // window records the netting. Record-only stub — the sweep computes the real bar
-  // off the state sla days (contract_execution / isda_agreement pattern).
-  timers: [{ onState: 'statement_served', after: { days: 0 }, fire: 'record_netting', kind: 'time_bar' }],
+  // statement-response time-bar: a served statement left undisputed for 30 days
+  // (the 10-day response sla plus dispute margin) records the netting.
+  timers: [{ onState: 'statement_served', after: { days: 30 }, fire: 'record_netting', kind: 'time_bar' }],
 };

@@ -168,10 +168,10 @@ export const protectionRelay: ChainDecl = {
       id: 'revert_change',
       from: ['change_approved', 'settings_applied', 'change_verified'],
       to: 'change_reverted',
-      by: ['engineer', 'regulator'],
+      by: ['engineer', 'regulator', 'system'],
       label: 'Revert change',
       intent: 'destructive',
-      requiresReason: ['misoperation', 'setting_error', 'grid_instability', 'emergency_recall'],
+      requiresReason: ['misoperation', 'setting_error', 'grid_instability', 'emergency_recall', 'verification_window_elapsed'],
       guards: [],
     },
     {
@@ -187,8 +187,7 @@ export const protectionRelay: ChainDecl = {
   ],
 
   // applied-but-unverified time-bar: settings pushed to a live relay must be
-  // proven by secondary injection promptly; an unverified applied change stales
-  // out and is reverted. record-only stub — the sweep computes the real bar off
-  // the state sla hours (ppa_contract pattern).
-  timers: [{ onState: 'settings_applied', after: { hours: 0 }, fire: 'revert_change', kind: 'time_bar' }],
+  // proven by secondary injection within a day; an unverified applied change
+  // stales out and is reverted.
+  timers: [{ onState: 'settings_applied', after: { hours: 24 }, fire: 'revert_change', kind: 'time_bar', reason: 'verification_window_elapsed' }],
 };

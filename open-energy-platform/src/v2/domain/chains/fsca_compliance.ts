@@ -150,10 +150,10 @@ export const fscaCompliance: ChainDecl = {
       id: 'withdraw',
       from: ['drafted', 'non_compliant', 'remediation'],
       to: 'withdrawn',
-      by: ['entity'],
+      by: ['entity', 'system'],
       label: 'Withdraw filing',
       intent: 'destructive',
-      requiresReason: ['superseded', 'filed_in_error', 'no_longer_required'],
+      requiresReason: ['superseded', 'filed_in_error', 'no_longer_required', 'remediation_window_lapsed'],
       guards: [],
     },
   ],
@@ -162,5 +162,5 @@ export const fscaCompliance: ChainDecl = {
   // resubmitted within the window; an abandoned remediation lapses to withdrawn.
   // record-only stub — the sweep computes the real bar off the state sla days
   // (ppa_contract / permit_to_work pattern).
-  timers: [{ onState: 'remediation', after: { days: 0 }, fire: 'withdraw', kind: 'time_bar' }],
+  timers: [{ onState: 'remediation', after: { days: 180 }, fire: 'withdraw', kind: 'time_bar', reason: 'remediation_window_lapsed' }],
 };

@@ -192,7 +192,7 @@ export const cpClearance: ChainDecl = {
       id: 'default_cp',
       from: ['cp_register_agreed', 'satisfying_cps', 'cps_submitted', 'under_lender_review', 'cps_satisfied'],
       to: 'cp_defaulted',
-      by: ['lender', 'regulator'],
+      by: ['lender', 'regulator', 'system'],
       label: 'Default CP register',
       intent: 'destructive',
       requiresReason: ['long_stop_passed', 'cp_unsatisfiable', 'material_adverse_change', 'facility_terminated'],
@@ -213,5 +213,5 @@ export const cpClearance: ChainDecl = {
   // long-stop closing-date time-bar: an agreed register whose CPs are not
   // cleared by the negotiated closing date defaults. record-only stub; the
   // sweep computes the real bar off the closing_deadline / state sla.
-  timers: [{ onState: 'satisfying_cps', after: { days: 0 }, fire: 'default_cp', kind: 'time_bar' }],
+  timers: [{ onState: 'satisfying_cps', after: { days: 90 }, fire: 'default_cp', kind: 'time_bar', reason: 'long_stop_passed' }],
 };

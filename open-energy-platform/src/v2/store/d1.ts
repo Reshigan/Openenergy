@@ -17,6 +17,7 @@ import type {
   MerkleRootRow,
   PartyRow,
   Store,
+  TimerRow,
   TxnBundle,
   TxnListFilter,
   TxnRow,
@@ -521,5 +522,20 @@ export class D1Store implements Store {
       .bind(...binds)
       .all<EventDbRow>();
     return (rows.results ?? []).map(toEventRow);
+  }
+
+  async dueTimers(nowIso: string, limit: number, cls: 'sla' | 'time_bar'): Promise<TimerRow[]> {
+    const rows = await this.db
+      .prepare(
+        `SELECT id, txn_id, fire, due_at, key, class FROM v2_timers
+         WHERE class = ? AND due_at <= ? ORDER BY due_at ASC LIMIT ?`,
+      )
+      .bind(cls, nowIso, limit)
+      .all<TimerRow>();
+    return rows.results ?? [];
+  }
+
+  async deleteTimer(id: string): Promise<void> {
+    await this.db.prepare(`DELETE FROM v2_timers WHERE id = ?`).bind(id).run();
   }
 }

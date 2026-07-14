@@ -159,7 +159,7 @@ export const gridCapacityAllocation: ChainDecl = {
       id: 'decline_offer',
       from: 'allocation_offered',
       to: 'offer_declined',
-      by: ['applicant', 'grid_operator'],
+      by: ['applicant', 'grid_operator', 'system'],
       label: 'Decline offer',
       intent: 'destructive',
       requiresReason: ['capacity_insufficient', 'terms_unacceptable', 'offer_expired', 'project_cancelled'],
@@ -180,5 +180,5 @@ export const gridCapacityAllocation: ChainDecl = {
   // offer-expiry time-bar: an untouched offer stales out (allocated headroom
   // cannot be reserved for an applicant indefinitely). record-only stub; the
   // sweep computes the real bar off the state's sla days (ppa_contract pattern).
-  timers: [{ onState: 'allocation_offered', after: { days: 0 }, fire: 'decline_offer', kind: 'time_bar' }],
+  timers: [{ onState: 'allocation_offered', after: { days: 60 }, fire: 'decline_offer', kind: 'time_bar', reason: 'offer_expired' }],
 };

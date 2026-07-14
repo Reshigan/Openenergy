@@ -145,10 +145,10 @@ export const algoCert: ChainDecl = {
       id: 'reject',
       from: ['submitted', 'under_review', 'testing'],
       to: 'rejected',
-      by: ['regulator', 'operator'],
+      by: ['regulator', 'operator', 'system'],
       label: 'Reject',
       intent: 'destructive',
-      requiresReason: ['inadequate_controls', 'conformance_failed', 'insufficient_evidence', 'strategy_prohibited'],
+      requiresReason: ['inadequate_controls', 'conformance_failed', 'insufficient_evidence', 'strategy_prohibited', 'review_sla_expired'],
       guards: [],
     },
     {
@@ -165,18 +165,18 @@ export const algoCert: ChainDecl = {
       id: 'revoke',
       from: ['certified', 'suspended'],
       to: 'revoked',
-      by: ['regulator', 'operator'],
+      by: ['regulator', 'operator', 'system'],
       label: 'Revoke certification',
       intent: 'destructive',
-      requiresReason: ['persistent_breach', 'material_misrepresentation', 'membership_terminated', 'regulatory_direction'],
+      requiresReason: ['persistent_breach', 'material_misrepresentation', 'membership_terminated', 'regulatory_direction', 'cure_window_elapsed'],
       guards: [],
     },
   ],
 
   timers: [
     // an unactioned submission stales out of the regulator's queue (SLA breach).
-    { onState: 'submitted', after: { days: 0 }, fire: 'reject', kind: 'sla' },
+    { onState: 'submitted', after: { days: 30 }, fire: 'reject', kind: 'sla', reason: 'review_sla_expired' },
     // a suspension left unresolved time-bars into permanent revocation.
-    { onState: 'suspended', after: { days: 0 }, fire: 'revoke', kind: 'time_bar' },
+    { onState: 'suspended', after: { days: 90 }, fire: 'revoke', kind: 'time_bar', reason: 'cure_window_elapsed' },
   ],
 };

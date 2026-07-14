@@ -129,10 +129,10 @@ export const poaCpaInclusion: ChainDecl = {
       id: 'reject_inclusion',
       from: ['inclusion_requested', 'eligibility_screening', 'doe_validation'],
       to: 'rejected',
-      by: ['validator', 'regulator'],
+      by: ['validator', 'regulator', 'system'],
       label: 'Reject inclusion',
       intent: 'destructive',
-      requiresReason: ['additionality_failed', 'methodology_ineligible', 'double_counting_risk', 'evidence_inadequate'],
+      requiresReason: ['additionality_failed', 'methodology_ineligible', 'double_counting_risk', 'evidence_inadequate', 'validation_window_expired'],
       guards: [],
       derive: (_f, at: Instant) => ({ rejected_at: isoUtc(at) }),
     },
@@ -148,7 +148,7 @@ export const poaCpaInclusion: ChainDecl = {
     },
   ],
 
-  // DOE validation review window: an unvalidated referral stales out to a
-  // rejection. record-only stub; the sweep computes the real bar off state sla.
-  timers: [{ onState: 'doe_validation', after: { days: 0 }, fire: 'reject_inclusion', kind: 'time_bar' }],
+  // DOE validation review window: a referral unvalidated 90 days out (triple the
+  // 30-day state sla) stales out to a rejection.
+  timers: [{ onState: 'doe_validation', after: { days: 90 }, fire: 'reject_inclusion', kind: 'time_bar', reason: 'validation_window_expired' }],
 };

@@ -111,7 +111,7 @@ export const dataSubjectRequest: ChainDecl = {
       id: 'acknowledge',
       from: 'received',
       to: 'acknowledged',
-      by: ['officer'],
+      by: ['officer', 'system'],
       label: 'Acknowledge receipt',
       intent: 'primary',
       guards: [],
@@ -218,5 +218,5 @@ export const dataSubjectRequest: ChainDecl = {
   // statutory response clock — a received request left unacknowledged escalates.
   // record-only stub; the sweep computes the real deadline off state sla hours
   // and the derived sla_days (ppa_contract pattern).
-  timers: [{ onState: 'received', after: { hours: 0 }, fire: 'acknowledge', kind: 'sla' }],
+  timers: [{ onState: 'received', after: { hours: 24 }, fire: 'acknowledge', kind: 'sla' }],
 };

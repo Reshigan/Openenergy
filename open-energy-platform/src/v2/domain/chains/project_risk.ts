@@ -252,7 +252,7 @@ export const projectRisk: ChainDecl = {
       id: 'escalate_risk',
       from: ['identified', 'assessed', 'quantified', 'response_planned', 'response_active', 'monitoring'],
       to: 'escalated',
-      by: ['risk_owner', 'sponsor'],
+      by: ['risk_owner', 'sponsor', 'system'],
       label: 'Escalate',
       intent: 'destructive',
       requiresReason: ['exceeds_owner_authority', 'contingency_breach', 'board_notification_required', 'sla_breach'],
@@ -270,8 +270,7 @@ export const projectRisk: ChainDecl = {
     },
   ],
 
-  // identified-state triage bar: an unassessed risk left past its SLA auto-
-  // escalates to the sponsor/board. Record-only stub; the sweep computes the
-  // real bar off the state sla hours (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'identified', after: { hours: 0 }, fire: 'escalate_risk', kind: 'sla' }],
+  // identified-state triage bar: an unassessed risk left past its 48h SLA auto-
+  // escalates to the sponsor/board.
+  timers: [{ onState: 'identified', after: { hours: 48 }, fire: 'escalate_risk', kind: 'sla', reason: 'sla_breach' }],
 };

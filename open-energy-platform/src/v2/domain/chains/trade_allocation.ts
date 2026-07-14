@@ -143,5 +143,5 @@ export const tradeAllocation: ChainDecl = {
 
   // record-only stub; the SLA sweep computes the real bar off each state's sla
   // hours and fires auto_cancel (ppa_contract / permit_to_work timer pattern).
-  timers: [{ onState: 'allocated', after: { hours: 0 }, fire: 'auto_cancel', kind: 'time_bar' }],
+  timers: [{ onState: 'allocated', after: { hours: 24 }, fire: 'auto_cancel', kind: 'time_bar' }],
 };

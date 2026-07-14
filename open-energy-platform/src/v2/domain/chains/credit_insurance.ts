@@ -190,17 +190,17 @@ export const creditInsurance: ChainDecl = {
       id: 'cancel',
       from: ['requested', 'underwriting', 'bound', 'active'],
       to: 'cancelled',
-      by: ['insured', 'insurer', 'operator'],
+      by: ['insured', 'insurer', 'operator', 'system'],
       label: 'Cancel policy',
       intent: 'destructive',
-      requiresReason: ['non_payment', 'mutual_agreement', 'material_risk_change', 'cover_no_longer_required'],
+      requiresReason: ['non_payment', 'mutual_agreement', 'material_risk_change', 'cover_no_longer_required', 'validity_lapsed'],
       guards: [],
     },
   ],
 
   timers: [
     // a bound quote left un-incepted lapses; an active policy auto-expires at term.
-    { onState: 'bound', after: { days: 0 }, fire: 'cancel', kind: 'time_bar' },
-    { onState: 'active', after: { days: 0 }, fire: 'auto_expire', kind: 'time_bar' },
+    { onState: 'bound', after: { days: 30 }, fire: 'cancel', kind: 'time_bar', reason: 'validity_lapsed' },
+    { onState: 'active', after: { days: 365 }, fire: 'auto_expire', kind: 'time_bar' },
   ],
 };

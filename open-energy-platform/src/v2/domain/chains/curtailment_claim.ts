@@ -208,6 +208,6 @@ export const curtailmentClaim: ChainDecl = {
   ],
 
   timers: [
-    { onState: 'rejected', after: { days: 0 }, fire: 'auto_dismiss', kind: 'time_bar' },
+    { onState: 'rejected', after: { days: 14 }, fire: 'auto_dismiss', kind: 'time_bar' },
   ],
 };

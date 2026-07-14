@@ -254,8 +254,7 @@ export const securityPerfection: ChainDecl = {
     },
   ],
 
-  // perfection time-bar: a lodged filing left unregistered past the registry
-  // deadline stales into overdue. record-only stub; the sweep computes the real
-  // bar off state sla days (ppa_contract pattern).
-  timers: [{ onState: 'lodged_for_registration', after: { days: 0 }, fire: 'mark_overdue', kind: 'time_bar' }],
+  // perfection time-bar: a lodged filing left unregistered past the 30-day
+  // registry deadline stales into overdue.
+  timers: [{ onState: 'lodged_for_registration', after: { days: 30 }, fire: 'mark_overdue', kind: 'time_bar', reason: 'deadline_passed' }],
 };

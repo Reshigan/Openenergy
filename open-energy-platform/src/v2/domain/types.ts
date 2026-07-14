@@ -84,6 +84,9 @@ export interface TimerDecl {
   fire: string;
   escalate?: string;
   kind: 'sla' | 'time_bar';
+  /** reason_code the sweep passes when firing an edge with requiresReason.
+   *  Bundle test enforces: fire edge requiresReason ⇒ reason set and in list. */
+  reason?: string;
 }
 
 export interface ChainDecl {
@@ -321,4 +324,10 @@ export interface Store {
   merkleRoots(): Promise<MerkleRootRow[]>;
   partiesForTxns(txnIds: string[]): Promise<PartyRow[]>;
   eventsForExport(q: ExportQuery): Promise<EventRow[]>;
+  /** due rows (due_at <= now), oldest first. One call per class so a noisy
+   *  class can't starve the other (plan §timers). */
+  dueTimers(nowIso: string, limit: number, cls: 'sla' | 'time_bar'): Promise<TimerRow[]>;
+  /** delete-after-attempt: the sweep's idempotency key + engine replay make a
+   *  double-fire harmless, so no claimed_at column is needed. */
+  deleteTimer(id: string): Promise<void>;
 }

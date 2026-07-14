@@ -162,6 +162,17 @@ export class MemoryStore implements Store {
     return out;
   }
 
+  async dueTimers(nowIso: string, limit: number, cls: 'sla' | 'time_bar'): Promise<TimerRow[]> {
+    return this.timers
+      .filter((t) => t.class === cls && t.due_at <= nowIso)
+      .sort((a, b) => (a.due_at < b.due_at ? -1 : a.due_at > b.due_at ? 1 : 0))
+      .slice(0, limit);
+  }
+
+  async deleteTimer(id: string): Promise<void> {
+    this.timers = this.timers.filter((t) => t.id !== id);
+  }
+
   async eventsForExport(q: ExportQuery): Promise<EventRow[]> {
     const chainSet = new Set(q.chain_keys);
     const partySet = q.participant_ids?.length ? new Set(q.participant_ids) : null;

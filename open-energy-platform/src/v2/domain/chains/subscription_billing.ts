@@ -149,5 +149,5 @@ export const subscriptionBilling: ChainDecl = {
 
   // payment-due time bar: an issued invoice left unpaid crosses into overdue.
   // record-only stub — the sweep computes the real bar off the issued-state sla.
-  timers: [{ onState: 'issued', after: { days: 0 }, fire: 'mark_overdue', kind: 'time_bar' }],
+  timers: [{ onState: 'issued', after: { days: 30 }, fire: 'mark_overdue', kind: 'time_bar' }],
 };

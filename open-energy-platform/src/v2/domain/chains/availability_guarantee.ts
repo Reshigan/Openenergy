@@ -136,16 +136,21 @@ export const availabilityGuarantee: ChainDecl = {
       id: 'instruct_remedy',
       from: 'shortfall_computed',
       to: 'remedy_instructed',
-      by: ['provider', 'operator'],
+      by: ['provider', 'operator', 'system'],
       label: 'Instruct remedy',
       intent: 'primary',
       input: {
-        remedy_ref: { type: 'string', required: true },
+        // optional: the time-bar sweep fires this edge with no input; derive
+        // defaults the ref to the contractual LD-schedule remedy.
+        remedy_ref: { type: 'string' },
         remedy_zar: { type: 'number', min: 0 },
       },
       requiresReason: ['liquidated_damages', 'service_credit', 'make_good', 'capacity_replacement'],
       guards: ['regulatorPresentIfStrategic'],
-      derive: (_f, at: Instant) => ({ instructed_at: isoUtc(at) }),
+      derive: (f, at: Instant) => ({
+        instructed_at: isoUtc(at),
+        ...(typeof f['remedy_ref'] === 'string' && f['remedy_ref'] ? {} : { remedy_ref: 'PPA-LD-SCHEDULE-DEFAULT' }),
+      }),
     },
 
     // --- dispute loop ------------------------------------------------------
@@ -195,7 +200,7 @@ export const availabilityGuarantee: ChainDecl = {
     },
   ],
 
-  // remedy time-bar: a computed shortfall left un-instructed stales out. Record-only
-  // stub; the sweep computes the real bar off the state sla (ppa_contract pattern).
-  timers: [{ onState: 'shortfall_computed', after: { days: 0 }, fire: 'instruct_remedy', kind: 'time_bar' }],
+  // remedy time-bar: a computed shortfall left un-instructed for 60 days defaults
+  // to the PPA liquidated-damages schedule remedy (derive fills remedy_ref).
+  timers: [{ onState: 'shortfall_computed', after: { days: 60 }, fire: 'instruct_remedy', kind: 'time_bar', reason: 'liquidated_damages' }],
 };

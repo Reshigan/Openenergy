@@ -180,7 +180,7 @@ export const blackStart: ChainDecl = {
       id: 'decline_capability',
       from: ['capability_declared', 'under_assessment', 'test_scheduled'],
       to: 'capability_declined',
-      by: ['operator'],
+      by: ['operator', 'system'],
       label: 'Decline capability',
       intent: 'destructive',
       requiresReason: ['technical_infeasible', 'insufficient_cranking', 'failed_test', 'voltage_out_of_range', 'provider_nonresponsive'],
@@ -208,8 +208,7 @@ export const blackStart: ChainDecl = {
     },
   ],
 
-  // test-scheduled time-bar: a scheduled black-start test left un-witnessed past the
-  // window stales out — the restoration plan can't carry an unverified slot. record-
-  // only stub; the sweep computes the real bar off state sla (permit_to_work pattern).
-  timers: [{ onState: 'test_scheduled', after: { days: 0 }, fire: 'decline_capability', kind: 'time_bar' }],
+  // test-scheduled time-bar: a scheduled black-start test left un-witnessed for 60
+  // days stales out — the restoration plan can't carry an unverified slot.
+  timers: [{ onState: 'test_scheduled', after: { days: 60 }, fire: 'decline_capability', kind: 'time_bar', reason: 'provider_nonresponsive' }],
 };

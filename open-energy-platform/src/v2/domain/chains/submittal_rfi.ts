@@ -159,15 +159,16 @@ export const submittalRfi: ChainDecl = {
       id: 'void_rfi',
       from: ['submitted', 'under_review', 'revision_requested', 'answered'],
       to: 'voided',
-      by: ['reviewer', 'coordinator'],
+      by: ['reviewer', 'coordinator', 'system'],
       label: 'Void RFI',
       intent: 'destructive',
-      requiresReason: ['raised_in_error', 'out_of_scope', 'contract_terminated'],
+      requiresReason: ['raised_in_error', 'out_of_scope', 'contract_terminated', 'response_deadline_missed'],
       guards: [],
     },
   ],
 
   // RFI aging SLA: an RFI left under review past its response window ages out.
-  // record-only stub; the sweep computes the real bar off state sla days.
-  timers: [{ onState: 'under_review', after: { days: 0 }, fire: 'answer_rfi', kind: 'sla' }],
+  // The timer must NOT auto-answer (that would fabricate a reviewer response);
+  // it administratively voids the stale RFI with an honest deadline code.
+  timers: [{ onState: 'under_review', after: { days: 14 }, fire: 'void_rfi', kind: 'sla', reason: 'response_deadline_missed' }],
 };

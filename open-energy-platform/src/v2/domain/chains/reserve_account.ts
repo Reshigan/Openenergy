@@ -175,7 +175,7 @@ export const reserveAccount: ChainDecl = {
       id: 'enforce_shortfall',
       from: 'shortfall',
       to: 'enforced',
-      by: ['lender'],
+      by: ['lender', 'system'],
       label: 'Enforce shortfall',
       intent: 'destructive',
       requiresReason: ['uncured_time_bar', 'cross_default', 'insolvency'],
@@ -193,8 +193,7 @@ export const reserveAccount: ChainDecl = {
     },
   ],
 
-  // cure time-bar: a shortfall left uncured past the CTA grace window enforces.
-  // record-only stub; the sweep computes the real bar off the state sla days
-  // (ppa_contract pattern).
-  timers: [{ onState: 'shortfall', after: { days: 0 }, fire: 'enforce_shortfall', kind: 'time_bar' }],
+  // cure time-bar: a shortfall left uncured past the CTA 30-day grace window
+  // enforces.
+  timers: [{ onState: 'shortfall', after: { days: 30 }, fire: 'enforce_shortfall', kind: 'time_bar', reason: 'uncured_time_bar' }],
 };

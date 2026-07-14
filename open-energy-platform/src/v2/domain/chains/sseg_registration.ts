@@ -176,7 +176,7 @@ export const ssegRegistration: ChainDecl = {
       id: 'reject',
       from: ['submitted', 'under_review', 'technical_review', 'approved'],
       to: 'rejected',
-      by: ['distributor'],
+      by: ['distributor', 'system'],
       label: 'Reject application',
       intent: 'destructive',
       requiresReason: ['incomplete_application', 'grid_capacity_unavailable', 'non_compliant_equipment', 'approval_lapsed'],
@@ -194,8 +194,7 @@ export const ssegRegistration: ChainDecl = {
     },
   ],
 
-  // approval-to-install validity lapse: an approval left un-commissioned stales
-  // out (NRS approvals lapse). record-only stub; the sweep computes the real bar
-  // off the state sla days (ppa_contract pattern).
-  timers: [{ onState: 'approved', after: { days: 0 }, fire: 'reject', kind: 'time_bar' }],
+  // approval-to-install validity lapse: an approval left un-commissioned for
+  // 180 days stales out (municipal SSEG approvals-to-install lapse at ~6 months).
+  timers: [{ onState: 'approved', after: { days: 180 }, fire: 'reject', kind: 'time_bar', reason: 'approval_lapsed' }],
 };

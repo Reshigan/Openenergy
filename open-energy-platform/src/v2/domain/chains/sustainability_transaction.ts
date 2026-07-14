@@ -176,7 +176,7 @@ export const sustainabilityTransaction: ChainDecl = {
       id: 'withdraw',
       from: ['proposed', 'quoted', 'accepted'],
       to: 'withdrawn',
-      by: ['buyer'],
+      by: ['buyer', 'system'],
       label: 'Withdraw',
       intent: 'destructive',
       requiresReason: ['quote_expired', 'budget_withdrawn', 'no_longer_required', 'sourced_elsewhere'],
@@ -197,5 +197,5 @@ export const sustainabilityTransaction: ChainDecl = {
   // quote-validity time-bar: an unaccepted quote stales out (a price cannot be
   // held indefinitely). record-only stub; the sweep computes the real bar off the
   // state sla hours (ppa_contract / permit_to_work pattern).
-  timers: [{ onState: 'quoted', after: { hours: 0 }, fire: 'withdraw', kind: 'time_bar' }],
+  timers: [{ onState: 'quoted', after: { hours: 48 }, fire: 'withdraw', kind: 'time_bar', reason: 'quote_expired' }],
 };

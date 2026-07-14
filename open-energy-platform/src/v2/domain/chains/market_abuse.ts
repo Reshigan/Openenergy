@@ -177,21 +177,20 @@ export const marketAbuse: ChainDecl = {
       id: 'close_case',
       from: ['flagged', 'triage', 'investigating'],
       to: 'closed',
-      by: ['surveillance', 'operator'],
+      by: ['surveillance', 'operator', 'system'],
       label: 'Close case',
       intent: 'destructive',
-      requiresReason: ['duplicate', 'no_jurisdiction', 'referred_elsewhere', 'time_barred', 'de_minimis'],
+      requiresReason: ['duplicate', 'no_jurisdiction', 'referred_elsewhere', 'time_barred', 'de_minimis', 'triage_sla_expired'],
       guards: [],
       derive: (_f, at: Instant) => ({ closed_at_case: isoUtc(at) }),
     },
   ],
 
   // SLA on triage (surveillance must progress a flagged alert) and a statutory
-  // limitation time-bar on a stalled investigation. record-only stubs — the
-  // sweep computes the real bar off state sla and fires the edge (ppa/ptw pattern;
-  // close_case's reason_code is supplied by the sweep, not the timer).
+  // limitation time-bar on a stalled investigation (FMA 2012 pattern — a case
+  // not substantiated within a year of opening is time-barred; ppa/ptw pattern).
   timers: [
-    { onState: 'triage', after: { days: 3 }, fire: 'close_case', kind: 'sla' },
-    { onState: 'investigating', after: { days: 0 }, fire: 'close_case', kind: 'time_bar' },
+    { onState: 'triage', after: { days: 3 }, fire: 'close_case', kind: 'sla', reason: 'triage_sla_expired' },
+    { onState: 'investigating', after: { days: 365 }, fire: 'close_case', kind: 'time_bar', reason: 'time_barred' },
   ],
 };

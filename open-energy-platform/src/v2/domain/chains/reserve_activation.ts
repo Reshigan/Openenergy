@@ -222,5 +222,5 @@ export const reserveActivation: ChainDecl = {
     },
   ],
 
-  timers: [{ onState: 'instructed', after: { hours: 0 }, fire: 'auto_lapse', kind: 'time_bar' }],
+  timers: [{ onState: 'instructed', after: { hours: 1 }, fire: 'auto_lapse', kind: 'time_bar' }],
 };

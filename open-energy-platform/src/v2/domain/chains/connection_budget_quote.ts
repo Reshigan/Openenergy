@@ -144,8 +144,7 @@ export const connectionBudgetQuote: ChainDecl = {
     },
   ],
 
-  // quote-validity time-bar: a budget quote left unaccepted past its validity
-  // window expires. Record-only stub — the sweep computes the real bar off the
-  // state sla days (ppa_contract / isda_agreement pattern).
-  timers: [{ onState: 'quoted', after: { days: 0 }, fire: 'expire', kind: 'time_bar' }],
+  // quote-validity time-bar: a budget quote left unaccepted past the standard
+  // 90-day NRS 069 validity window expires (validity_lapsed).
+  timers: [{ onState: 'quoted', after: { days: 90 }, fire: 'expire', kind: 'time_bar', reason: 'validity_lapsed' }],
 };

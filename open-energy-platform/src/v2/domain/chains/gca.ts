@@ -195,7 +195,7 @@ export const gca: ChainDecl = {
       id: 'decline_offer',
       from: 'offer_issued',
       to: 'offer_declined',
-      by: ['applicant', 'operator'],
+      by: ['applicant', 'operator', 'system'],
       label: 'Decline / lapse offer',
       intent: 'destructive',
       requiresReason: ['terms_unacceptable', 'cost_prohibitive', 'offer_expired', 'project_cancelled'],
@@ -216,5 +216,5 @@ export const gca: ChainDecl = {
   // offer-validity time-bar: an issued offer left unaccepted lapses (offers carry
   // a fixed validity window). record-only stub; the sweep computes the real bar
   // off offer_validity_days / state sla (ppa_contract / permit_to_work pattern).
-  timers: [{ onState: 'offer_issued', after: { days: 0 }, fire: 'decline_offer', kind: 'time_bar' }],
+  timers: [{ onState: 'offer_issued', after: { days: 60 }, fire: 'decline_offer', kind: 'time_bar', reason: 'offer_expired' }],
 };

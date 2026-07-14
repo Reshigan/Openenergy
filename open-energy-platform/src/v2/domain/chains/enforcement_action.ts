@@ -114,15 +114,21 @@ export const enforcementAction: ChainDecl = {
       id: 'make_determination',
       from: ['notice_issued', 'under_representation'],
       to: 'determination_made',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Make determination',
       intent: 'primary',
       input: {
-        determination: { type: 'string', required: true },
+        determination: { type: 'string' },
         penalty_amount: { type: 'number', min: 0 },
       },
       guards: [],
-      derive: (f, at: Instant) => ({ determined_at: isoUtc(at), penalty_tier: penaltyTier(f.penalty_amount) }),
+      // determination defaults to 'compliance_notice' when absent: a notice
+      // unanswered past the response window stands as issued (never a penalty).
+      derive: (f, at: Instant) => ({
+        determination: typeof f.determination === 'string' ? f.determination : 'compliance_notice',
+        determined_at: isoUtc(at),
+        penalty_tier: penaltyTier(f.penalty_amount),
+      }),
     },
     {
       id: 'require_remediation',
@@ -186,5 +192,5 @@ export const enforcementAction: ChainDecl = {
   // representation time-bar: a notice left unanswered past the response window
   // lets the regulator proceed to determination. record-only stub; the sweep
   // computes the real bar off the state sla (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'notice_issued', after: { days: 0 }, fire: 'make_determination', kind: 'time_bar' }],
+  timers: [{ onState: 'notice_issued', after: { days: 14 }, fire: 'make_determination', kind: 'time_bar' }],
 };

@@ -151,12 +151,13 @@ export const ippDocumentControl: ChainDecl = {
     // --- exits ----------------------------------------------------------------
     {
       id: 'reject',
-      from: ['document_submitted', 'under_review'],
+      // revision_required included so the 21-day resubmission time-bar can fire
+      from: ['document_submitted', 'under_review', 'revision_required'],
       to: 'rejected',
-      by: ['reviewer', 'controller'],
+      by: ['reviewer', 'controller', 'system'],
       label: 'Reject document',
       intent: 'destructive',
-      requiresReason: ['unacceptable_quality', 'out_of_scope', 'duplicate_submission', 'contract_noncompliance'],
+      requiresReason: ['unacceptable_quality', 'out_of_scope', 'duplicate_submission', 'contract_noncompliance', 'resubmission_deadline_missed'],
       guards: [],
     },
     {
@@ -184,5 +185,5 @@ export const ippDocumentControl: ChainDecl = {
   // revision-required resubmission time-bar: a document returned for revision that
   // is never resubmitted stales out and is rejected. record-only stub; the sweep
   // computes the real bar off state sla days (permit_to_work pattern).
-  timers: [{ onState: 'revision_required', after: { days: 0 }, fire: 'reject', kind: 'time_bar' }],
+  timers: [{ onState: 'revision_required', after: { days: 21 }, fire: 'reject', kind: 'time_bar', reason: 'resubmission_deadline_missed' }],
 };

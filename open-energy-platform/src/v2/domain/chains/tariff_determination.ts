@@ -104,7 +104,7 @@ export const tariffDetermination: ChainDecl = {
       id: 'conclude_consultation',
       from: 'public_process',
       to: 'analysis',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Conclude consultation',
       intent: 'primary',
       guards: [],
@@ -152,5 +152,5 @@ export const tariffDetermination: ChainDecl = {
   // statutory public-participation window — a time_bar off the public_process
   // sla. record-only stub (ppa_contract pattern); the sweep computes the real
   // bar from the state sla days and fires conclude_consultation.
-  timers: [{ onState: 'public_process', after: { days: 0 }, fire: 'conclude_consultation', kind: 'time_bar' }],
+  timers: [{ onState: 'public_process', after: { days: 60 }, fire: 'conclude_consultation', kind: 'time_bar' }],
 };

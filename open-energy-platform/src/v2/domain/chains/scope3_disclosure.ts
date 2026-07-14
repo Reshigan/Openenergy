@@ -138,7 +138,7 @@ export const scope3Disclosure: ChainDecl = {
       id: 'close_data_collection',
       from: 'data_collection_open',
       to: 'data_collection_complete',
-      by: ['reporter', 'operator'],
+      by: ['reporter', 'operator', 'system'],
       label: 'Close data collection',
       intent: 'primary',
       input: {
@@ -248,7 +248,6 @@ export const scope3Disclosure: ChainDecl = {
   ],
 
   // data-collection window time-bar: an open collection cannot stay open forever
-  // (the reporting year closes). record-only stub; the sweep computes the real
-  // bar off the state sla days (permit_to_work pattern).
-  timers: [{ onState: 'data_collection_open', after: { days: 0 }, fire: 'close_data_collection', kind: 'time_bar' }],
+  // (the reporting year closes) — the 60-day collection window auto-closes.
+  timers: [{ onState: 'data_collection_open', after: { days: 60 }, fire: 'close_data_collection', kind: 'time_bar' }],
 };

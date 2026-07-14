@@ -149,7 +149,7 @@ export const serviceContract: ChainDecl = {
       id: 'expire',
       from: 'active',
       to: 'expired',
-      by: ['operator', 'provider'],
+      by: ['operator', 'provider', 'system'],
       label: 'Expire contract',
       intent: 'primary',
       guards: [],
@@ -190,7 +190,7 @@ export const serviceContract: ChainDecl = {
     },
   ],
 
-  // active-term time-bar: a contract past its natural term expires. record-only
-  // stub; the sweep computes the real bar off term_months (ppa_contract pattern).
-  timers: [{ onState: 'active', after: { days: 0 }, fire: 'expire', kind: 'time_bar' }],
+  // active-term time-bar: a contract past its natural term expires (default
+  // 12-month O&M term; per-txn term rides term_months).
+  timers: [{ onState: 'active', after: { days: 365 }, fire: 'expire', kind: 'time_bar' }],
 };

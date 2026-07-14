@@ -187,7 +187,7 @@ export const carbonBudget: ChainDecl = {
       id: 'revoke_budget',
       from: ['allocated', 'monitoring', 'reconciliation_submitted'],
       to: 'revoked',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Revoke budget',
       intent: 'destructive',
       requiresReason: ['reporting_default', 'misrepresentation', 'licence_withdrawn', 'regulatory_directive'],
@@ -195,8 +195,7 @@ export const carbonBudget: ChainDecl = {
     },
   ],
 
-  // monitoring-period reporting time-bar: a period left un-reconciled past its
-  // reporting deadline is a compliance default and the allocation is revoked.
-  // record-only stub; the sweep computes the real bar off state sla days.
-  timers: [{ onState: 'monitoring', after: { days: 0 }, fire: 'revoke_budget', kind: 'time_bar' }],
+  // monitoring-period reporting time-bar: a period left un-reconciled a full year
+  // past commencement is a compliance default and the allocation is revoked.
+  timers: [{ onState: 'monitoring', after: { days: 365 }, fire: 'revoke_budget', kind: 'time_bar', reason: 'reporting_default' }],
 };

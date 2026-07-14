@@ -136,10 +136,10 @@ export const ppaAnnualRecon: ChainDecl = {
       id: 'dispute',
       from: ['computed', 'agreed'],
       to: 'disputed',
-      by: ['buyer', 'seller', 'operator'],
+      by: ['buyer', 'seller', 'operator', 'system'],
       label: 'Dispute figure',
       intent: 'destructive',
-      requiresReason: ['metering_discrepancy', 'tariff_dispute', 'volume_mismatch', 'data_incomplete', 'calculation_error'],
+      requiresReason: ['metering_discrepancy', 'tariff_dispute', 'volume_mismatch', 'data_incomplete', 'calculation_error', 'no_response'],
       guards: [],
     },
     // resolution sends it back to data_gathering so the figure is re-derived
@@ -151,7 +151,7 @@ export const ppaAnnualRecon: ChainDecl = {
       id: 'cancel',
       from: ['initiated', 'data_gathering', 'disputed'],
       to: 'cancelled',
-      by: ['seller', 'operator'],
+      by: ['seller', 'operator', 'system'],
       label: 'Cancel reconciliation',
       intent: 'destructive',
       requiresReason: ['ppa_terminated', 'superseded', 'duplicate', 'no_activity'],
@@ -171,8 +171,8 @@ export const ppaAnnualRecon: ChainDecl = {
 
   timers: [
     // a computed figure left un-agreed by the buyer stales into dispute for review.
-    { onState: 'computed', after: { days: 21 }, fire: 'dispute', kind: 'time_bar' },
+    { onState: 'computed', after: { days: 21 }, fire: 'dispute', kind: 'time_bar', reason: 'no_response' },
     // a gathering exercise with no compute stales out.
-    { onState: 'data_gathering', after: { days: 30 }, fire: 'cancel', kind: 'time_bar' },
+    { onState: 'data_gathering', after: { days: 30 }, fire: 'cancel', kind: 'time_bar', reason: 'no_activity' },
   ],
 };

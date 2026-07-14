@@ -212,7 +212,7 @@ export const benchmarkTransition: ChainDecl = {
       id: 'put_on_hold',
       from: ['impact_assessed', 'classified', 'notified', 'responded', 'amendment_drafted'],
       to: 'on_hold',
-      by: ['dealer'],
+      by: ['dealer', 'system'],
       label: 'Put on hold',
       intent: 'secondary',
       requiresReason: ['awaiting_isda_protocol', 'counterparty_unresponsive', 'legal_review', 'pending_regulator_guidance'],
@@ -245,7 +245,7 @@ export const benchmarkTransition: ChainDecl = {
     },
   ],
 
-  // counterparty-notification SLA: a notified side left unanswered stales toward
-  // a hold. record-only stub; the sweep computes the real bar off state sla days.
-  timers: [{ onState: 'notified', after: { days: 0 }, fire: 'put_on_hold', kind: 'sla' }],
+  // counterparty-notification SLA: a notified side left unanswered for 30 days
+  // stales toward a hold (counterparty_unresponsive).
+  timers: [{ onState: 'notified', after: { days: 30 }, fire: 'put_on_hold', kind: 'sla', reason: 'counterparty_unresponsive' }],
 };

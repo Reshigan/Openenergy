@@ -142,7 +142,7 @@ export const supportTicket: ChainDecl = {
       id: 'close_ticket',
       from: 'resolved',
       to: 'closed',
-      by: ['reporter', 'operator'],
+      by: ['reporter', 'operator', 'system'],
       label: 'Confirm & close',
       intent: 'primary',
       guards: [],
@@ -186,5 +186,5 @@ export const supportTicket: ChainDecl = {
   // resolved-ticket auto-close: a resolution left unconfirmed by the reporter
   // ages out and closes. record-only stub; the sweep computes the real bar off
   // the `resolved` state's sla hours (permit_to_work pattern).
-  timers: [{ onState: 'resolved', after: { hours: 0 }, fire: 'close_ticket', kind: 'sla' }],
+  timers: [{ onState: 'resolved', after: { hours: 72 }, fire: 'close_ticket', kind: 'sla' }],
 };

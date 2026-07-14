@@ -117,7 +117,7 @@ export const consultationNotice: ChainDecl = {
       id: 'close_comments',
       from: 'comment_open',
       to: 'under_review',
-      by: ['regulator'],
+      by: ['regulator', 'system'],
       label: 'Close comment period',
       intent: 'primary',
       input: { submissions_count: { type: 'number', min: 0 } },
@@ -162,5 +162,5 @@ export const consultationNotice: ChainDecl = {
   // comment-window time-bar: an open comment period closes on its deadline.
   // record-only stub; the sweep computes the real bar off the state sla days
   // (ppa_contract pattern).
-  timers: [{ onState: 'comment_open', after: { days: 0 }, fire: 'close_comments', kind: 'time_bar' }],
+  timers: [{ onState: 'comment_open', after: { days: 30 }, fire: 'close_comments', kind: 'time_bar' }],
 };

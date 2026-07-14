@@ -157,10 +157,10 @@ export const contractExecution: ChainDecl = {
       id: 'withdraw',
       from: ['draft', 'out_for_signature', 'partially_signed'],
       to: 'withdrawn',
-      by: ['originator', 'operator'],
+      by: ['originator', 'operator', 'system'],
       label: 'Withdraw contract',
       intent: 'destructive',
-      requiresReason: ['no_longer_required', 'superseded', 'commercial_terms_changed', 'counterparty_ineligible'],
+      requiresReason: ['no_longer_required', 'superseded', 'commercial_terms_changed', 'counterparty_ineligible', 'offer_expired'],
       guards: [],
     },
     {
@@ -178,5 +178,5 @@ export const contractExecution: ChainDecl = {
   // signature-request time-bar: a contract left unsigned past the window expires.
   // Record-only stub — the sweep computes the real bar off the state sla days
   // (ppa_contract / isda_agreement pattern).
-  timers: [{ onState: 'out_for_signature', after: { days: 0 }, fire: 'withdraw', kind: 'time_bar' }],
+  timers: [{ onState: 'out_for_signature', after: { days: 30 }, fire: 'withdraw', kind: 'time_bar', reason: 'offer_expired' }],
 };

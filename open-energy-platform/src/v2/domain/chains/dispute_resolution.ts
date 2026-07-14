@@ -152,7 +152,7 @@ export const disputeResolution: ChainDecl = {
       id: 'dismiss',
       from: ['filed', 'in_mediation', 'in_arbitration'],
       to: 'dismissed',
-      by: ['arbitrator', 'operator'],
+      by: ['arbitrator', 'operator', 'system'],
       label: 'Dismiss dispute',
       intent: 'destructive',
       requiresReason: ['no_jurisdiction', 'frivolous', 'time_barred', 'no_arbitration_agreement'],
@@ -163,5 +163,5 @@ export const disputeResolution: ChainDecl = {
   // arbitration time-bar: a matter left un-awarded past the window stales out.
   // Record-only stub — the sweep computes the real bar off the state sla days
   // (isda_agreement / contract_execution pattern).
-  timers: [{ onState: 'in_arbitration', after: { days: 0 }, fire: 'dismiss', kind: 'time_bar' }],
+  timers: [{ onState: 'in_arbitration', after: { days: 180 }, fire: 'dismiss', kind: 'time_bar', reason: 'time_barred' }],
 };

@@ -176,8 +176,8 @@ export const licenceRenewal: ChainDecl = {
     },
   ],
 
-  // info-request time-bar: if the holder does not respond before the licence
-  // expiry, the renewal lapses. after:{days:0} = record-only stub; the sweep
-  // computes the real bar off state sla days (licence_application pattern).
-  timers: [{ onState: 'info_requested', after: { days: 0 }, fire: 'lapse', kind: 'time_bar' }],
+  // info-request time-bar: if the holder does not respond within the 60-day
+  // information window (ERA 2006, aligned with licence_application), the
+  // renewal lapses.
+  timers: [{ onState: 'info_requested', after: { days: 60 }, fire: 'lapse', kind: 'time_bar', reason: 'info_deadline_missed' }],
 };

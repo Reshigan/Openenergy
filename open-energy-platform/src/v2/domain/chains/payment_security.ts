@@ -164,7 +164,7 @@ export const paymentSecurity: ChainDecl = {
       id: 'expire_security',
       from: ['instrument_issued', 'in_force'],
       to: 'expired',
-      by: ['provider', 'operator'],
+      by: ['provider', 'operator', 'system'],
       label: 'Expire security',
       intent: 'secondary',
       requiresReason: ['validity_lapsed', 'ppa_terminated', 'superseded'],
@@ -196,7 +196,7 @@ export const paymentSecurity: ChainDecl = {
   ],
 
   // in-force validity time-bar: a standing instrument lapses at its validity
-  // horizon. record-only stub; the sweep computes the real bar off validity_days
-  // (permit_to_work / ppa_contract pattern).
-  timers: [{ onState: 'in_force', after: { days: 0 }, fire: 'expire_security', kind: 'time_bar' }],
+  // horizon — 365 days is the standard annual guarantee tenor default
+  // (validity_days on the instrument; permit_to_work / ppa_contract pattern).
+  timers: [{ onState: 'in_force', after: { days: 365 }, fire: 'expire_security', kind: 'time_bar', reason: 'validity_lapsed' }],
 };

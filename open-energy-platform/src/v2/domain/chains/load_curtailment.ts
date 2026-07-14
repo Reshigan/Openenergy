@@ -166,7 +166,7 @@ export const loadCurtailment: ChainDecl = {
       id: 'record_non_compliance',
       from: ['directive_issued', 'acknowledged', 'curtailment_active'],
       to: 'non_compliance',
-      by: ['operator', 'regulator'],
+      by: ['operator', 'regulator', 'system'],
       label: 'Record non-compliance',
       intent: 'destructive',
       requiresReason: ['no_acknowledgement', 'failed_to_shed', 'partial_shed', 'directive_ignored'],
@@ -174,8 +174,8 @@ export const loadCurtailment: ChainDecl = {
     },
   ],
 
-  // acknowledge/shed time-bar: a directive left un-actioned past its window is a
-  // compliance breach. record-only stub; the sweep computes the real bar off
-  // state sla hours (permit_to_work pattern).
-  timers: [{ onState: 'directive_issued', after: { hours: 0 }, fire: 'record_non_compliance', kind: 'time_bar' }],
+  // acknowledge/shed time-bar: a directive left un-acknowledged 2 hours past
+  // issue (double the 1-hour ack sla) is a compliance breach (permit_to_work
+  // pattern).
+  timers: [{ onState: 'directive_issued', after: { hours: 2 }, fire: 'record_non_compliance', kind: 'time_bar', reason: 'no_acknowledgement' }],
 };

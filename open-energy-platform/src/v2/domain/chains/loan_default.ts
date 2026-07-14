@@ -123,7 +123,7 @@ export const loanDefault: ChainDecl = {
       id: 'elect_enforcement',
       from: ['default_declared', 'cure_in_progress'],
       to: 'enforcement_pending',
-      by: ['lender'],
+      by: ['lender', 'system'],
       label: 'Elect enforcement',
       intent: 'destructive',
       requiresReason: ['uncured_beyond_bar', 'cure_plan_rejected', 'material_adverse_change', 'cross_default'],
@@ -164,9 +164,9 @@ export const loanDefault: ChainDecl = {
     },
   ],
 
-  // cure-period time-bar: a default left uncured past the bar escalates to
-  // enforcement. record-only stub; the sweep computes the real bar off state sla
-  // days (ppa_contract / permit_to_work pattern). elect_enforcement's reason +
-  // approval are supplied by the operator acting on the fired timer.
-  timers: [{ onState: 'default_declared', after: { days: 0 }, fire: 'elect_enforcement', kind: 'time_bar' }],
+  // cure-period time-bar: a default left uncured 30 days past declaration (a
+  // standard facility-agreement cure period) escalates to enforcement
+  // (ppa_contract / permit_to_work pattern). elect_enforcement's approval ref is
+  // supplied by the operator acting on the fired timer.
+  timers: [{ onState: 'default_declared', after: { days: 30 }, fire: 'elect_enforcement', kind: 'time_bar', reason: 'uncured_beyond_bar' }],
 };
