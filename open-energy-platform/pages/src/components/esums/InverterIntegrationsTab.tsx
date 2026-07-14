@@ -595,7 +595,7 @@ function AccrualsPanel() {
 
   const loadImportStatus = useCallback(async () => {
     try {
-      const { data } = await api.get<ImportStatus>('/api/esums/accruals/backfill/status');
+      const { data } = await api.get<ImportStatus>('/esums/accruals/backfill/status');
       setImportStatus(data);
       return data;
     } catch { return null; }
@@ -609,7 +609,7 @@ function AccrualsPanel() {
     setBackfilling(true);
     try {
       for (let guard = 0; guard < 5000; guard++) {
-        const { data: t } = await api.post<{ remaining: number }>('/api/esums/accruals/backfill/tick', { max_jobs: 4 });
+        const { data: t } = await api.post<{ remaining: number }>('/esums/accruals/backfill/tick', { max_jobs: 4 });
         const st = await loadImportStatus();
         if ((t.remaining ?? 0) <= 0 || !st?.active) break;
       }
@@ -618,7 +618,7 @@ function AccrualsPanel() {
       // carbon credits, carbon-fund holdings) across all retrospective periods.
       setBackfillMsg(`Import done, building retrospectives across all roles…`);
       const { data: retro } = await api.post<{ invoices: number; credits: number; holdings: number }>(
-        '/api/esums/accruals/backfill/finalize', {},
+        '/esums/accruals/backfill/finalize', {},
       );
       setBackfillMsg(
         `Now live: ${(fin?.kwh_total ?? 0).toFixed(0)} kWh across ${fin?.stations ?? 0} station(s). ` +
@@ -639,8 +639,8 @@ function AccrualsPanel() {
     setLoading(true);
     try {
       const [agg, ts] = await Promise.all([
-        api.get<{ totals: AccrualTotals; stations: AccrualStation[] }>(`/api/esums/accruals?period=${period}`),
-        api.get<{ series: SeriesPoint[] }>(`/api/esums/accruals/time-series?period=${period}&granularity=daily`),
+        api.get<{ totals: AccrualTotals; stations: AccrualStation[] }>(`/esums/accruals?period=${period}`),
+        api.get<{ series: SeriesPoint[] }>(`/esums/accruals/time-series?period=${period}&granularity=daily`),
       ]);
       setTotals(agg.data.totals);
       setAccStations(agg.data.stations ?? []);
@@ -663,7 +663,7 @@ function AccrualsPanel() {
   const handleBackfill = async () => {
     setBackfillMsg(null);
     try {
-      await api.post('/api/esums/accruals/backfill/start', {});
+      await api.post('/esums/accruals/backfill/start', {});
       await loadImportStatus();
       runTickLoop();
     } catch (e) {
@@ -880,12 +880,12 @@ export function InverterIntegrationsTab() {
     setError(null);
     try {
       const [credRes, stationRes] = await Promise.all([
-        api.get('/esums/manufacturers/credentials') as Promise<CredListResponse>,
-        api.get('/esums/manufacturers/stations') as Promise<StationListResponse>,
+        api.get<CredListResponse>('/esums/manufacturers/credentials'),
+        api.get<StationListResponse>('/esums/manufacturers/stations'),
       ]);
-      setCreds(credRes.data ?? []);
-      setSupported(credRes.supported ?? []);
-      setStations(stationRes.data ?? []);
+      setCreds(credRes.data?.data ?? []);
+      setSupported(credRes.data?.supported ?? []);
+      setStations(stationRes.data?.data ?? []);
     } catch (e: unknown) {
       setError((e as Error).message ?? 'Load failed');
     } finally {
@@ -898,7 +898,7 @@ export function InverterIntegrationsTab() {
   const handleTest = async (id: string) => {
     setTesting(t => ({ ...t, [id]: true }));
     try {
-      const res = await api.post(`/esums/manufacturers/credentials/${id}/test`, {}) as { ok: boolean; error?: string };
+      const res = (await api.post<{ ok: boolean; error?: string }>(`/esums/manufacturers/credentials/${id}/test`, {})).data;
       await loadAll();
       if (!res.ok) setPollResult(`Test failed: ${res.error}`);
       else setPollResult('Connection test passed');
@@ -913,7 +913,7 @@ export function InverterIntegrationsTab() {
     setPolling(true);
     setPollResult(null);
     try {
-      const res = await api.post('/esums/manufacturers/poll-all', {}) as { ok: boolean; summary: Array<{ manufacturer: string; polled: number; errors: number }> };
+      const res = (await api.post<{ ok: boolean; summary: Array<{ manufacturer: string; polled: number; errors: number }> }>('/esums/manufacturers/poll-all', {})).data;
       const lines = (res.summary ?? []).map(s => `${MFR_LABEL[s.manufacturer] ?? s.manufacturer}: ${s.polled} polled${s.errors ? `, ${s.errors} errors` : ''}`);
       setPollResult(lines.length ? lines.join(' · ') : 'No active integrations to poll');
       await loadAll();
@@ -928,7 +928,7 @@ export function InverterIntegrationsTab() {
     setDiscovering(true);
     setPollResult(null);
     try {
-      const res = await api.post('/esums/solax/sync', {}) as { ok?: boolean; plants?: number; upserted?: number; errors?: string[]; error?: string };
+      const res = (await api.post<{ ok?: boolean; plants?: number; upserted?: number; errors?: string[]; error?: string }>('/esums/solax/sync', {})).data;
       if (res.ok === false || res.error) {
         setPollResult(`Discovery failed: ${res.error ?? 'unknown error'}`);
       } else {
