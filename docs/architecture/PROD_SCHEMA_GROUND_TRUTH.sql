@@ -1,23 +1,13 @@
 -- PROD_SCHEMA_GROUND_TRUTH.sql
--- Live DDL of the Open Energy prod D1 (open-energy-db), captured verbatim from
--- sqlite_master on the remote. GROUND TRUTH the v2 rebuild targets: prod diverged
--- from the migration ledger (019-048 force-applied out-of-band, see CLAUDE.md
--- "Migration discipline"), so applied migrations are NOT a reliable schema source.
--- This dump is. Re-dump before relying on it for a migration.
---
--- served_by=v3-prod colo=ORD region=ENAM
--- objects: 945 tables, 2309 indexes, 0 triggers, 0 views
--- NOT date-stamped: Date.now() banned in this tree; served_by/colo pin provenance.
-
-
--- ======================================================================
--- TABLES (945)
--- ======================================================================
+-- Dumped from remote D1 open-energy-db on 2026-07-14 (read-only sqlite_master dump).
+-- REBUILD_PLAN.md risk R3: the real prod schema, captured BEFORE any v2 code was written.
+-- 945 tables, 2309 indexes, 0 other objects.
 
 CREATE TABLE _cf_KV (
         key TEXT PRIMARY KEY,
         value BLOB
       ) WITHOUT ROWID;
+
 CREATE TABLE action_queue (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL,
@@ -35,6 +25,7 @@ CREATE TABLE action_queue (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE activity_dependencies (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -45,6 +36,7 @@ CREATE TABLE activity_dependencies (
   created_at TEXT NOT NULL,
   UNIQUE(predecessor_id, successor_id)
 );
+
 CREATE TABLE admin_billing_runs (
   id              TEXT PRIMARY KEY,
   run_type        TEXT NOT NULL CHECK (run_type IN ('monthly','adhoc','correction')),
@@ -60,6 +52,7 @@ CREATE TABLE admin_billing_runs (
   initiated_by    TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE admin_feature_flag_overrides (
   id              TEXT PRIMARY KEY,
   flag_key        TEXT NOT NULL,
@@ -71,6 +64,7 @@ CREATE TABLE admin_feature_flag_overrides (
   reason          TEXT,
   occurred_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE admin_tenant_lifecycle_events (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT NOT NULL,
@@ -83,6 +77,7 @@ CREATE TABLE admin_tenant_lifecycle_events (
   reason          TEXT,
   payload_json    TEXT
 );
+
 CREATE TABLE advisory_locks (
   lock_key TEXT PRIMARY KEY,             -- 'contract_sign:<id>' or 'trade_match:<o1>:<o2>'
   holder_id TEXT NOT NULL,               -- participant_id of lock holder
@@ -90,6 +85,7 @@ CREATE TABLE advisory_locks (
   expires_at TEXT NOT NULL,              -- holder must heartbeat or release before this
   context TEXT                           -- optional JSON for debugging
 );
+
 CREATE TABLE ai_classification_logs (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -111,6 +107,7 @@ CREATE TABLE ai_classification_logs (
   resolved_at         TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ai_decisions (
   id              TEXT PRIMARY KEY,
   surface         TEXT NOT NULL,        -- 'rejection_explainer' | 'order_size_suggest' | 'risk_narrative' | ...
@@ -127,6 +124,7 @@ CREATE TABLE ai_decisions (
   related_entity_id   TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ai_lender_advice (
   id                   TEXT PRIMARY KEY,
   covenant_test_id     TEXT NOT NULL,
@@ -144,6 +142,7 @@ CREATE TABLE ai_lender_advice (
   dismissed_at         TEXT,
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ai_settlement_run_failures (
   id                   TEXT PRIMARY KEY,
   run_id               TEXT,                     -- settlement_runs.id
@@ -160,6 +159,7 @@ CREATE TABLE ai_settlement_run_failures (
   dismissed_at         TEXT,
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ai_trade_amendments (
   id                   TEXT PRIMARY KEY,
   participant_id       TEXT NOT NULL,
@@ -178,6 +178,7 @@ CREATE TABLE ai_trade_amendments (
   dismissed_at         TEXT,
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ancillary_service_awards (
   id TEXT PRIMARY KEY,
   tender_id TEXT NOT NULL REFERENCES ancillary_service_tenders(id),
@@ -187,6 +188,7 @@ CREATE TABLE ancillary_service_awards (
   awarded_at TEXT NOT NULL DEFAULT (datetime('now')),
   awarded_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE ancillary_service_bids (
   id TEXT PRIMARY KEY,
   tender_id TEXT NOT NULL REFERENCES ancillary_service_tenders(id),
@@ -201,6 +203,7 @@ CREATE TABLE ancillary_service_bids (
   awarded_capacity_mw REAL,
   awarded_price_zar_mw_h REAL
 );
+
 CREATE TABLE ancillary_service_deliveries (
   id TEXT PRIMARY KEY,
   award_id TEXT NOT NULL REFERENCES ancillary_service_awards(id),
@@ -213,6 +216,7 @@ CREATE TABLE ancillary_service_deliveries (
   settled BOOLEAN DEFAULT 0,
   settled_at TEXT
 );
+
 CREATE TABLE ancillary_service_products (
   id TEXT PRIMARY KEY,
   product_code TEXT UNIQUE NOT NULL,
@@ -226,6 +230,7 @@ CREATE TABLE ancillary_service_products (
   enabled BOOLEAN DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ancillary_service_tenders (
   id TEXT PRIMARY KEY,
   tender_number TEXT UNIQUE NOT NULL,
@@ -242,6 +247,7 @@ CREATE TABLE ancillary_service_tenders (
   published_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE assurance_engagements (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL REFERENCES participants(id),
@@ -262,6 +268,7 @@ CREATE TABLE assurance_engagements (
   created_at          TEXT DEFAULT (datetime('now')),
   updated_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE assurance_evidence (
   id                  TEXT PRIMARY KEY,
   engagement_id       TEXT NOT NULL REFERENCES assurance_engagements(id),
@@ -274,6 +281,7 @@ CREATE TABLE assurance_evidence (
   uploaded_at         TEXT DEFAULT (datetime('now')),
   hash_sha256         TEXT
 );
+
 CREATE TABLE assurance_findings (
   id                  TEXT PRIMARY KEY,
   engagement_id       TEXT NOT NULL REFERENCES assurance_engagements(id),
@@ -292,6 +300,7 @@ CREATE TABLE assurance_findings (
   resolved_by         TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE audit_chain (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT,
@@ -306,6 +315,7 @@ CREATE TABLE audit_chain (
   this_hash       TEXT NOT NULL,                     -- SHA-256(prev_hash || payload_json)
   created_at      TEXT DEFAULT (datetime('now'))
 , domain TEXT);
+
 CREATE TABLE audit_chain_anchors (
   anchor_date   TEXT NOT NULL,           -- YYYY-MM-DD (UTC)
   anchor_hour   TEXT NOT NULL,           -- HH (UTC, 00-23)
@@ -316,6 +326,7 @@ CREATE TABLE audit_chain_anchors (
   anchored_at   TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (anchor_date, anchor_hour)
 );
+
 CREATE TABLE audit_chain_state (
   entity_type     TEXT PRIMARY KEY,
   head_hash       TEXT NOT NULL,
@@ -324,6 +335,7 @@ CREATE TABLE audit_chain_state (
   last_verified_at TEXT,
   last_verified_seq INTEGER
 );
+
 CREATE TABLE audit_events (
   id            TEXT PRIMARY KEY,
   entity_type   TEXT NOT NULL,         -- 'trading' | 'settlement' | …
@@ -337,6 +349,7 @@ CREATE TABLE audit_events (
   created_at    TEXT NOT NULL DEFAULT (datetime('now')), preimage_version INTEGER NOT NULL DEFAULT 1,
   UNIQUE (entity_type, sequence_no)
 );
+
 CREATE TABLE audit_exports (
   id              TEXT PRIMARY KEY,
   entity_type     TEXT NOT NULL,
@@ -349,6 +362,7 @@ CREATE TABLE audit_exports (
   generated_by    TEXT NOT NULL,        -- actor_id
   generated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE audit_log_archives (
   id TEXT PRIMARY KEY,
   day_bucket TEXT NOT NULL,            -- YYYY-MM-DD
@@ -360,6 +374,7 @@ CREATE TABLE audit_log_archives (
   latest_created_at TEXT,
   archived_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE audit_logs (
   id TEXT PRIMARY KEY,
   actor_id TEXT REFERENCES participants(id),
@@ -371,6 +386,7 @@ CREATE TABLE audit_logs (
   user_agent TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE audit_recon_breaks (
   id            TEXT PRIMARY KEY,
   run_id        TEXT NOT NULL,
@@ -385,6 +401,7 @@ CREATE TABLE audit_recon_breaks (
   resolved_by   TEXT,
   FOREIGN KEY (run_id) REFERENCES audit_recon_runs(id)
 );
+
 CREATE TABLE audit_recon_runs (
   id              TEXT PRIMARY KEY,
   entity_type     TEXT NOT NULL,
@@ -399,6 +416,7 @@ CREATE TABLE audit_recon_runs (
   finished_at     TEXT,
   started_by      TEXT NOT NULL
 );
+
 CREATE TABLE backup_log (
   id            TEXT PRIMARY KEY,
   key           TEXT NOT NULL,
@@ -407,6 +425,7 @@ CREATE TABLE backup_log (
   table_count   INTEGER NOT NULL,
   generated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE baseline_activities (
   baseline_id TEXT NOT NULL,
   activity_id TEXT NOT NULL,
@@ -415,6 +434,7 @@ CREATE TABLE baseline_activities (
   duration_days REAL,
   PRIMARY KEY(baseline_id, activity_id)
 );
+
 CREATE TABLE briefing_reports (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -425,6 +445,7 @@ CREATE TABLE briefing_reports (
   intelligence_summary TEXT,
   generated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE brp_period_nominations (
   brp_participant_id TEXT NOT NULL REFERENCES participants(id),
   period_start TEXT NOT NULL,               
@@ -435,6 +456,7 @@ CREATE TABLE brp_period_nominations (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (brp_participant_id, period_start)
 );
+
 CREATE TABLE business_day_calendar (
   date           TEXT NOT NULL,                  -- YYYY-MM-DD
   market_zone    TEXT NOT NULL DEFAULT 'ZA',
@@ -446,6 +468,7 @@ CREATE TABLE business_day_calendar (
   notes          TEXT,
   PRIMARY KEY (date, market_zone)
 );
+
 CREATE TABLE calendar_exceptions (
   id TEXT PRIMARY KEY,
   calendar_id TEXT NOT NULL,
@@ -454,6 +477,7 @@ CREATE TABLE calendar_exceptions (
   reason TEXT,
   UNIQUE(calendar_id, exception_date)
 );
+
 CREATE TABLE carbon_fund_capital_calls (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -467,6 +491,7 @@ CREATE TABLE carbon_fund_capital_calls (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_fund_cobenefits (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -483,6 +508,7 @@ CREATE TABLE carbon_fund_cobenefits (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_fund_fees (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -497,6 +523,7 @@ CREATE TABLE carbon_fund_fees (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_fund_lps (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),  
@@ -514,6 +541,7 @@ CREATE TABLE carbon_fund_lps (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_fund_nav (
   id TEXT PRIMARY KEY,
   fund_id TEXT NOT NULL REFERENCES participants(id),
@@ -523,6 +551,7 @@ CREATE TABLE carbon_fund_nav (
   assets_under_management REAL,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_fund_nav_history (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -540,6 +569,7 @@ CREATE TABLE carbon_fund_nav_history (
   created_at      TEXT DEFAULT (datetime('now')),
   UNIQUE (participant_id, as_of_date)
 );
+
 CREATE TABLE carbon_fund_pipeline (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -557,6 +587,7 @@ CREATE TABLE carbon_fund_pipeline (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_fund_term_sheets (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -573,6 +604,7 @@ CREATE TABLE carbon_fund_term_sheets (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_holdings (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -585,6 +617,7 @@ CREATE TABLE carbon_holdings (
   status TEXT DEFAULT 'available' CHECK (status IN ('available','reserved','retired')),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_mrv_workflow (
   id                  TEXT PRIMARY KEY,
   project_id          TEXT NOT NULL,
@@ -605,6 +638,7 @@ CREATE TABLE carbon_mrv_workflow (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_options (
   id TEXT PRIMARY KEY,
   seller_id TEXT NOT NULL REFERENCES participants(id),
@@ -617,6 +651,7 @@ CREATE TABLE carbon_options (
   status TEXT DEFAULT 'open' CHECK (status IN ('open','exercised','expired','cancelled')),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_projects (
   id TEXT PRIMARY KEY,
   project_name TEXT NOT NULL,
@@ -636,6 +671,7 @@ CREATE TABLE carbon_projects (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_registries (
   id TEXT PRIMARY KEY,
   registry_code TEXT UNIQUE NOT NULL,
@@ -650,6 +686,7 @@ CREATE TABLE carbon_registries (
   enabled BOOLEAN DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_registry_sync_log (
   id TEXT PRIMARY KEY,
   registry_id TEXT NOT NULL REFERENCES carbon_registries(id),
@@ -662,6 +699,7 @@ CREATE TABLE carbon_registry_sync_log (
   attempt INTEGER DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_retirement_certificates (
   id                      TEXT PRIMARY KEY,
   retirement_id           TEXT NOT NULL,
@@ -679,6 +717,7 @@ CREATE TABLE carbon_retirement_certificates (
   notes                   TEXT,
   created_at              TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_retirements (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -692,6 +731,7 @@ CREATE TABLE carbon_retirements (
   created_by TEXT NOT NULL REFERENCES participants(id),
   created_at TEXT DEFAULT (datetime('now'))
 , chain_status TEXT NOT NULL DEFAULT 'requested', scope TEXT NOT NULL DEFAULT 'voluntary', sla_deadline_at TEXT, last_sla_breach_at TEXT, escalation_level INTEGER NOT NULL DEFAULT 0, validation_notes TEXT, rejection_reason TEXT, certificate_hash TEXT);
+
 CREATE TABLE carbon_tax_offset_claims (
   id TEXT PRIMARY KEY,
   taxpayer_participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -708,6 +748,7 @@ CREATE TABLE carbon_tax_offset_claims (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_tax_offset_retirements (
   id TEXT PRIMARY KEY,
   claim_id TEXT NOT NULL REFERENCES carbon_tax_offset_claims(id) ON DELETE CASCADE,
@@ -716,6 +757,7 @@ CREATE TABLE carbon_tax_offset_retirements (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (retirement_id)                   -- one retirement → one claim, by law
 );
+
 CREATE TABLE carbon_trades (
   id TEXT PRIMARY KEY,
   buyer_id TEXT NOT NULL REFERENCES participants(id),
@@ -731,6 +773,7 @@ CREATE TABLE carbon_trades (
   settlement_id TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE carbon_vintage_workflow (
   id                    TEXT PRIMARY KEY,
   vintage_id            TEXT NOT NULL,
@@ -746,6 +789,7 @@ CREATE TABLE carbon_vintage_workflow (
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cascade_dlq (
   id TEXT PRIMARY KEY,
   event TEXT NOT NULL,                   -- e.g. 'contract.signed'
@@ -765,6 +809,7 @@ CREATE TABLE cascade_dlq (
   resolved_by TEXT,                      -- participant_id (support operator) or 'auto_retry'
   resolution_note TEXT
 );
+
 CREATE TABLE cdr_buffer_pool (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -779,6 +824,7 @@ CREATE TABLE cdr_buffer_pool (
   status          TEXT DEFAULT 'active' CHECK (status IN ('active','released','liquidated','retired_for_reversal')),
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cdr_client_attribution (
   id              TEXT PRIMARY KEY,
   fund_participant_id TEXT NOT NULL REFERENCES participants(id),  -- the carbon fund
@@ -793,6 +839,7 @@ CREATE TABLE cdr_client_attribution (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cdr_due_diligence (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -813,6 +860,7 @@ CREATE TABLE cdr_due_diligence (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cdr_offtakes (
   id                  TEXT PRIMARY KEY,
   buyer_id            TEXT NOT NULL REFERENCES participants(id),
@@ -833,6 +881,7 @@ CREATE TABLE cdr_offtakes (
   signed_at           TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cdr_projects (
   id                  TEXT PRIMARY KEY,
   tenant_id           TEXT DEFAULT 'default' NOT NULL,
@@ -862,6 +911,7 @@ CREATE TABLE cdr_projects (
   risk_rating         TEXT,                              -- 'high','medium','low'
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cdr_retirements (
   id              TEXT PRIMARY KEY,
   offtake_id      TEXT NOT NULL REFERENCES cdr_offtakes(id),
@@ -874,6 +924,7 @@ CREATE TABLE cdr_retirements (
   reason          TEXT,
   retired_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cfe_hourly_generation (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -886,6 +937,7 @@ CREATE TABLE cfe_hourly_generation (
   grid_zone       TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cfe_hourly_load (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -896,6 +948,7 @@ CREATE TABLE cfe_hourly_load (
   grid_zone       TEXT,                              -- 'ZA-NPC','ZA-Western',… (for grid intensity lookup)
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE cfe_match_summary (
   participant_id          TEXT NOT NULL,
   tenant_id               TEXT DEFAULT 'default' NOT NULL,
@@ -911,6 +964,7 @@ CREATE TABLE cfe_match_summary (
   computed_at             TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (participant_id, reporting_period_start, reporting_period_end, tenant_id)
 );
+
 CREATE TABLE chain_signatories (
   id TEXT PRIMARY KEY,
   entity_type TEXT NOT NULL,            -- the Meridian chain key (e.g. 'ppa_contract_chain')
@@ -925,6 +979,7 @@ CREATE TABLE chain_signatories (
   tenant_id TEXT DEFAULT 'default',
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE clearing_disclosure_snapshots (
   id                              TEXT PRIMARY KEY,
   as_of_date                      TEXT NOT NULL,
@@ -956,6 +1011,7 @@ CREATE TABLE clearing_disclosure_snapshots (
   published_at                    TEXT,
   published_by                    TEXT
 );
+
 CREATE TABLE clearing_obligations (
   id              TEXT PRIMARY KEY,
   run_id          TEXT NOT NULL REFERENCES clearing_runs(id),
@@ -965,6 +1021,7 @@ CREATE TABLE clearing_obligations (
   direction       TEXT CHECK (direction IN ('pay','receive')),
   status          TEXT DEFAULT 'pending'
 );
+
 CREATE TABLE clearing_runs (
   id              TEXT PRIMARY KEY,
   trading_day     TEXT NOT NULL,
@@ -977,6 +1034,7 @@ CREATE TABLE clearing_runs (
   started_at      TEXT DEFAULT (datetime('now')),
   finished_at     TEXT
 );
+
 CREATE TABLE climate_maturity_assessments (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -993,6 +1051,7 @@ CREATE TABLE climate_maturity_assessments (
   assessed_at         TEXT DEFAULT (datetime('now')),
   notes               TEXT
 );
+
 CREATE TABLE climate_scenarios (
   code            TEXT PRIMARY KEY,
   family          TEXT NOT NULL,   -- 'NGFS','IEA','IPCC','Watershed_custom'
@@ -1006,6 +1065,7 @@ CREATE TABLE climate_scenarios (
   description     TEXT,
   pathway_doc_url TEXT
 );
+
 CREATE TABLE collateral_accounts (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -1017,6 +1077,7 @@ CREATE TABLE collateral_accounts (
   created_at      TEXT DEFAULT (datetime('now')),
   updated_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE collateral_movements (
   id              TEXT PRIMARY KEY,
   account_id      TEXT NOT NULL REFERENCES collateral_accounts(id),
@@ -1027,6 +1088,7 @@ CREATE TABLE collateral_movements (
   created_by      TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE community_engagements (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -1044,6 +1106,7 @@ CREATE TABLE community_engagements (
   logged_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE community_engagements_v2 (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -1064,6 +1127,7 @@ CREATE TABLE community_engagements_v2 (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE community_stakeholders (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -1077,6 +1141,7 @@ CREATE TABLE community_stakeholders (
   notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE connection_queue (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),  -- the grid operator
@@ -1102,6 +1167,7 @@ CREATE TABLE connection_queue (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE consumption_profiles (
   id TEXT PRIMARY KEY,
   delivery_point_id TEXT NOT NULL REFERENCES offtaker_delivery_points(id),
@@ -1114,6 +1180,7 @@ CREATE TABLE consumption_profiles (
   source TEXT DEFAULT 'meter',       -- 'meter','estimated','aggregated'
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE contract_documents (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -1137,6 +1204,7 @@ CREATE TABLE contract_documents (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE contract_templates (
   id TEXT PRIMARY KEY,
   code TEXT UNIQUE NOT NULL,
@@ -1155,6 +1223,7 @@ CREATE TABLE contract_templates (
   published INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE counterparty_data_requests (
   id                  TEXT PRIMARY KEY,
   requestor_id        TEXT NOT NULL REFERENCES participants(id),
@@ -1174,6 +1243,7 @@ CREATE TABLE counterparty_data_requests (
   notes               TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE counterparty_submissions (
   id                  TEXT PRIMARY KEY,
   request_id          TEXT NOT NULL REFERENCES counterparty_data_requests(id),
@@ -1193,6 +1263,7 @@ CREATE TABLE counterparty_submissions (
   user_agent          TEXT,
   submitted_at        TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE covenant_tests (
   id TEXT PRIMARY KEY,
   covenant_id TEXT NOT NULL REFERENCES covenants(id),
@@ -1207,6 +1278,7 @@ CREATE TABLE covenant_tests (
   tested_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE covenant_waivers (
   id TEXT PRIMARY KEY,
   covenant_id TEXT NOT NULL REFERENCES covenants(id),
@@ -1221,6 +1293,7 @@ CREATE TABLE covenant_waivers (
   conditions TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE covenants (
   id TEXT PRIMARY KEY,
   project_id TEXT REFERENCES ipp_projects(id),
@@ -1243,6 +1316,7 @@ CREATE TABLE covenants (
   notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE credit_limits (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -1255,6 +1329,7 @@ CREATE TABLE credit_limits (
   set_by          TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE credit_serials (
   id TEXT PRIMARY KEY,
   vintage_id TEXT NOT NULL REFERENCES credit_vintages(id),
@@ -1267,6 +1342,7 @@ CREATE TABLE credit_serials (
   retired_at TEXT,
   retirement_ref TEXT REFERENCES carbon_retirements(id)
 );
+
 CREATE TABLE credit_vintages (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES carbon_projects(id),
@@ -1284,6 +1360,7 @@ CREATE TABLE credit_vintages (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (project_id, registry_id, vintage_year)
 );
+
 CREATE TABLE curtailment_notices (
   id TEXT PRIMARY KEY,
   notice_number TEXT UNIQUE NOT NULL,
@@ -1298,11 +1375,13 @@ CREATE TABLE curtailment_notices (
   lifted_at TEXT,
   issued_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE d1_migrations(
 		id         INTEGER PRIMARY KEY AUTOINCREMENT,
 		name       TEXT UNIQUE,
 		applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
 CREATE TABLE data_tier_snapshots (
   id TEXT PRIMARY KEY,
   snapshot_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -1316,6 +1395,7 @@ CREATE TABLE data_tier_snapshots (
   total_db_bytes INTEGER,
   notes TEXT
 );
+
 CREATE TABLE day_ahead_blocks (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -1333,6 +1413,7 @@ CREATE TABLE day_ahead_blocks (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE deal_room_investors (
   id TEXT PRIMARY KEY,
   deal_room_id TEXT NOT NULL REFERENCES deal_rooms(id),
@@ -1342,6 +1423,7 @@ CREATE TABLE deal_room_investors (
   committed_amount REAL,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE deal_room_messages (
   id TEXT PRIMARY KEY,
   deal_room_id TEXT NOT NULL REFERENCES deal_rooms(id),
@@ -1350,6 +1432,7 @@ CREATE TABLE deal_room_messages (
   attachments TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE deal_room_terms (
   id TEXT PRIMARY KEY,
   deal_room_id TEXT NOT NULL REFERENCES deal_rooms(id),
@@ -1362,6 +1445,7 @@ CREATE TABLE deal_room_terms (
   responded_at TEXT,
   notes TEXT
 );
+
 CREATE TABLE deal_rooms (
   id TEXT PRIMARY KEY,
   deal_name TEXT NOT NULL,
@@ -1377,6 +1461,7 @@ CREATE TABLE deal_rooms (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE delivery_schedule (
   id TEXT PRIMARY KEY,
   match_id TEXT NOT NULL REFERENCES trade_matches(id),
@@ -1392,6 +1477,7 @@ CREATE TABLE delivery_schedule (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE demand_response_events (
   id              TEXT PRIMARY KEY,
   program_id      TEXT NOT NULL REFERENCES demand_response_programs(id),
@@ -1407,6 +1493,7 @@ CREATE TABLE demand_response_events (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE demand_response_programs (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -1423,6 +1510,7 @@ CREATE TABLE demand_response_programs (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE determinations_register (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -1440,6 +1528,7 @@ CREATE TABLE determinations_register (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE disbursement_requests (
   id TEXT PRIMARY KEY,
   facility_id TEXT NOT NULL,
@@ -1453,6 +1542,7 @@ CREATE TABLE disbursement_requests (
   requested_by TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE disclosure_jurisdictions (
   code            TEXT PRIMARY KEY,
   name            TEXT NOT NULL,
@@ -1461,6 +1551,7 @@ CREATE TABLE disclosure_jurisdictions (
   mandatory       INTEGER DEFAULT 1,
   description     TEXT
 );
+
 CREATE TABLE disclosure_submissions (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -1477,6 +1568,7 @@ CREATE TABLE disclosure_submissions (
   notes               TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE dispatch_instructions (
   id TEXT PRIMARY KEY,
   instruction_number TEXT UNIQUE NOT NULL,
@@ -1500,6 +1592,7 @@ CREATE TABLE dispatch_instructions (
   penalty_amount_zar REAL,
   issued_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE dispatch_schedule_periods (
   id TEXT PRIMARY KEY,
   schedule_id TEXT NOT NULL REFERENCES dispatch_schedules(id) ON DELETE CASCADE,
@@ -1511,6 +1604,7 @@ CREATE TABLE dispatch_schedule_periods (
   cleared_price_zar_mwh REAL,
   zone TEXT                         -- nodal_zones.code
 );
+
 CREATE TABLE dispatch_schedules (
   id TEXT PRIMARY KEY,
   schedule_type TEXT NOT NULL CHECK (schedule_type IN ('day_ahead','intraday','real_time','balancing')),
@@ -1522,6 +1616,7 @@ CREATE TABLE dispatch_schedules (
   published_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE document_signatories (
   id TEXT PRIMARY KEY,
   document_id TEXT NOT NULL REFERENCES contract_documents(id),
@@ -1534,6 +1629,7 @@ CREATE TABLE document_signatories (
   document_hash_at_signing TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ed_sed_spend (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -1549,6 +1645,7 @@ CREATE TABLE ed_sed_spend (
   evidence_r2_key TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE email_verification_tokens (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
@@ -1557,6 +1654,7 @@ CREATE TABLE email_verification_tokens (
   used_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE emission_factors (
   id TEXT PRIMARY KEY,
   country TEXT DEFAULT 'South Africa',
@@ -1568,6 +1666,7 @@ CREATE TABLE emission_factors (
   valid_until TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE energy_funds (
   id TEXT PRIMARY KEY,
   fund_name TEXT NOT NULL,
@@ -1586,6 +1685,7 @@ CREATE TABLE energy_funds (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE env_compliance_obligations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -1606,6 +1706,7 @@ CREATE TABLE env_compliance_obligations (
   closed_at       TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE environmental_authorisations (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -1623,6 +1724,7 @@ CREATE TABLE environmental_authorisations (
   document_r2_key TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE environmental_compliance (
   id TEXT PRIMARY KEY,
   authorisation_id TEXT NOT NULL REFERENCES environmental_authorisations(id) ON DELETE CASCADE,
@@ -1635,6 +1737,7 @@ CREATE TABLE environmental_compliance (
   evidence_r2_key TEXT,
   last_tested_at TEXT
 );
+
 CREATE TABLE epc_contractors (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -1653,6 +1756,7 @@ CREATE TABLE epc_contractors (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE epc_contracts (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -1671,6 +1775,7 @@ CREATE TABLE epc_contracts (
   )),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE epc_liquidated_damages (
   id TEXT PRIMARY KEY,
   epc_contract_id TEXT NOT NULL REFERENCES epc_contracts(id) ON DELETE CASCADE,
@@ -1682,6 +1787,7 @@ CREATE TABLE epc_liquidated_damages (
   status TEXT DEFAULT 'assessed' CHECK (status IN ('assessed','disputed','paid','waived')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE epc_variations (
   id TEXT PRIMARY KEY,
   epc_contract_id TEXT NOT NULL REFERENCES epc_contracts(id) ON DELETE CASCADE,
@@ -1694,6 +1800,7 @@ CREATE TABLE epc_variations (
   decided_at TEXT,
   decided_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE error_log (
   id              TEXT PRIMARY KEY,
   req_id          TEXT NOT NULL,
@@ -1712,6 +1819,7 @@ CREATE TABLE error_log (
   url             TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE escrow_accounts (
   id TEXT PRIMARY KEY,
   match_id TEXT NOT NULL REFERENCES trade_matches(id),
@@ -1725,6 +1833,7 @@ CREATE TABLE escrow_accounts (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE escrow_movements (
   id TEXT PRIMARY KEY,
   escrow_id TEXT NOT NULL REFERENCES escrow_accounts(id),
@@ -1734,6 +1843,7 @@ CREATE TABLE escrow_movements (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_activity_transactions (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL REFERENCES participants(id),
@@ -1777,6 +1887,7 @@ CREATE TABLE esg_activity_transactions (
   created_at            TEXT DEFAULT (datetime('now')),
   updated_at            TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_annual_rollup (
   participant_id        TEXT NOT NULL,
   tenant_id             TEXT DEFAULT 'default' NOT NULL,
@@ -1797,6 +1908,7 @@ CREATE TABLE esg_annual_rollup (
   computed_at           TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (participant_id, reporting_year, tenant_id)
 );
+
 CREATE TABLE esg_anomaly_flags (
   id                      TEXT PRIMARY KEY,
   transaction_id          TEXT NOT NULL REFERENCES esg_activity_transactions(id),
@@ -1812,6 +1924,7 @@ CREATE TABLE esg_anomaly_flags (
   resolved_at             TEXT,
   resolved_by             TEXT
 );
+
 CREATE TABLE esg_data (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -1824,6 +1937,7 @@ CREATE TABLE esg_data (
   verified_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_decarbonisation_pathways (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -1837,6 +1951,7 @@ CREATE TABLE esg_decarbonisation_pathways (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_disclosures (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL REFERENCES participants(id),
@@ -1863,6 +1978,7 @@ CREATE TABLE esg_disclosures (
   created_at          TEXT DEFAULT (datetime('now')),
   updated_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_emission_factors (
   id              TEXT PRIMARY KEY,
   source          TEXT NOT NULL,                  
@@ -1886,6 +2002,7 @@ CREATE TABLE esg_emission_factors (
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_initiatives (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL REFERENCES participants(id),
@@ -1906,6 +2023,7 @@ CREATE TABLE esg_initiatives (
   description           TEXT,
   created_at            TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_materiality_topics (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -1920,6 +2038,7 @@ CREATE TABLE esg_materiality_topics (
   notes               TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_metrics (
   id TEXT PRIMARY KEY,
   metric_name TEXT NOT NULL,
@@ -1929,6 +2048,7 @@ CREATE TABLE esg_metrics (
   calculation_method TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_rec_certificates (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL REFERENCES participants(id),
@@ -1949,6 +2069,7 @@ CREATE TABLE esg_rec_certificates (
   notes                 TEXT,
   created_at            TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_rec_retirements (
   id                  TEXT PRIMARY KEY,
   certificate_id      TEXT NOT NULL REFERENCES esg_rec_certificates(id),
@@ -1961,6 +2082,7 @@ CREATE TABLE esg_rec_retirements (
   retired_at          TEXT DEFAULT (datetime('now')),
   tenant_id           TEXT DEFAULT 'default' NOT NULL
 );
+
 CREATE TABLE esg_reports (
   id TEXT PRIMARY KEY,
   report_title TEXT NOT NULL,
@@ -1980,6 +2102,7 @@ CREATE TABLE esg_reports (
   created_by TEXT NOT NULL REFERENCES participants(id),
   created_at TEXT DEFAULT (datetime('now'))
 , template_id  TEXT, title        TEXT, period_start TEXT, period_end   TEXT, generated_at TEXT, r2_key       TEXT, narrative    TEXT);
+
 CREATE TABLE esg_reports_sections (
   id TEXT PRIMARY KEY,
   report_id TEXT NOT NULL REFERENCES esg_reports(id),
@@ -1990,6 +2113,7 @@ CREATE TABLE esg_reports_sections (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_risks (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -2005,6 +2129,7 @@ CREATE TABLE esg_risks (
   status              TEXT DEFAULT 'identified',
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_supplier_engagements (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL REFERENCES participants(id),
@@ -2024,6 +2149,7 @@ CREATE TABLE esg_supplier_engagements (
   tenant_id             TEXT DEFAULT 'default' NOT NULL,
   created_at            TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esg_targets (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL REFERENCES participants(id),
@@ -2043,6 +2169,7 @@ CREATE TABLE esg_targets (
   description         TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esums_carbon_credits (
   id TEXT PRIMARY KEY,
   station_id TEXT NOT NULL REFERENCES solax_stations(id),
@@ -2062,6 +2189,7 @@ CREATE TABLE esums_carbon_credits (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')), registry_ref TEXT, retired_at   TEXT, carbon_value_zar REAL NOT NULL DEFAULT 0,
   UNIQUE(station_id, period_start)
 );
+
 CREATE TABLE esums_data_sources (
   id                   TEXT PRIMARY KEY,
   participant_id       TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
@@ -2091,7 +2219,9 @@ CREATE TABLE esums_data_sources (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE esums_projects (id TEXT PRIMARY KEY, participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE, name TEXT NOT NULL, description TEXT, shard_key TEXT UNIQUE, site_count INTEGER NOT NULL DEFAULT 0, total_capacity_kw REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')), created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now')), project_type TEXT NOT NULL DEFAULT 'standalone' CHECK(project_type IN ('ipp','standalone')), ipp_project_id TEXT REFERENCES ipp_projects(id) ON DELETE SET NULL);
+
 CREATE TABLE esums_settlement_invoices (
   id TEXT PRIMARY KEY,
   station_id TEXT NOT NULL REFERENCES solax_stations(id),
@@ -2115,7 +2245,9 @@ CREATE TABLE esums_settlement_invoices (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(station_id, period_start)
 );
+
 CREATE TABLE esums_telemetry (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, site_id TEXT NOT NULL, project_id TEXT, ts TEXT NOT NULL, ac_kw REAL, dc_kw REAL, yield_kwh REAL, interval_kwh REAL, voltage_v REAL, current_a REAL, frequency_hz REAL, temperature_c REAL, irradiance_w_m2 REAL, status_code TEXT, quality TEXT NOT NULL DEFAULT 'valid');
+
 CREATE TABLE feature_flag_overrides (
   id TEXT PRIMARY KEY,
   flag_id TEXT NOT NULL REFERENCES feature_flags(id) ON DELETE CASCADE,
@@ -2127,6 +2259,7 @@ CREATE TABLE feature_flag_overrides (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   CHECK (tenant_id IS NOT NULL OR participant_id IS NOT NULL)
 );
+
 CREATE TABLE feature_flags (
   id TEXT PRIMARY KEY,
   flag_key TEXT UNIQUE NOT NULL,
@@ -2141,6 +2274,7 @@ CREATE TABLE feature_flags (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE fee_schedule (
   id TEXT PRIMARY KEY,
   fee_type TEXT NOT NULL CHECK (fee_type IN ('trading_commission','carbon_transaction','escrow','disbursement','management','platform','currency')),
@@ -2155,6 +2289,7 @@ CREATE TABLE fee_schedule (
   active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE frequency_response_markets (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -2168,6 +2303,7 @@ CREATE TABLE frequency_response_markets (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE frequency_response_offers (
   id              TEXT PRIMARY KEY,
   market_id       TEXT NOT NULL REFERENCES frequency_response_markets(id),
@@ -2179,6 +2315,7 @@ CREATE TABLE frequency_response_offers (
   status          TEXT DEFAULT 'submitted' CHECK (status IN ('submitted','accepted','partial','rejected','withdrawn')),
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE fund_commitments (
   id TEXT PRIMARY KEY,
   fund_id TEXT NOT NULL REFERENCES energy_funds(id),
@@ -2190,6 +2327,7 @@ CREATE TABLE fund_commitments (
   distributed_amount REAL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE fund_investments (
   id TEXT PRIMARY KEY,
   fund_id TEXT NOT NULL REFERENCES energy_funds(id),
@@ -2200,6 +2338,7 @@ CREATE TABLE fund_investments (
   investment_date TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE generated_documents (
   id           TEXT PRIMARY KEY,
   doc_type     TEXT NOT NULL,          -- invoice | carbon_cert | covenant_report | work_order | stage_gate | settlement | audit_export
@@ -2209,6 +2348,7 @@ CREATE TABLE generated_documents (
   generated_by TEXT NOT NULL,
   generated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_aggregated_forecasts (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -2222,6 +2362,7 @@ CREATE TABLE grid_aggregated_forecasts (
   confidence_pct  REAL,
   notes           TEXT
 );
+
 CREATE TABLE grid_ancillary_award_events (
   id                  TEXT PRIMARY KEY,
   award_id            TEXT NOT NULL,
@@ -2232,6 +2373,7 @@ CREATE TABLE grid_ancillary_award_events (
   occurred_at         TEXT NOT NULL DEFAULT (datetime('now')),
   notes               TEXT
 );
+
 CREATE TABLE grid_connection_applications (
   id TEXT PRIMARY KEY,
   application_number TEXT UNIQUE NOT NULL,
@@ -2259,6 +2401,7 @@ CREATE TABLE grid_connection_applications (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_connection_events (
   id TEXT PRIMARY KEY,
   application_id TEXT NOT NULL REFERENCES grid_connection_applications(id) ON DELETE CASCADE,
@@ -2269,6 +2412,7 @@ CREATE TABLE grid_connection_events (
   actor_id TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_connections (
   id TEXT PRIMARY KEY,
   project_id TEXT REFERENCES ipp_projects(id),
@@ -2281,6 +2425,7 @@ CREATE TABLE grid_connections (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','disconnected')),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_constraints (
   id TEXT PRIMARY KEY,
   constraint_type TEXT NOT NULL CHECK (constraint_type IN ('transmission','distribution','generation','demand')),
@@ -2295,6 +2440,7 @@ CREATE TABLE grid_constraints (
   resolution_notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_contingency_runs (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -2311,6 +2457,7 @@ CREATE TABLE grid_contingency_runs (
   computed_at     TEXT DEFAULT (datetime('now')),
   notes           TEXT
 );
+
 CREATE TABLE grid_curtailment_events (
   id                  TEXT PRIMARY KEY,
   curtailment_id      TEXT NOT NULL,
@@ -2322,6 +2469,7 @@ CREATE TABLE grid_curtailment_events (
   notes               TEXT,
   payload_json        TEXT
 );
+
 CREATE TABLE grid_dispatch_schedules (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2337,6 +2485,7 @@ CREATE TABLE grid_dispatch_schedules (
   status          TEXT DEFAULT 'draft' CHECK (status IN ('draft','published','superseded','withdrawn')),
   notes           TEXT
 );
+
 CREATE TABLE grid_imbalance (
   id TEXT PRIMARY KEY,
   period_start TEXT NOT NULL,
@@ -2352,6 +2501,7 @@ CREATE TABLE grid_imbalance (
   settled_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_intraday_balancing (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -2366,6 +2516,7 @@ CREATE TABLE grid_intraday_balancing (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_outage_coordination (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -2384,6 +2535,7 @@ CREATE TABLE grid_outage_coordination (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_outage_responses (
   id                  TEXT PRIMARY KEY,
   outage_id           TEXT NOT NULL,
@@ -2395,6 +2547,7 @@ CREATE TABLE grid_outage_responses (
   eta_minutes         INTEGER,
   responded_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_outage_updates (
   id TEXT PRIMARY KEY,
   outage_id TEXT NOT NULL REFERENCES grid_outages(id) ON DELETE CASCADE,
@@ -2404,6 +2557,7 @@ CREATE TABLE grid_outage_updates (
   restored_load_mw REAL,
   posted_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE grid_outages (
   id TEXT PRIMARY KEY,
   outage_number TEXT UNIQUE NOT NULL,
@@ -2426,6 +2580,7 @@ CREATE TABLE grid_outages (
   commander_id TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_reactive_dispatch (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -2440,6 +2595,7 @@ CREATE TABLE grid_reactive_dispatch (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_scada_snapshots (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -2456,6 +2612,7 @@ CREATE TABLE grid_scada_snapshots (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE grid_wheeling_agreements (
   id TEXT PRIMARY KEY,
   host_participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -2470,6 +2627,7 @@ CREATE TABLE grid_wheeling_agreements (
   status TEXT DEFAULT 'active' CHECK (status IN ('draft','pending','active','suspended','terminated')),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE idempotency_keys (
   key TEXT PRIMARY KEY,                  -- client-provided UUID (scoped below)
   scope TEXT NOT NULL,                   -- participant_id || tenant_id || 'anon'
@@ -2481,6 +2639,7 @@ CREATE TABLE idempotency_keys (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   expires_at TEXT NOT NULL               -- default +24h from write
 );
+
 CREATE TABLE ie_certifications (
   id TEXT PRIMARY KEY,
   disbursement_id TEXT REFERENCES project_disbursements(id),
@@ -2504,6 +2663,7 @@ CREATE TABLE ie_certifications (
   document_r2_key TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE imbalance_monthly_totals (
   brp_participant_id TEXT NOT NULL REFERENCES participants(id),
   period TEXT NOT NULL,                        
@@ -2522,6 +2682,7 @@ CREATE TABLE imbalance_monthly_totals (
   computed_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (brp_participant_id, period)
 );
+
 CREATE TABLE imbalance_prices (
   period_start TEXT PRIMARY KEY,              
   period_end TEXT NOT NULL,
@@ -2531,6 +2692,7 @@ CREATE TABLE imbalance_prices (
   published_by TEXT REFERENCES participants(id),
   published_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE imbalance_settlement_runs (
   id TEXT PRIMARY KEY,
   period_from TEXT NOT NULL,
@@ -2544,6 +2706,7 @@ CREATE TABLE imbalance_settlement_runs (
   started_at TEXT NOT NULL DEFAULT (datetime('now')),
   finished_at TEXT
 );
+
 CREATE TABLE imbalance_settlements (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,                       
@@ -2559,6 +2722,7 @@ CREATE TABLE imbalance_settlements (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (brp_participant_id, period_start)
 );
+
 CREATE TABLE industry_benchmarks (
   id              TEXT PRIMARY KEY,
   sector_nace     TEXT NOT NULL,
@@ -2574,6 +2738,7 @@ CREATE TABLE industry_benchmarks (
   source          TEXT,
   UNIQUE (sector_nace, region, reporting_year, metric)
 );
+
 CREATE TABLE insurance_claims (
   id TEXT PRIMARY KEY,
   policy_id TEXT NOT NULL REFERENCES insurance_policies(id),
@@ -2586,6 +2751,7 @@ CREATE TABLE insurance_claims (
   description TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE insurance_policies (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -2606,6 +2772,7 @@ CREATE TABLE insurance_policies (
   status TEXT DEFAULT 'active' CHECK (status IN ('active','lapsed','renewed','cancelled')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 , expiry_status TEXT NOT NULL DEFAULT 'green', last_warning_at TEXT, last_cycle_1_at TEXT, last_cycle_2_at TEXT, last_cycle_3_at TEXT, last_escalated_at TEXT, last_acknowledged_at TEXT, last_acknowledged_by TEXT);
+
 CREATE TABLE insurance_policies_v2 (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2631,6 +2798,7 @@ CREATE TABLE insurance_policies_v2 (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE intelligence_items (
   id TEXT PRIMARY KEY,
   participant_id TEXT REFERENCES participants(id),
@@ -2646,6 +2814,7 @@ CREATE TABLE intelligence_items (
   resolved_by TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE intraday_orders (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2660,6 +2829,7 @@ CREATE TABLE intraday_orders (
   vwap_zar        REAL,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE invoice_confirmations (
   id               TEXT PRIMARY KEY,
   invoice_id       TEXT NOT NULL,
@@ -2670,6 +2840,7 @@ CREATE TABLE invoice_confirmations (
   notes            TEXT,
   UNIQUE (invoice_id, party)                     -- one decision per side
 );
+
 CREATE TABLE invoice_line_items (
   id                  TEXT PRIMARY KEY,
   invoice_id          TEXT NOT NULL,
@@ -2690,6 +2861,7 @@ CREATE TABLE invoice_line_items (
   meta_json           TEXT,                           -- arbitrary structured context (rule applied, etc.)
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE invoice_sequences (
   tenant_id    TEXT NOT NULL,
   year         INTEGER NOT NULL,
@@ -2697,6 +2869,7 @@ CREATE TABLE invoice_sequences (
   updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (tenant_id, year)
 );
+
 CREATE TABLE invoices (
   id TEXT PRIMARY KEY,
   invoice_number TEXT UNIQUE NOT NULL,
@@ -2723,6 +2896,7 @@ CREATE TABLE invoices (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 , tenant_id TEXT DEFAULT 'default' NOT NULL, confirmation_status TEXT DEFAULT 'pending');
+
 CREATE TABLE ipp_bond_notices (
   id TEXT PRIMARY KEY,
   bond_id TEXT NOT NULL REFERENCES ipp_performance_bonds(id),
@@ -2740,6 +2914,7 @@ CREATE TABLE ipp_bond_notices (
   parent_notice_id TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_commissioning_tests (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2761,6 +2936,7 @@ CREATE TABLE ipp_commissioning_tests (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_decommissioning_plans (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2785,6 +2961,7 @@ CREATE TABLE ipp_decommissioning_plans (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_drawdown_requests (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2806,6 +2983,7 @@ CREATE TABLE ipp_drawdown_requests (
   rejection_reason TEXT,
   notes           TEXT
 );
+
 CREATE TABLE ipp_financial_models (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2837,6 +3015,7 @@ CREATE TABLE ipp_financial_models (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_info_memorandums (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2862,6 +3041,7 @@ CREATE TABLE ipp_info_memorandums (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_nominations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2881,6 +3061,7 @@ CREATE TABLE ipp_nominations (
   status          TEXT DEFAULT 'submitted' CHECK (status IN ('submitted','acknowledged','scheduled','partial','curtailed','rejected','withdrawn')),
   notes           TEXT
 );
+
 CREATE TABLE ipp_performance_bonds (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -2919,6 +3100,7 @@ CREATE TABLE ipp_performance_bonds (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_permits (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2944,6 +3126,7 @@ CREATE TABLE ipp_permits (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_projects (
   id TEXT PRIMARY KEY,
   project_name TEXT NOT NULL,
@@ -2966,6 +3149,7 @@ CREATE TABLE ipp_projects (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_resource_campaigns (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -2986,6 +3170,7 @@ CREATE TABLE ipp_resource_campaigns (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_site_assessments (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3013,6 +3198,7 @@ CREATE TABLE ipp_site_assessments (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_spares_inventory (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3036,6 +3222,7 @@ CREATE TABLE ipp_spares_inventory (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_tender_bidders (
   id              TEXT PRIMARY KEY,
   tender_id       TEXT NOT NULL REFERENCES ipp_tenders(id),
@@ -3056,6 +3243,7 @@ CREATE TABLE ipp_tender_bidders (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_tenders (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3075,6 +3263,7 @@ CREATE TABLE ipp_tenders (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_work_orders (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3105,6 +3294,7 @@ CREATE TABLE ipp_work_orders (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ipp_yield_estimates (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3134,6 +3324,7 @@ CREATE TABLE ipp_yield_estimates (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE journey_feature_config (
   id           TEXT PRIMARY KEY,
   role         TEXT NOT NULL,
@@ -3145,6 +3336,7 @@ CREATE TABLE journey_feature_config (
   updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (role, feature_key)
 );
+
 CREATE TABLE land_leases (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3168,6 +3360,7 @@ CREATE TABLE land_leases (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE land_parcels (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -3186,6 +3379,7 @@ CREATE TABLE land_parcels (
   status TEXT DEFAULT 'secured' CHECK (status IN ('identified','negotiating','secured','in_dispute','released')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ledger_transactions (
   id                  TEXT PRIMARY KEY,
   tenant_id           TEXT DEFAULT 'default' NOT NULL,
@@ -3253,6 +3447,7 @@ CREATE TABLE ledger_transactions (
   created_at          TEXT DEFAULT (datetime('now')),
   updated_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE lender_covenant_actions (
   id                  TEXT PRIMARY KEY,
   covenant_test_id    TEXT NOT NULL,              -- covenant_tests.id
@@ -3277,6 +3472,7 @@ CREATE TABLE lender_covenant_actions (
   cure_deadline       TEXT,                       -- ISO; when the cure plan must be complete
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE lender_credit_risk (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -3298,6 +3494,7 @@ CREATE TABLE lender_credit_risk (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE lender_deal_pipeline (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3317,6 +3514,7 @@ CREATE TABLE lender_deal_pipeline (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE lender_ecl_provisions (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -3334,6 +3532,7 @@ CREATE TABLE lender_ecl_provisions (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE lender_limit_framework (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -3349,6 +3548,7 @@ CREATE TABLE lender_limit_framework (
   as_of_date      TEXT,
   notes           TEXT
 );
+
 CREATE TABLE lender_pricing_models (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -3368,6 +3568,7 @@ CREATE TABLE lender_pricing_models (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE lender_repayment_schedules (
   id              TEXT PRIMARY KEY,
   loan_id         TEXT NOT NULL,
@@ -3385,6 +3586,7 @@ CREATE TABLE lender_repayment_schedules (
   paid_amount_zar REAL,
   notes           TEXT
 );
+
 CREATE TABLE lender_sponsor_dd (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -3409,6 +3611,7 @@ CREATE TABLE lender_sponsor_dd (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE license_fees_register (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -3424,6 +3627,7 @@ CREATE TABLE license_fees_register (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE loan_covenants (
   id TEXT PRIMARY KEY,
   facility_id TEXT NOT NULL,
@@ -3435,6 +3639,7 @@ CREATE TABLE loan_covenants (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE loan_facilities (
   id TEXT PRIMARY KEY,
   facility_name TEXT NOT NULL,
@@ -3451,6 +3656,7 @@ CREATE TABLE loan_facilities (
   status TEXT DEFAULT 'active',
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE loan_originations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),  -- the lender
@@ -3478,6 +3684,7 @@ CREATE TABLE loan_originations (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE loan_workouts (
   id              TEXT PRIMARY KEY,
   loan_id         TEXT NOT NULL REFERENCES loan_originations(id),
@@ -3496,6 +3703,7 @@ CREATE TABLE loan_workouts (
   legal_counsel   TEXT,
   notes           TEXT
 );
+
 CREATE TABLE login_attempts (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL,
@@ -3504,6 +3712,7 @@ CREATE TABLE login_attempts (
   reason TEXT,
   attempted_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE loi_drafts (
   id TEXT PRIMARY KEY,
   from_participant_id TEXT NOT NULL,
@@ -3529,7 +3738,9 @@ CREATE TABLE loi_drafts (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE manufacturer_credentials (id TEXT PRIMARY KEY, participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE, manufacturer TEXT NOT NULL, auth_type TEXT NOT NULL, client_id TEXT, client_secret TEXT, api_key TEXT, token TEXT, username TEXT, password TEXT, access_token TEXT, token_expires_at TEXT, base_url TEXT, site_id TEXT, extra_config TEXT, status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','inactive','error')), last_tested_at TEXT, last_error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, tariff_rate_zar_per_kwh REAL, customer_tariff_rate_zar_per_kwh REAL, carbon_intensity_gco2_per_kwh REAL NOT NULL DEFAULT 950);
+
 CREATE TABLE margin_calls (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,
@@ -3544,6 +3755,7 @@ CREATE TABLE margin_calls (
   created_at               TEXT DEFAULT (datetime('now')),
   resolved_at              TEXT
 );
+
 CREATE TABLE margin_enforcement_state (
   member_id           TEXT PRIMARY KEY,
   gate_status         TEXT NOT NULL DEFAULT 'clear',
@@ -3557,6 +3769,7 @@ CREATE TABLE margin_enforcement_state (
   override_by         TEXT,
   override_at         TEXT
 );
+
 CREATE TABLE margin_reservations (
   id              TEXT PRIMARY KEY,
   order_id        TEXT NOT NULL,
@@ -3568,6 +3781,7 @@ CREATE TABLE margin_reservations (
   resolved_at     TEXT,
   resolution_note TEXT
 );
+
 CREATE TABLE mark_prices (
   id                  TEXT PRIMARY KEY,
   energy_type         TEXT NOT NULL,
@@ -3577,6 +3791,7 @@ CREATE TABLE mark_prices (
   source              TEXT DEFAULT 'manual',
   computed_at         TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE market_prints (
   shard_key       TEXT NOT NULL,
   minute_bucket   TEXT NOT NULL,
@@ -3591,6 +3806,7 @@ CREATE TABLE market_prints (
   trade_count     INTEGER DEFAULT 0,
   PRIMARY KEY (shard_key, minute_bucket)
 );
+
 CREATE TABLE marketplace_inquiries (
   id TEXT PRIMARY KEY,
   listing_id TEXT NOT NULL REFERENCES marketplace_listings(id),
@@ -3599,6 +3815,7 @@ CREATE TABLE marketplace_inquiries (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending','responded','accepted','rejected')),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE marketplace_listings (
   id TEXT PRIMARY KEY,
   seller_id TEXT NOT NULL REFERENCES participants(id),
@@ -3616,6 +3833,7 @@ CREATE TABLE marketplace_listings (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE meter_ingest_channels (
   id TEXT PRIMARY KEY,
   connection_id TEXT NOT NULL,          -- references grid_connections(id); kept loose for external connections
@@ -3635,6 +3853,7 @@ CREATE TABLE meter_ingest_channels (
   enabled BOOLEAN DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE meter_ingest_raw (
   id TEXT PRIMARY KEY,
   channel_id TEXT NOT NULL REFERENCES meter_ingest_channels(id),
@@ -3647,6 +3866,7 @@ CREATE TABLE meter_ingest_raw (
   normalisation_error TEXT,
   hash_sha256 TEXT                     -- dedupe key
 );
+
 CREATE TABLE meter_ingest_sessions (
   id TEXT PRIMARY KEY,
   channel_id TEXT NOT NULL REFERENCES meter_ingest_channels(id),
@@ -3658,6 +3878,7 @@ CREATE TABLE meter_ingest_sessions (
   user_agent TEXT,
   status TEXT DEFAULT 'active' CHECK (status IN ('active','closed','errored'))
 );
+
 CREATE TABLE metering_readings (
   id TEXT PRIMARY KEY,
   connection_id TEXT NOT NULL REFERENCES grid_connections(id),
@@ -3674,6 +3895,7 @@ CREATE TABLE metering_readings (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE metering_readings_archives (
   id TEXT PRIMARY KEY,
   connection_id TEXT NOT NULL,
@@ -3684,6 +3906,7 @@ CREATE TABLE metering_readings_archives (
   sha256 TEXT,
   archived_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE metering_readings_daily (
   id TEXT PRIMARY KEY,
   connection_id TEXT NOT NULL,
@@ -3698,6 +3921,7 @@ CREATE TABLE metering_readings_daily (
   last_updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (connection_id, reading_day)
 );
+
 CREATE TABLE mfa_totp_secrets (
   participant_id TEXT PRIMARY KEY REFERENCES participants(id) ON DELETE CASCADE,
   secret_base32 TEXT NOT NULL,
@@ -3706,6 +3930,7 @@ CREATE TABLE mfa_totp_secrets (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE modules (
   id TEXT PRIMARY KEY,
   module_key TEXT UNIQUE NOT NULL,
@@ -3716,6 +3941,7 @@ CREATE TABLE modules (
   price_monthly REAL,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE mrv_submissions (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES carbon_projects(id),
@@ -3737,6 +3963,7 @@ CREATE TABLE mrv_submissions (
   submitted_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 , chain_status TEXT NOT NULL DEFAULT 'draft', doe_assignee_id TEXT, doe_assigned_at TEXT, doe_due_at TEXT, doe_opinion TEXT, doe_opinion_at TEXT, cra_submitted_at TEXT, cra_due_at TEXT, cra_decision TEXT, cra_decision_at TEXT, cra_decision_by TEXT, cra_rejection_reason TEXT, issuance_authorized_at TEXT, issuance_authorized_by TEXT, last_sla_breach_at TEXT);
+
 CREATE TABLE mrv_verifications (
   id TEXT PRIMARY KEY,
   submission_id TEXT NOT NULL REFERENCES mrv_submissions(id),
@@ -3751,6 +3978,7 @@ CREATE TABLE mrv_verifications (
   verification_date TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE network_development_items (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -3766,6 +3994,7 @@ CREATE TABLE network_development_items (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE nodal_zones (
   code TEXT PRIMARY KEY,            -- e.g. 'ZA-GP-01', 'ZA-WC-02'
   name TEXT NOT NULL,
@@ -3773,6 +4002,7 @@ CREATE TABLE nodal_zones (
   voltage_class TEXT,               -- 'HV_400','HV_275','HV_132','MV'
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE notifications (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -3784,6 +4014,7 @@ CREATE TABLE notifications (
   email_sent INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_accessibility_audits (
   id              TEXT PRIMARY KEY,
   page_path       TEXT NOT NULL,
@@ -3796,6 +4027,7 @@ CREATE TABLE oe_accessibility_audits (
   audited_at      TEXT NOT NULL DEFAULT (datetime('now')),
   audited_by      TEXT
 );
+
 CREATE TABLE oe_ai_actions (
   id              TEXT PRIMARY KEY,
   message_id      TEXT NOT NULL,
@@ -3807,6 +4039,7 @@ CREATE TABLE oe_ai_actions (
   result_json     TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ai_messages (
   id              TEXT PRIMARY KEY,
   session_id      TEXT NOT NULL,
@@ -3816,6 +4049,7 @@ CREATE TABLE oe_ai_messages (
   citations_json  TEXT,                 -- JSON of citations (tables / record ids)
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ai_sessions (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -3826,6 +4060,7 @@ CREATE TABLE oe_ai_sessions (
   last_message_at TEXT,
   message_count   INTEGER NOT NULL DEFAULT 0
 );
+
 CREATE TABLE oe_algo_certifications (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -3927,6 +4162,7 @@ CREATE TABLE oe_algo_certifications (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_algo_certifications_events (
   id                 TEXT PRIMARY KEY,
   cert_id            TEXT NOT NULL,
@@ -3939,6 +4175,7 @@ CREATE TABLE oe_algo_certifications_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_algo_executions (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -3964,6 +4201,7 @@ CREATE TABLE oe_algo_executions (
   created_at         TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at         TEXT
 );
+
 CREATE TABLE oe_algo_slices (
   id            TEXT PRIMARY KEY,
   algo_id       TEXT NOT NULL,
@@ -3976,6 +4214,7 @@ CREATE TABLE oe_algo_slices (
   status        TEXT NOT NULL DEFAULT 'queued',  -- queued | submitted | filled | skipped
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_algo_trading_blocks (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -3987,6 +4226,7 @@ CREATE TABLE oe_algo_trading_blocks (
   lifted_at TEXT,
   lifted_by TEXT
 );
+
 CREATE TABLE oe_ancillary_contracts (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -4004,6 +4244,7 @@ CREATE TABLE oe_ancillary_contracts (
   performance_score   REAL,                       -- 0..1 rolling SLA
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ancillary_dispatch (
   id              TEXT PRIMARY KEY,
   contract_id     TEXT NOT NULL,
@@ -4018,6 +4259,7 @@ CREATE TABLE oe_ancillary_dispatch (
   closed_at       TEXT,
   notes           TEXT
 );
+
 CREATE TABLE oe_anomaly_detection_ml (
   id                                      TEXT PRIMARY KEY,
   model_number                            TEXT UNIQUE NOT NULL,
@@ -4137,6 +4379,7 @@ CREATE TABLE oe_anomaly_detection_ml (
   created_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_anomaly_detection_ml_events (
   id                  TEXT PRIMARY KEY,
   model_id            TEXT NOT NULL,
@@ -4151,6 +4394,7 @@ CREATE TABLE oe_anomaly_detection_ml_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_api_keys (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -4167,6 +4411,7 @@ CREATE TABLE oe_api_keys (
   created_by            TEXT NOT NULL,
   created_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_appeals (
   id              TEXT PRIMARY KEY,
   decision_id     TEXT NOT NULL,
@@ -4183,6 +4428,7 @@ CREATE TABLE oe_appeals (
   matter_number   TEXT,                          -- court case number
   doc_r2_prefix   TEXT
 );
+
 CREATE TABLE oe_article6_adjustments (
   id                          TEXT PRIMARY KEY,
   retirement_id               TEXT NOT NULL,           -- credit_serials retirement event / carbon_retirements.id
@@ -4214,6 +4460,7 @@ CREATE TABLE oe_article6_adjustments (
   created_at                  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_asset_prognostics (
   id                            TEXT PRIMARY KEY,
   site_id                       TEXT NOT NULL,
@@ -4261,6 +4508,7 @@ CREATE TABLE oe_asset_prognostics (
   created_at                    TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                    TEXT
 );
+
 CREATE TABLE oe_asset_prognostics_events (
   id                TEXT PRIMARY KEY,
   prognostic_id     TEXT NOT NULL,
@@ -4272,6 +4520,7 @@ CREATE TABLE oe_asset_prognostics_events (
   detail            TEXT,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_auction_bids (
   id              TEXT PRIMARY KEY,
   auction_id      TEXT NOT NULL,
@@ -4283,6 +4532,7 @@ CREATE TABLE oe_auction_bids (
   is_winning      INTEGER NOT NULL DEFAULT 0,
   withdrawn_at    TEXT
 );
+
 CREATE TABLE oe_auctions (
   id                  TEXT PRIMARY KEY,
   auction_number      TEXT NOT NULL UNIQUE,
@@ -4305,6 +4555,7 @@ CREATE TABLE oe_auctions (
   total_bids          INTEGER NOT NULL DEFAULT 0,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_audit_attestors (
   id                  TEXT PRIMARY KEY,
   name                TEXT NOT NULL,
@@ -4315,6 +4566,7 @@ CREATE TABLE oe_audit_attestors (
   active              INTEGER NOT NULL DEFAULT 1,
   added_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_audit_chain_block (
   id                                          TEXT PRIMARY KEY,
   block_height                                INTEGER NOT NULL,
@@ -4429,6 +4681,7 @@ CREATE TABLE oe_audit_chain_block (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_audit_chain_block_events (
   id                  TEXT PRIMARY KEY,
   block_id            TEXT NOT NULL,
@@ -4441,6 +4694,7 @@ CREATE TABLE oe_audit_chain_block_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_audit_findings (
   id          TEXT PRIMARY KEY,
   audit_id    TEXT NOT NULL,
@@ -4456,6 +4710,7 @@ CREATE TABLE oe_audit_findings (
   remediated_at TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_audit_merkle_roots (
   id                  TEXT PRIMARY KEY,
   entity_type         TEXT NOT NULL,
@@ -4471,6 +4726,7 @@ CREATE TABLE oe_audit_merkle_roots (
   generated_at        TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (entity_type, day)
 );
+
 CREATE TABLE oe_audit_proof_requests (
   id                  TEXT PRIMARY KEY,
   event_id            TEXT NOT NULL,
@@ -4481,6 +4737,7 @@ CREATE TABLE oe_audit_proof_requests (
   matches_root        INTEGER,              -- 0/1
   generated_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_availability_guarantee_events (
   id                 TEXT PRIMARY KEY,
   guarantee_id       TEXT NOT NULL,
@@ -4493,6 +4750,7 @@ CREATE TABLE oe_availability_guarantee_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_availability_guarantees (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -4592,6 +4850,7 @@ CREATE TABLE oe_availability_guarantees (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_benchmark_transition_events (
   id                 TEXT PRIMARY KEY,
   transition_id      TEXT NOT NULL,
@@ -4604,6 +4863,7 @@ CREATE TABLE oe_benchmark_transition_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_benchmark_transitions (
   id                              TEXT PRIMARY KEY,
   transition_number               TEXT UNIQUE NOT NULL,
@@ -4708,6 +4968,7 @@ CREATE TABLE oe_benchmark_transitions (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_bess_soh (
   id                              TEXT PRIMARY KEY,
   programme_number                TEXT UNIQUE NOT NULL,
@@ -4823,6 +5084,7 @@ CREATE TABLE oe_bess_soh (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_bess_soh_events (
   id                 TEXT PRIMARY KEY,
   programme_id       TEXT NOT NULL,
@@ -4835,6 +5097,7 @@ CREATE TABLE oe_bess_soh_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_best_execution (
   id                      TEXT PRIMARY KEY,
   rfq_number              TEXT UNIQUE NOT NULL,
@@ -4921,6 +5184,7 @@ CREATE TABLE oe_best_execution (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_best_execution_events (
   id              TEXT PRIMARY KEY,
   rfq_id          TEXT NOT NULL,
@@ -4933,6 +5197,7 @@ CREATE TABLE oe_best_execution_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_black_start_capabilities (
   id                              TEXT PRIMARY KEY,
   capability_number               TEXT UNIQUE NOT NULL,
@@ -5051,6 +5316,7 @@ CREATE TABLE oe_black_start_capabilities (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_black_start_capabilities_events (
   id                 TEXT PRIMARY KEY,
   capability_id      TEXT NOT NULL,
@@ -5063,6 +5329,7 @@ CREATE TABLE oe_black_start_capabilities_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_blackstart_units (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -5077,6 +5344,7 @@ CREATE TABLE oe_blackstart_units (
   payment_zar_per_month REAL,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_block_trades (
   id                TEXT PRIMARY KEY,
   reporter_id       TEXT NOT NULL,
@@ -5096,6 +5364,7 @@ CREATE TABLE oe_block_trades (
   published_at      TEXT,
   bust_reason       TEXT
 );
+
 CREATE TABLE oe_capital_adequacy_reports (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,
@@ -5154,6 +5423,7 @@ CREATE TABLE oe_capital_adequacy_reports (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_carbon_budget_obligations (
   id TEXT PRIMARY KEY,
   registration_id TEXT NOT NULL REFERENCES oe_carbon_budget_registrations(id),
@@ -5169,6 +5439,7 @@ CREATE TABLE oe_carbon_budget_obligations (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_carbon_budget_registrations (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -5205,6 +5476,7 @@ CREATE TABLE oe_carbon_budget_registrations (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 , cb_tier TEXT CHECK(cb_tier IN ('small','medium','large','major')));
+
 CREATE TABLE oe_carbon_credit_rating (
   id                                                  TEXT PRIMARY KEY,
   rating_number                                       TEXT UNIQUE NOT NULL,
@@ -5316,6 +5588,7 @@ CREATE TABLE oe_carbon_credit_rating (
   created_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_credit_rating_events (
   id                  TEXT PRIMARY KEY,
   rating_id           TEXT NOT NULL,
@@ -5328,6 +5601,7 @@ CREATE TABLE oe_carbon_credit_rating_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_erpas (
   id                       TEXT PRIMARY KEY,
   erpa_number              TEXT UNIQUE NOT NULL,
@@ -5419,6 +5693,7 @@ CREATE TABLE oe_carbon_erpas (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_erpas_events (
   id              TEXT PRIMARY KEY,
   erpa_id         TEXT NOT NULL,
@@ -5431,6 +5706,7 @@ CREATE TABLE oe_carbon_erpas_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_issuances (
   id                              TEXT PRIMARY KEY,
   issuance_number                 TEXT UNIQUE NOT NULL,
@@ -5556,6 +5832,7 @@ CREATE TABLE oe_carbon_issuances (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_issuances_events (
   id                 TEXT PRIMARY KEY,
   issuance_id        TEXT NOT NULL,
@@ -5568,6 +5845,7 @@ CREATE TABLE oe_carbon_issuances_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_monitoring (
   id                     TEXT PRIMARY KEY,
   pdd_id                 TEXT NOT NULL,
@@ -5585,6 +5863,7 @@ CREATE TABLE oe_carbon_monitoring (
   issued_at              TEXT,
   issued_serial_range    TEXT
 );
+
 CREATE TABLE oe_carbon_offset_claims (
   id                       TEXT PRIMARY KEY,
   claim_number             TEXT UNIQUE NOT NULL,
@@ -5669,6 +5948,7 @@ CREATE TABLE oe_carbon_offset_claims (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_offset_claims_events (
   id              TEXT PRIMARY KEY,
   claim_id        TEXT NOT NULL,
@@ -5681,6 +5961,7 @@ CREATE TABLE oe_carbon_offset_claims_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_pdd (
   id                       TEXT PRIMARY KEY,
   project_id               TEXT NOT NULL,
@@ -5700,6 +5981,7 @@ CREATE TABLE oe_carbon_pdd (
   created_at               TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at               TEXT
 );
+
 CREATE TABLE oe_carbon_registration (
   id                      TEXT PRIMARY KEY,
   project_number          TEXT UNIQUE NOT NULL,
@@ -5781,6 +6063,7 @@ CREATE TABLE oe_carbon_registration (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_registration_events (
   id              TEXT PRIMARY KEY,
   project_id      TEXT NOT NULL,
@@ -5793,6 +6076,7 @@ CREATE TABLE oe_carbon_registration_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_registry_transfers (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,   -- transferor
@@ -5848,6 +6132,7 @@ CREATE TABLE oe_carbon_registry_transfers (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_carbon_reversals (
   id                            TEXT PRIMARY KEY,
   reversal_number               TEXT UNIQUE NOT NULL,
@@ -5929,6 +6214,7 @@ CREATE TABLE oe_carbon_reversals (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_reversals_events (
   id              TEXT PRIMARY KEY,
   reversal_id     TEXT NOT NULL,
@@ -5941,6 +6227,7 @@ CREATE TABLE oe_carbon_reversals_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_carbon_scope3_disclosures (
   id                          TEXT PRIMARY KEY,
   participant_id              TEXT NOT NULL,   -- carbon fund / reporting entity
@@ -6007,6 +6294,7 @@ CREATE TABLE oe_carbon_scope3_disclosures (
   created_at                  TEXT NOT NULL,
   updated_at                  TEXT NOT NULL
 );
+
 CREATE TABLE oe_carbon_tax_returns (
   id                    TEXT PRIMARY KEY,
   chain_status          TEXT NOT NULL DEFAULT 'period_open',
@@ -6051,6 +6339,7 @@ CREATE TABLE oe_carbon_tax_returns (
   assessment_amount     REAL,
   dispute_reason        TEXT
 );
+
 CREATE TABLE oe_carbon_verifications (
   id                  TEXT PRIMARY KEY,
   monitoring_id       TEXT NOT NULL,
@@ -6066,6 +6355,7 @@ CREATE TABLE oe_carbon_verifications (
   fee_zar             REAL,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_cascade_rule_audit (
   id TEXT PRIMARY KEY,
   rule_id TEXT NOT NULL,
@@ -6077,6 +6367,7 @@ CREATE TABLE oe_cascade_rule_audit (
   detail TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_cbt_sed_reports (
   id TEXT PRIMARY KEY,
   ipp_id TEXT NOT NULL,                          -- IPP / generator (ipp_developer user id)
@@ -6135,6 +6426,7 @@ CREATE TABLE oe_cbt_sed_reports (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ccp_assessments (
   id                                  TEXT PRIMARY KEY,
   assessment_number                   TEXT UNIQUE NOT NULL,
@@ -6264,6 +6556,7 @@ CREATE TABLE oe_ccp_assessments (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ccp_assessments_events (
   id              TEXT PRIMARY KEY,
   assessment_id   TEXT NOT NULL,
@@ -6276,6 +6569,7 @@ CREATE TABLE oe_ccp_assessments_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_certificate_bundles (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -6305,6 +6599,7 @@ CREATE TABLE oe_certificate_bundles (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 , bundle_tier TEXT CHECK(bundle_tier IN ('basic','dual','comprehensive','institutional')));
+
 CREATE TABLE oe_certificate_participants (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL UNIQUE,
@@ -6321,6 +6616,7 @@ CREATE TABLE oe_certificate_participants (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_chain_metrics (
   chain_key TEXT PRIMARY KEY,
   open_count INTEGER NOT NULL DEFAULT 0,
@@ -6330,6 +6626,7 @@ CREATE TABLE oe_chain_metrics (
   last_event_at TEXT,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_change_requests (
   id                       TEXT PRIMARY KEY,
   change_number            TEXT UNIQUE NOT NULL,
@@ -6404,6 +6701,7 @@ CREATE TABLE oe_change_requests (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_change_requests_events (
   id              TEXT PRIMARY KEY,
   change_id       TEXT NOT NULL,
@@ -6416,6 +6714,7 @@ CREATE TABLE oe_change_requests_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_clearing_contributions (
   id                TEXT PRIMARY KEY,
   fund_id           TEXT NOT NULL,
@@ -6427,6 +6726,7 @@ CREATE TABLE oe_clearing_contributions (
   status            TEXT NOT NULL DEFAULT 'held'   -- held | partially_used | exhausted |
                                                   -- refunded
 );
+
 CREATE TABLE oe_clearing_fund (
   id                TEXT PRIMARY KEY,
   fund_year         INTEGER NOT NULL,
@@ -6437,6 +6737,7 @@ CREATE TABLE oe_clearing_fund (
   established_at    TEXT NOT NULL DEFAULT (datetime('now')),
   closed_at         TEXT
 );
+
 CREATE TABLE oe_clearing_loss_events (
   id                TEXT PRIMARY KEY,
   default_event_id  TEXT NOT NULL,
@@ -6453,6 +6754,7 @@ CREATE TABLE oe_clearing_loss_events (
   notes             TEXT,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_cod_chain (
   id                   TEXT PRIMARY KEY,
   cod_number           TEXT UNIQUE NOT NULL,
@@ -6486,6 +6788,7 @@ CREATE TABLE oe_cod_chain (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_cod_chain_events (
   id          TEXT PRIMARY KEY,
   cod_id      TEXT NOT NULL,
@@ -6500,6 +6803,7 @@ CREATE TABLE oe_cod_chain_events (
   payload     TEXT,              -- JSON
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_collateral_postings (
   id              TEXT PRIMARY KEY,
   margin_call_id  TEXT,                          -- nullable for initial margin
@@ -6514,6 +6818,7 @@ CREATE TABLE oe_collateral_postings (
   released_at     TEXT,
   substituted_by  TEXT                           -- id of replacement posting
 );
+
 CREATE TABLE oe_compliance_audits (
   id              TEXT PRIMARY KEY,
   licensee_id     TEXT NOT NULL,
@@ -6530,6 +6835,7 @@ CREATE TABLE oe_compliance_audits (
   report_r2_key   TEXT,
   notes           TEXT
 );
+
 CREATE TABLE oe_compliance_inspections (
   id                       TEXT PRIMARY KEY,
   inspection_number        TEXT UNIQUE NOT NULL,
@@ -6608,6 +6914,7 @@ CREATE TABLE oe_compliance_inspections (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_compliance_inspections_events (
   id              TEXT PRIMARY KEY,
   inspection_id   TEXT NOT NULL,
@@ -6620,6 +6927,7 @@ CREATE TABLE oe_compliance_inspections_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_compliance_notices (
   id                  TEXT PRIMARY KEY,
   licensee_user_id    TEXT NOT NULL,          -- the participant who must respond
@@ -6640,6 +6948,7 @@ CREATE TABLE oe_compliance_notices (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_connection_energization (
   id                       TEXT PRIMARY KEY,
   energization_number      TEXT UNIQUE NOT NULL,
@@ -6722,6 +7031,7 @@ CREATE TABLE oe_connection_energization (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_connection_energization_events (
   id              TEXT PRIMARY KEY,
   energization_id TEXT NOT NULL,
@@ -6734,6 +7044,7 @@ CREATE TABLE oe_connection_energization_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_consent_records (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT,                        -- NULL for pre-auth cookie consent
@@ -6747,6 +7058,7 @@ CREATE TABLE oe_consent_records (
   user_agent         TEXT,
   created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_construction_cost_reports (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -6802,6 +7114,7 @@ CREATE TABLE oe_construction_cost_reports (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_consultation_notices (
   id                              TEXT PRIMARY KEY,
   notice_number                   TEXT UNIQUE NOT NULL,
@@ -6935,6 +7248,7 @@ CREATE TABLE oe_consultation_notices (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_consultation_notices_events (
   id                 TEXT PRIMARY KEY,
   notice_id          TEXT NOT NULL,
@@ -6947,6 +7261,7 @@ CREATE TABLE oe_consultation_notices_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_control_environment_audit (
   id                                          TEXT PRIMARY KEY,
   control_number                              TEXT UNIQUE NOT NULL,
@@ -7086,6 +7401,7 @@ CREATE TABLE oe_control_environment_audit (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_control_environment_audit_events (
   id                  TEXT PRIMARY KEY,
   control_id          TEXT NOT NULL,
@@ -7100,6 +7416,7 @@ CREATE TABLE oe_control_environment_audit_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_counterparty_margin (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT UNIQUE NOT NULL,
@@ -7195,6 +7512,7 @@ CREATE TABLE oe_counterparty_margin (
   created_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_counterparty_margin_events (
   id              TEXT PRIMARY KEY,
   margin_id       TEXT NOT NULL,
@@ -7207,6 +7525,7 @@ CREATE TABLE oe_counterparty_margin_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_counterparty_offers (
   id                    TEXT PRIMARY KEY,
   offeror_participant_id TEXT NOT NULL,
@@ -7222,6 +7541,7 @@ CREATE TABLE oe_counterparty_offers (
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_country_routing (
   country_iso          TEXT PRIMARY KEY,           -- ISO 3166-1 alpha-3 (ZAF, GBR, …)
   country_name         TEXT NOT NULL,
@@ -7234,6 +7554,7 @@ CREATE TABLE oe_country_routing (
   notes                TEXT,
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_covenant_certificate_events (
   id              TEXT PRIMARY KEY,
   certificate_id  TEXT NOT NULL,
@@ -7246,6 +7567,7 @@ CREATE TABLE oe_covenant_certificate_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_covenant_certificates (
   id                      TEXT PRIMARY KEY,
   certificate_number      TEXT UNIQUE NOT NULL,
@@ -7328,6 +7650,7 @@ CREATE TABLE oe_covenant_certificates (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_cp_clearances (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- lender originating the CP register
@@ -7375,6 +7698,7 @@ CREATE TABLE oe_cp_clearances (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_cp_tracker (
   id                   TEXT PRIMARY KEY,
   cp_title             TEXT NOT NULL,
@@ -7396,6 +7720,7 @@ CREATE TABLE oe_cp_tracker (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_credit_facility_applications (
   id                            TEXT PRIMARY KEY,
   application_number            TEXT UNIQUE NOT NULL,
@@ -7493,6 +7818,7 @@ CREATE TABLE oe_credit_facility_applications (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_credit_facility_applications_events (
   id                 TEXT PRIMARY KEY,
   application_id     TEXT NOT NULL,
@@ -7505,6 +7831,7 @@ CREATE TABLE oe_credit_facility_applications_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_credit_insurance (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- IPP / project developer
@@ -7566,6 +7893,7 @@ CREATE TABLE oe_credit_insurance (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_crediting_period_renewals (
   id                       TEXT PRIMARY KEY,
   renewal_number           TEXT UNIQUE NOT NULL,
@@ -7652,6 +7980,7 @@ CREATE TABLE oe_crediting_period_renewals (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_crediting_period_renewals_events (
   id              TEXT PRIMARY KEY,
   renewal_id      TEXT NOT NULL,
@@ -7664,6 +7993,7 @@ CREATE TABLE oe_crediting_period_renewals_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_cross_border_trades (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- trader submitting for pre-approval
@@ -7720,6 +8050,7 @@ CREATE TABLE oe_cross_border_trades (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_csat_records (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,   -- support requestor / customer
@@ -7765,6 +8096,7 @@ CREATE TABLE oe_csat_records (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_curtailment_claims (
   id                      TEXT PRIMARY KEY,
   claim_number            TEXT UNIQUE NOT NULL,
@@ -7850,6 +8182,7 @@ CREATE TABLE oe_curtailment_claims (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_curtailment_claims_events (
   id              TEXT PRIMARY KEY,
   claim_id        TEXT NOT NULL,
@@ -7862,6 +8195,7 @@ CREATE TABLE oe_curtailment_claims_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_curtailment_events (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -7879,6 +8213,7 @@ CREATE TABLE oe_curtailment_events (
   reason              TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_cyber_incident_events (
   id          TEXT PRIMARY KEY,
   incident_id TEXT NOT NULL,
@@ -7890,6 +8225,7 @@ CREATE TABLE oe_cyber_incident_events (
   payload     TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_cyber_incidents (
   id                              TEXT PRIMARY KEY,
   case_number                     TEXT NOT NULL UNIQUE,
@@ -7933,6 +8269,7 @@ CREATE TABLE oe_cyber_incidents (
   created_at                      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_data_export_requests (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -7947,6 +8284,7 @@ CREATE TABLE oe_data_export_requests (
   expires_at         TEXT,                        -- 7 days after ready
   error              TEXT
 );
+
 CREATE TABLE oe_data_subject_requests (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL,
@@ -7984,6 +8322,7 @@ CREATE TABLE oe_data_subject_requests (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_deal_links (
   id                  TEXT PRIMARY KEY,
   tenant_id           TEXT NOT NULL,
@@ -7998,6 +8337,7 @@ CREATE TABLE oe_deal_links (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_deal_objectives (
   id                  TEXT PRIMARY KEY,
   owner_id            TEXT NOT NULL,
@@ -8014,6 +8354,7 @@ CREATE TABLE oe_deal_objectives (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_deal_offers (
   id                  TEXT PRIMARY KEY,
   deal_type           TEXT NOT NULL,
@@ -8043,6 +8384,7 @@ CREATE TABLE oe_deal_offers (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_deal_requests (
   id                  TEXT PRIMARY KEY,
   deal_type           TEXT NOT NULL,
@@ -8064,6 +8406,7 @@ CREATE TABLE oe_deal_requests (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_default_events (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -8080,6 +8423,7 @@ CREATE TABLE oe_default_events (
   notes              TEXT,
   declared_by        TEXT
 );
+
 CREATE TABLE oe_deletion_requests (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -8093,6 +8437,7 @@ CREATE TABLE oe_deletion_requests (
   cancelled_at       TEXT,
   completed_at       TEXT
 );
+
 CREATE TABLE oe_demand_response_events (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,   -- the offtaker / large consumer
@@ -8140,6 +8485,7 @@ CREATE TABLE oe_demand_response_events (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_dfr (
   id                                  TEXT PRIMARY KEY,
   dfr_number                          TEXT UNIQUE NOT NULL,
@@ -8250,6 +8596,7 @@ CREATE TABLE oe_dfr (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_dfr_events (
   id                  TEXT PRIMARY KEY,
   dfr_id              TEXT NOT NULL,
@@ -8262,6 +8609,7 @@ CREATE TABLE oe_dfr_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_digest_deliveries (
   id                  TEXT PRIMARY KEY,
   subscription_id     TEXT NOT NULL,
@@ -8274,6 +8622,7 @@ CREATE TABLE oe_digest_deliveries (
   error               TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_digest_subscriptions (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -8289,6 +8638,7 @@ CREATE TABLE oe_digest_subscriptions (
   created_by          TEXT NOT NULL,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_disbursement_cases (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT NOT NULL UNIQUE,
@@ -8331,6 +8681,7 @@ CREATE TABLE oe_disbursement_cases (
   created_at                  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_disbursement_events (
   id              TEXT PRIMARY KEY,
   disbursement_id TEXT NOT NULL,
@@ -8342,6 +8693,7 @@ CREATE TABLE oe_disbursement_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_dispatch_nomination_events (
   id TEXT PRIMARY KEY,
   nomination_id TEXT NOT NULL,
@@ -8358,6 +8710,7 @@ CREATE TABLE oe_dispatch_nomination_events (
   payload_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_dispatch_nominations (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -8398,6 +8751,7 @@ CREATE TABLE oe_dispatch_nominations (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (participant_id, trading_day, schedule_type)
 );
+
 CREATE TABLE oe_dispatch_offers (
   id                  TEXT PRIMARY KEY,
   run_id              TEXT NOT NULL,
@@ -8412,6 +8766,7 @@ CREATE TABLE oe_dispatch_offers (
                                                   -- fully_cleared | rejected | curtailed
   submitted_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_dispatch_runs (
   id                   TEXT PRIMARY KEY,
   trade_date           TEXT NOT NULL,
@@ -8428,6 +8783,7 @@ CREATE TABLE oe_dispatch_runs (
   created_by           TEXT,
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_disposition_cases (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT NOT NULL UNIQUE,
@@ -8473,6 +8829,7 @@ CREATE TABLE oe_disposition_cases (
   created_at                  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_disposition_events (
   id              TEXT PRIMARY KEY,
   disposition_id  TEXT NOT NULL,
@@ -8484,6 +8841,7 @@ CREATE TABLE oe_disposition_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_doc_jobs (
   id                TEXT PRIMARY KEY,
   owner_id          TEXT NOT NULL,    -- subscriber who runs the generation
@@ -8502,6 +8860,7 @@ CREATE TABLE oe_doc_jobs (
   created_at        TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_document_envelopes (
   id              TEXT PRIMARY KEY,
   template_id     TEXT NOT NULL REFERENCES oe_document_templates(id),
@@ -8517,6 +8876,7 @@ CREATE TABLE oe_document_envelopes (
   r2_signed_key   TEXT,                                -- final PDF/MD location
   document_hash   TEXT                                  -- SHA-256 of body_rendered, used as the signing payload
 );
+
 CREATE TABLE oe_document_templates (
   id              TEXT PRIMARY KEY,
   template_key    TEXT UNIQUE NOT NULL,                -- e.g. 'ppa.standard.v3'
@@ -8533,6 +8893,7 @@ CREATE TABLE oe_document_templates (
   published_at    TEXT,
   deprecated_at   TEXT
 );
+
 CREATE TABLE oe_drawdown_chain (
   id                   TEXT PRIMARY KEY,
   drawdown_number      TEXT UNIQUE NOT NULL,
@@ -8570,6 +8931,7 @@ CREATE TABLE oe_drawdown_chain (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_drawdown_chain_events (
   id          TEXT PRIMARY KEY,
   drawdown_id TEXT NOT NULL,
@@ -8584,6 +8946,7 @@ CREATE TABLE oe_drawdown_chain_events (
   payload     TEXT,              -- JSON
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_dscr_monitoring (
   id                              TEXT PRIMARY KEY,
   monitoring_number               TEXT UNIQUE NOT NULL,
@@ -8691,6 +9054,7 @@ CREATE TABLE oe_dscr_monitoring (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_dscr_monitoring_events (
   id                 TEXT PRIMARY KEY,
   monitoring_id      TEXT NOT NULL,
@@ -8703,6 +9067,7 @@ CREATE TABLE oe_dscr_monitoring_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_dscr_reports (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- IPP developer
@@ -8758,6 +9123,7 @@ CREATE TABLE oe_dscr_reports (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_ed_commitment_events (
   id            TEXT PRIMARY KEY,
   commitment_id TEXT NOT NULL,
@@ -8769,6 +9135,7 @@ CREATE TABLE oe_ed_commitment_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ed_commitments (
   id                              TEXT PRIMARY KEY,
   case_number                     TEXT NOT NULL UNIQUE,
@@ -8812,6 +9179,7 @@ CREATE TABLE oe_ed_commitments (
   created_at                      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_email_outbox (
   id          TEXT PRIMARY KEY,
   to_addr     TEXT NOT NULL,
@@ -8821,6 +9189,7 @@ CREATE TABLE oe_email_outbox (
   error       TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_emp_compliance_reports (
   id TEXT PRIMARY KEY,
   ipp_id TEXT NOT NULL,
@@ -8841,6 +9210,7 @@ CREATE TABLE oe_emp_compliance_reports (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_enforcement_action (
   id                                                  TEXT PRIMARY KEY,
   enforcement_case_number                             TEXT UNIQUE NOT NULL,
@@ -8960,6 +9330,7 @@ CREATE TABLE oe_enforcement_action (
   created_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_enforcement_action_events (
   id                  TEXT PRIMARY KEY,
   action_id           TEXT NOT NULL,
@@ -8972,6 +9343,7 @@ CREATE TABLE oe_enforcement_action_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_enforcement_actions (
   id                                  TEXT PRIMARY KEY,
   case_number                         TEXT UNIQUE NOT NULL,
@@ -9102,6 +9474,7 @@ CREATE TABLE oe_enforcement_actions (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_enforcement_actions_events (
   id            TEXT PRIMARY KEY,
   case_id       TEXT NOT NULL,
@@ -9114,6 +9487,7 @@ CREATE TABLE oe_enforcement_actions_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_eop_activations (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- grid operator / SO
@@ -9172,6 +9546,7 @@ CREATE TABLE oe_eop_activations (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_esap_compliance (
   id                     TEXT PRIMARY KEY,
   chain_status           TEXT NOT NULL DEFAULT 'monitoring_period_open',
@@ -9193,6 +9568,7 @@ CREATE TABLE oe_esap_compliance (
   created_at             TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_esap_monitoring (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- lender / project finance institution
@@ -9261,6 +9637,7 @@ CREATE TABLE oe_esap_monitoring (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_esg_disclosure (
   id                                  TEXT PRIMARY KEY,
   disclosure_number                   TEXT UNIQUE NOT NULL,
@@ -9392,6 +9769,7 @@ CREATE TABLE oe_esg_disclosure (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_esg_disclosure_events (
   id                  TEXT PRIMARY KEY,
   disclosure_id       TEXT NOT NULL,
@@ -9404,6 +9782,7 @@ CREATE TABLE oe_esg_disclosure_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_export_curtailments (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- Esums plant operator
@@ -9457,6 +9836,7 @@ CREATE TABLE oe_export_curtailments (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_facility_amendments (
   id                     TEXT PRIMARY KEY,
   facility_id            TEXT NOT NULL,
@@ -9489,6 +9869,7 @@ CREATE TABLE oe_facility_amendments (
   created_at             TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_fault_fingerprint_ml (
   id                                      TEXT PRIMARY KEY,
   model_number                            TEXT UNIQUE NOT NULL,
@@ -9620,6 +10001,7 @@ CREATE TABLE oe_fault_fingerprint_ml (
   created_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_fault_fingerprint_ml_events (
   id                  TEXT PRIMARY KEY,
   model_id            TEXT NOT NULL,
@@ -9634,6 +10016,7 @@ CREATE TABLE oe_fault_fingerprint_ml_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_feature_entitlements (
   participant_id TEXT NOT NULL,
   feature        TEXT NOT NULL,   -- e.g. 'doc_generation'
@@ -9643,6 +10026,7 @@ CREATE TABLE oe_feature_entitlements (
   tenant_id      TEXT NOT NULL DEFAULT 'default',
   PRIMARY KEY (participant_id, feature)
 );
+
 CREATE TABLE oe_feature_flags (
   key             TEXT PRIMARY KEY,
   description     TEXT,
@@ -9655,6 +10039,7 @@ CREATE TABLE oe_feature_flags (
   updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_by      TEXT
 );
+
 CREATE TABLE oe_fee_schedule (
   id TEXT PRIMARY KEY,
   trigger_event TEXT NOT NULL UNIQUE,        -- the PlatformEvent that bills (e.g. ppa_evt_activated)
@@ -9671,6 +10056,7 @@ CREATE TABLE oe_fee_schedule (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 , split_config TEXT);
+
 CREATE TABLE oe_frequency_events (
   id                  TEXT PRIMARY KEY,
   detected_at         TEXT NOT NULL,
@@ -9686,6 +10072,7 @@ CREATE TABLE oe_frequency_events (
   notes               TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_fsca_compliance_reports (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -9730,6 +10117,7 @@ CREATE TABLE oe_fsca_compliance_reports (
   created_at              TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_fsca_conduct_reports (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- trading participant
@@ -9786,6 +10174,7 @@ CREATE TABLE oe_fsca_conduct_reports (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_gca_connections (
   id                              TEXT PRIMARY KEY,
   case_number                     TEXT NOT NULL UNIQUE,
@@ -9829,6 +10218,7 @@ CREATE TABLE oe_gca_connections (
   created_at                      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_gca_events (
   id           TEXT PRIMARY KEY,
   gca_id       TEXT NOT NULL,
@@ -9840,6 +10230,7 @@ CREATE TABLE oe_gca_events (
   payload      TEXT,
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_generation_revenue_assurance (
   id                       TEXT PRIMARY KEY,
   gra_number               TEXT UNIQUE NOT NULL,
@@ -9943,6 +10334,7 @@ CREATE TABLE oe_generation_revenue_assurance (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_generation_revenue_assurance_events (
   id                  TEXT PRIMARY KEY,
   assurance_id        TEXT NOT NULL,
@@ -9955,6 +10347,7 @@ CREATE TABLE oe_generation_revenue_assurance_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_government_filing_connector (
   id                                      TEXT PRIMARY KEY,
   connector_number                        TEXT UNIQUE NOT NULL,
@@ -10078,6 +10471,7 @@ CREATE TABLE oe_government_filing_connector (
   created_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_government_filing_connector_events (
   id                  TEXT PRIMARY KEY,
   connector_id        TEXT NOT NULL,
@@ -10092,6 +10486,7 @@ CREATE TABLE oe_government_filing_connector_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_green_bond_reports (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -10142,6 +10537,7 @@ CREATE TABLE oe_green_bond_reports (
   created_at             TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_green_tariff_disclosures (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- offtaker
@@ -10202,6 +10598,7 @@ CREATE TABLE oe_green_tariff_disclosures (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_grid_capacity_allocations (
   id                            TEXT PRIMARY KEY,
   allocation_number             TEXT UNIQUE NOT NULL,
@@ -10291,6 +10688,7 @@ CREATE TABLE oe_grid_capacity_allocations (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_grid_capacity_allocations_events (
   id                 TEXT PRIMARY KEY,
   allocation_id      TEXT NOT NULL,
@@ -10303,6 +10701,7 @@ CREATE TABLE oe_grid_capacity_allocations_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_grid_code_compliance (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT UNIQUE NOT NULL,
@@ -10393,6 +10792,7 @@ CREATE TABLE oe_grid_code_compliance (
   created_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_grid_code_compliance_events (
   id              TEXT PRIMARY KEY,
   compliance_id   TEXT NOT NULL,
@@ -10405,6 +10805,7 @@ CREATE TABLE oe_grid_code_compliance_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_grid_constraints (
   id               TEXT PRIMARY KEY,
   zone             TEXT NOT NULL,           -- 'EHV-CGT', 'NW-Loadcentre', ...
@@ -10419,6 +10820,7 @@ CREATE TABLE oe_grid_constraints (
   created_by       TEXT,
   created_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_grid_wheeling_charges (
   id                    TEXT PRIMARY KEY,
   agreement_id          TEXT NOT NULL,                              -- oe_wheeling_agreements.id
@@ -10445,6 +10847,7 @@ CREATE TABLE oe_grid_wheeling_charges (
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_grid_wheeling_disputes (
   id                       TEXT PRIMARY KEY,
   charge_id                TEXT NOT NULL,                           -- oe_grid_wheeling_charges.id
@@ -10462,6 +10865,7 @@ CREATE TABLE oe_grid_wheeling_disputes (
   evidence_r2_key          TEXT,
   created_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_gtia (
   id                          TEXT PRIMARY KEY,
   participant_id              TEXT NOT NULL,   -- IPP submitting the GTIA
@@ -10519,6 +10923,7 @@ CREATE TABLE oe_gtia (
   created_at                  TEXT NOT NULL,
   updated_at                  TEXT NOT NULL
 );
+
 CREATE TABLE oe_handover_dossier (
   id                                  TEXT PRIMARY KEY,
   dossier_number                      TEXT UNIQUE NOT NULL,
@@ -10634,6 +11039,7 @@ CREATE TABLE oe_handover_dossier (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_handover_dossier_events (
   id                  TEXT PRIMARY KEY,
   dossier_id          TEXT NOT NULL,
@@ -10646,6 +11052,7 @@ CREATE TABLE oe_handover_dossier_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_hearings (
   id              TEXT PRIMARY KEY,
   application_id  TEXT NOT NULL,
@@ -10661,12 +11068,14 @@ CREATE TABLE oe_hearings (
   attendee_count  INTEGER,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_help_dismissals (
   user_id         TEXT NOT NULL,
   help_key        TEXT NOT NULL,
   dismissed_at    TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (user_id, help_key)
 );
+
 CREATE TABLE oe_hse_incident_events (
   id          TEXT PRIMARY KEY,
   incident_id TEXT NOT NULL,
@@ -10678,6 +11087,7 @@ CREATE TABLE oe_hse_incident_events (
   payload     TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_hse_incidents (
   id                                TEXT PRIMARY KEY,
   case_number                       TEXT NOT NULL UNIQUE,
@@ -10718,6 +11128,7 @@ CREATE TABLE oe_hse_incidents (
   created_at                        TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_imbalance_settlement (
   id                                                  TEXT PRIMARY KEY,
   settlement_number                                   TEXT UNIQUE NOT NULL,
@@ -10830,6 +11241,7 @@ CREATE TABLE oe_imbalance_settlement (
   created_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_imbalance_settlement_events (
   id                  TEXT PRIMARY KEY,
   settlement_id       TEXT NOT NULL,
@@ -10842,6 +11254,7 @@ CREATE TABLE oe_imbalance_settlement_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_insurance_claim_chain (
   id                       TEXT PRIMARY KEY,
   claim_number             TEXT NOT NULL UNIQUE,
@@ -10886,6 +11299,7 @@ CREATE TABLE oe_insurance_claim_chain (
   created_at               TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_insurance_claim_chain_events (
   id              TEXT PRIMARY KEY,
   claim_id        TEXT NOT NULL,
@@ -10897,6 +11311,7 @@ CREATE TABLE oe_insurance_claim_chain_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_interconnector_schedules (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL,
@@ -10933,6 +11348,7 @@ CREATE TABLE oe_interconnector_schedules (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_ael_applications` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -10952,6 +11368,7 @@ CREATE TABLE `oe_ipp_ael_applications` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_annual_audits (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -10975,6 +11392,7 @@ CREATE TABLE oe_ipp_annual_audits (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_annual_compliance_assessments (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11001,6 +11419,7 @@ CREATE TABLE oe_ipp_annual_compliance_assessments (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_annual_reports` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11021,6 +11440,7 @@ CREATE TABLE `oe_ipp_annual_reports` (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_bbbee_verification (
   id                          TEXT    PRIMARY KEY,
   project_ref                 TEXT    NOT NULL,
@@ -11062,6 +11482,7 @@ CREATE TABLE oe_ipp_bbbee_verification (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_bfs_studies` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11082,6 +11503,7 @@ CREATE TABLE `oe_ipp_bfs_studies` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_ccc_negotiations` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11102,6 +11524,7 @@ CREATE TABLE `oe_ipp_ccc_negotiations` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_cep_compliance (
   id                          TEXT    PRIMARY KEY,
   project_ref                 TEXT    NOT NULL,
@@ -11147,6 +11570,7 @@ CREATE TABLE oe_ipp_cep_compliance (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_change_of_control (
   id                     TEXT PRIMARY KEY,
   participant_id         TEXT NOT NULL,
@@ -11173,6 +11597,7 @@ CREATE TABLE oe_ipp_change_of_control (
   created_at             TEXT NOT NULL,
   updated_at             TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_change_order (
   id                                          TEXT PRIMARY KEY,
   change_order_number                         TEXT UNIQUE NOT NULL,
@@ -11303,6 +11728,7 @@ CREATE TABLE oe_ipp_change_order (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_change_order_events (
   id                  TEXT PRIMARY KEY,
   change_order_id     TEXT NOT NULL,
@@ -11315,6 +11741,7 @@ CREATE TABLE oe_ipp_change_order_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_commissioning_test (
   id                          TEXT PRIMARY KEY,
   participant_id              TEXT NOT NULL,
@@ -11345,6 +11772,7 @@ CREATE TABLE oe_ipp_commissioning_test (
   created_at                  TEXT NOT NULL,
   updated_at                  TEXT NOT NULL
 );
+
 CREATE TABLE `oe_ipp_community_trust_reports` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11365,6 +11793,7 @@ CREATE TABLE `oe_ipp_community_trust_reports` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_construction_diary (
   id                        TEXT PRIMARY KEY,
   project_id                TEXT NOT NULL,
@@ -11449,6 +11878,7 @@ CREATE TABLE oe_ipp_construction_diary (
   created_at                TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_contractor_defaults` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11471,6 +11901,7 @@ CREATE TABLE `oe_ipp_contractor_defaults` (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_dlp_defects (
   id                    TEXT PRIMARY KEY,
   project_id            TEXT NOT NULL,
@@ -11532,6 +11963,7 @@ CREATE TABLE oe_ipp_dlp_defects (
   created_at            TEXT NOT NULL,
   updated_at            TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_document_control (
   id                                          TEXT PRIMARY KEY,
   document_number                             TEXT UNIQUE NOT NULL,
@@ -11658,6 +12090,7 @@ CREATE TABLE oe_ipp_document_control (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_document_control_events (
   id                  TEXT PRIMARY KEY,
   document_id         TEXT NOT NULL,
@@ -11670,6 +12103,7 @@ CREATE TABLE oe_ipp_document_control_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_drawdown_cps (
   id              TEXT PRIMARY KEY,
   drawdown_id     TEXT NOT NULL,
@@ -11685,6 +12119,7 @@ CREATE TABLE oe_ipp_drawdown_cps (
   waived_by       TEXT,
   waiver_reason   TEXT
 );
+
 CREATE TABLE oe_ipp_drawdowns (
   id                       TEXT PRIMARY KEY,
   project_id               TEXT NOT NULL,
@@ -11703,6 +12138,7 @@ CREATE TABLE oe_ipp_drawdowns (
   disbursed_at             TEXT,
   rejection_reason         TEXT
 );
+
 CREATE TABLE `oe_ipp_ea_amendments` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11722,6 +12158,7 @@ CREATE TABLE `oe_ipp_ea_amendments` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_eco_reports` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -11742,6 +12179,7 @@ CREATE TABLE `oe_ipp_eco_reports` (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_env_closure (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,
@@ -11775,6 +12213,7 @@ CREATE TABLE oe_ipp_env_closure (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_env_events (
   id TEXT PRIMARY KEY,
   monitoring_id TEXT NOT NULL,
@@ -11787,6 +12226,7 @@ CREATE TABLE oe_ipp_env_events (
   regulator_crossed INTEGER DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_env_monitoring (
   -- Core
   id TEXT PRIMARY KEY,
@@ -11871,6 +12311,7 @@ CREATE TABLE oe_ipp_env_monitoring (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_equity_transfers (
   id TEXT PRIMARY KEY,
   project_ref TEXT NOT NULL,
@@ -11895,6 +12336,7 @@ CREATE TABLE oe_ipp_equity_transfers (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_esmr (
   id                  TEXT    PRIMARY KEY,
   project_ref         TEXT    NOT NULL,
@@ -11928,6 +12370,7 @@ CREATE TABLE oe_ipp_esmr (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_evm (
   id                                          TEXT PRIMARY KEY,
   evm_number                                  TEXT UNIQUE NOT NULL,
@@ -12061,6 +12504,7 @@ CREATE TABLE oe_ipp_evm (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_evm_events (
   id                  TEXT PRIMARY KEY,
   evm_id              TEXT NOT NULL,
@@ -12073,6 +12517,7 @@ CREATE TABLE oe_ipp_evm_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_final_completion (
   id                          TEXT PRIMARY KEY,
   participant_id              TEXT NOT NULL,
@@ -12107,6 +12552,7 @@ CREATE TABLE oe_ipp_final_completion (
   created_at                  TEXT NOT NULL,
   updated_at                  TEXT NOT NULL
 );
+
 CREATE TABLE `oe_ipp_fm` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -12128,6 +12574,7 @@ CREATE TABLE `oe_ipp_fm` (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
 CREATE TABLE `oe_ipp_force_majeure` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -12147,6 +12594,7 @@ CREATE TABLE `oe_ipp_force_majeure` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_force_majeure_chain (
   id                   TEXT PRIMARY KEY,
   ppa_id               TEXT NOT NULL,
@@ -12169,6 +12617,7 @@ CREATE TABLE oe_ipp_force_majeure_chain (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_grid_compliance` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -12189,6 +12638,7 @@ CREATE TABLE `oe_ipp_grid_compliance` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_hra_assessments` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -12208,6 +12658,7 @@ CREATE TABLE `oe_ipp_hra_assessments` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ie_annual_reviews (
   id                  TEXT    PRIMARY KEY,
   project_ref         TEXT    NOT NULL,
@@ -12244,6 +12695,7 @@ CREATE TABLE oe_ipp_ie_annual_reviews (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ie_cert (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -12271,6 +12723,7 @@ CREATE TABLE oe_ipp_ie_cert (
   created_at            TEXT NOT NULL,
   updated_at            TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_insurance_renewals (
   id                          TEXT    PRIMARY KEY,
   project_ref                 TEXT    NOT NULL,
@@ -12317,6 +12770,7 @@ CREATE TABLE oe_ipp_insurance_renewals (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_issue_events (
   id          TEXT PRIMARY KEY,
   issue_id    TEXT NOT NULL REFERENCES oe_ipp_issues(id),
@@ -12327,6 +12781,7 @@ CREATE TABLE oe_ipp_issue_events (
   payload     TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_issues (
   id                        TEXT PRIMARY KEY,
   project_id                TEXT NOT NULL,
@@ -12424,6 +12879,7 @@ CREATE TABLE oe_ipp_issues (
   created_at                TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_land_amendments` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -12444,6 +12900,7 @@ CREATE TABLE `oe_ipp_land_amendments` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_land_register (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,
@@ -12473,6 +12930,7 @@ CREATE TABLE oe_ipp_land_register (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_lc_reports (
   id                  TEXT    PRIMARY KEY,
   project_ref         TEXT    NOT NULL,
@@ -12501,6 +12959,7 @@ CREATE TABLE oe_ipp_lc_reports (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ld_events (
   id                     TEXT PRIMARY KEY,
   project_id             TEXT NOT NULL,
@@ -12523,6 +12982,7 @@ CREATE TABLE oe_ipp_ld_events (
   invoiced_at            TEXT,
   created_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_lender_reporting (
   id                          TEXT    PRIMARY KEY,
   project_ref                 TEXT    NOT NULL,
@@ -12570,6 +13030,7 @@ CREATE TABLE oe_ipp_lender_reporting (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_lesson_events (
   id TEXT PRIMARY KEY,
   lesson_id TEXT NOT NULL,
@@ -12582,6 +13043,7 @@ CREATE TABLE oe_ipp_lesson_events (
   regulator_crossed INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_lessons_learned (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -12657,6 +13119,7 @@ CREATE TABLE oe_ipp_lessons_learned (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_licence_returns (
   id                  TEXT    PRIMARY KEY,
   project_ref         TEXT    NOT NULL,
@@ -12701,6 +13164,7 @@ CREATE TABLE oe_ipp_licence_returns (
   created_at          TEXT    DEFAULT (datetime('now')),
   updated_at          TEXT    DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_lta_certificates` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -12721,6 +13185,7 @@ CREATE TABLE `oe_ipp_lta_certificates` (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_method_statements (
   -- Core identity
   id                        TEXT    PRIMARY KEY,
@@ -12801,6 +13266,7 @@ CREATE TABLE oe_ipp_method_statements (
   created_at                TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_milestone_certifications (
   id                  TEXT    PRIMARY KEY,
   project_ref         TEXT    NOT NULL,
@@ -12836,6 +13302,7 @@ CREATE TABLE oe_ipp_milestone_certifications (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_mir_events (
   id              TEXT    PRIMARY KEY,
   mir_id          TEXT    NOT NULL REFERENCES oe_ipp_mirs(id),
@@ -12848,6 +13315,7 @@ CREATE TABLE oe_ipp_mir_events (
   regulator_crossed INTEGER NOT NULL DEFAULT 0,
   created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_mirs (
   -- Core
   id                          TEXT    PRIMARY KEY,
@@ -12939,6 +13407,7 @@ CREATE TABLE oe_ipp_mirs (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ms_events (
   id                TEXT    PRIMARY KEY,
   ms_id             TEXT    NOT NULL,
@@ -12951,6 +13420,7 @@ CREATE TABLE oe_ipp_ms_events (
   regulator_crossed INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ncr_events (
   id               TEXT PRIMARY KEY,
   ncr_id           TEXT NOT NULL,
@@ -12963,6 +13433,7 @@ CREATE TABLE oe_ipp_ncr_events (
   regulator_crossed INTEGER NOT NULL DEFAULT 0,
   created_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ncrs (
   -- Identity
   id                              TEXT PRIMARY KEY,                             -- ncr-001
@@ -13044,6 +13515,7 @@ CREATE TABLE oe_ipp_ncrs (
   created_at                      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_om_contracts` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -13064,6 +13536,7 @@ CREATE TABLE `oe_ipp_om_contracts` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_om_handover (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,
@@ -13098,6 +13571,7 @@ CREATE TABLE oe_ipp_om_handover (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_payment_certs (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -13132,6 +13606,7 @@ CREATE TABLE oe_ipp_payment_certs (
   created_at            TEXT NOT NULL,
   updated_at            TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_pcn_events (
   id TEXT PRIMARY KEY,
   claim_id TEXT NOT NULL,
@@ -13144,6 +13619,7 @@ CREATE TABLE oe_ipp_pcn_events (
   regulator_crossed INTEGER DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_perf_securities (
   id                          TEXT    PRIMARY KEY,
   project_ref                 TEXT    NOT NULL,
@@ -13189,6 +13665,7 @@ CREATE TABLE oe_ipp_perf_securities (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_ppa_variation (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -13213,6 +13690,7 @@ CREATE TABLE oe_ipp_ppa_variation (
   created_at            TEXT NOT NULL,
   updated_at            TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_progress_claims (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -13290,6 +13768,7 @@ CREATE TABLE oe_ipp_progress_claims (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_quarterly_gen_reports (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -13315,6 +13794,7 @@ CREATE TABLE oe_ipp_quarterly_gen_reports (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE `oe_ipp_refinancing` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -13335,6 +13815,7 @@ CREATE TABLE `oe_ipp_refinancing` (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_reipppp_reports (
   id TEXT PRIMARY KEY,
   project_ref TEXT NOT NULL,
@@ -13361,6 +13842,7 @@ CREATE TABLE oe_ipp_reipppp_reports (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_rfi (
   id                                          TEXT PRIMARY KEY,
   rfi_number                                  TEXT UNIQUE NOT NULL,
@@ -13489,6 +13971,7 @@ CREATE TABLE oe_ipp_rfi (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_rfi_events (
   id                  TEXT PRIMARY KEY,
   rfi_id              TEXT NOT NULL,
@@ -13501,6 +13984,7 @@ CREATE TABLE oe_ipp_rfi_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_risk_events (
   id          TEXT PRIMARY KEY,
   risk_id     TEXT NOT NULL REFERENCES oe_ipp_risks(id),
@@ -13511,6 +13995,7 @@ CREATE TABLE oe_ipp_risk_events (
   payload     TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_risks (
   id                          TEXT PRIMARY KEY,
   project_id                  TEXT NOT NULL,
@@ -13623,6 +14108,7 @@ CREATE TABLE oe_ipp_risks (
   created_at                  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_schedule (
   id                                          TEXT PRIMARY KEY,
   schedule_number                             TEXT UNIQUE NOT NULL,
@@ -13752,6 +14238,7 @@ CREATE TABLE oe_ipp_schedule (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_schedule_events (
   id                  TEXT PRIMARY KEY,
   schedule_id         TEXT NOT NULL,
@@ -13764,6 +14251,7 @@ CREATE TABLE oe_ipp_schedule_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_sed_compliance (
   id                          TEXT    PRIMARY KEY,
   project_ref                 TEXT    NOT NULL,
@@ -13810,6 +14298,7 @@ CREATE TABLE oe_ipp_sed_compliance (
   created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_site_instructions (
   id                    TEXT PRIMARY KEY,
   project_id            TEXT NOT NULL,
@@ -13861,6 +14350,7 @@ CREATE TABLE oe_ipp_site_instructions (
   created_at            TEXT NOT NULL,
   updated_at            TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_stakeholder_events (
   id                TEXT PRIMARY KEY,
   stakeholder_id    TEXT NOT NULL REFERENCES oe_ipp_stakeholders(id),
@@ -13873,6 +14363,7 @@ CREATE TABLE oe_ipp_stakeholder_events (
   regulator_crossed INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_stakeholders (
   id                        TEXT PRIMARY KEY,
   project_id                TEXT NOT NULL,
@@ -13981,6 +14472,7 @@ CREATE TABLE oe_ipp_stakeholders (
   created_at                TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_subcontractor_events (
   id                TEXT PRIMARY KEY,
   subcontractor_id  TEXT NOT NULL,
@@ -13993,6 +14485,7 @@ CREATE TABLE oe_ipp_subcontractor_events (
   regulator_crossed INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_subcontractors (
   -- Core
   id                        TEXT PRIMARY KEY,
@@ -14075,6 +14568,7 @@ CREATE TABLE oe_ipp_subcontractors (
   created_at                TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_submittal (
   id                                          TEXT PRIMARY KEY,
   submittal_number                            TEXT UNIQUE NOT NULL,
@@ -14201,6 +14695,7 @@ CREATE TABLE oe_ipp_submittal (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_submittal_events (
   id                  TEXT PRIMARY KEY,
   submittal_id        TEXT NOT NULL,
@@ -14215,6 +14710,7 @@ CREATE TABLE oe_ipp_submittal_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ipp_tpa (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -14239,6 +14735,7 @@ CREATE TABLE oe_ipp_tpa (
   created_at            TEXT NOT NULL,
   updated_at            TEXT NOT NULL
 );
+
 CREATE TABLE oe_ipp_tq_events (
   id TEXT PRIMARY KEY,
   tq_id TEXT NOT NULL,
@@ -14251,6 +14748,7 @@ CREATE TABLE oe_ipp_tq_events (
   regulator_crossed INTEGER DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_tqs (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -14323,6 +14821,7 @@ CREATE TABLE oe_ipp_tqs (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ipp_variation_orders (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,
@@ -14359,6 +14858,7 @@ CREATE TABLE oe_ipp_variation_orders (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE `oe_ipp_wul_applications` (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -14378,6 +14878,7 @@ CREATE TABLE `oe_ipp_wul_applications` (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_isda_agreements (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL,
@@ -14421,6 +14922,7 @@ CREATE TABLE oe_isda_agreements (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_itp_inspection (
   id                                  TEXT PRIMARY KEY,
   itp_number                          TEXT UNIQUE NOT NULL,
@@ -14530,6 +15032,7 @@ CREATE TABLE oe_itp_inspection (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_itp_inspection_events (
   id                  TEXT PRIMARY KEY,
   itp_id              TEXT NOT NULL,
@@ -14542,6 +15045,7 @@ CREATE TABLE oe_itp_inspection_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_kyc_beneficial_owners (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,                  -- the corporate entity
@@ -14555,6 +15059,7 @@ CREATE TABLE oe_kyc_beneficial_owners (
   verified_by     TEXT,
   source_of_funds TEXT
 );
+
 CREATE TABLE oe_kyc_risk_scores (
   participant_id           TEXT PRIMARY KEY,
   geographic_risk          REAL NOT NULL DEFAULT 0,   -- 0..100
@@ -14566,6 +15071,7 @@ CREATE TABLE oe_kyc_risk_scores (
   inputs_json              TEXT,                          -- audit trail of inputs
   last_assessed_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_kyc_screenings (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -14582,6 +15088,7 @@ CREATE TABLE oe_kyc_screenings (
   notes           TEXT,
   screened_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_kyc_submissions (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -14600,6 +15107,7 @@ CREATE TABLE oe_kyc_submissions (
   expires_at         TEXT,                       -- e.g. 12 months for proof of address
   submitted_at       TEXT NOT NULL DEFAULT (datetime('now'))
 , tenant_id TEXT, reason_code TEXT);
+
 CREATE TABLE oe_kyc_tiers (
   participant_id           TEXT PRIMARY KEY,
   current_tier             INTEGER NOT NULL DEFAULT 0,   -- 0..3
@@ -14610,6 +15118,7 @@ CREATE TABLE oe_kyc_tiers (
   upgraded_at              TEXT,
   updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_kyc_verifications (
   id                   TEXT PRIMARY KEY,
   chain_status         TEXT NOT NULL DEFAULT 'pending_submission',
@@ -14645,6 +15154,7 @@ CREATE TABLE oe_kyc_verifications (
   conditions_met_at    TEXT,
   verified_at          TEXT
 );
+
 CREATE TABLE oe_late_payment_fees (
   id              TEXT PRIMARY KEY,
   invoice_id      TEXT NOT NULL REFERENCES invoices(id),
@@ -14658,6 +15168,7 @@ CREATE TABLE oe_late_payment_fees (
   waived_by       TEXT,
   waiver_reason   TEXT
 );
+
 CREATE TABLE oe_lender_dunning_notices (
   id                     TEXT PRIMARY KEY,
   watchlist_id           TEXT,                       -- nullable for standalone notices
@@ -14688,6 +15199,7 @@ CREATE TABLE oe_lender_dunning_notices (
   created_at             TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_lender_ecl_staging (
   id                      TEXT PRIMARY KEY,
   facility_id             TEXT NOT NULL,
@@ -14705,6 +15217,7 @@ CREATE TABLE oe_lender_ecl_staging (
   notes                   TEXT,
   computed_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_lender_intercreditor (
   id                         TEXT PRIMARY KEY,
   project_id                 TEXT NOT NULL,
@@ -14718,6 +15231,7 @@ CREATE TABLE oe_lender_intercreditor (
   signed_at                  TEXT,
   created_at                 TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_lender_watchlist (
   id                     TEXT PRIMARY KEY,
   facility_id            TEXT NOT NULL,
@@ -14734,6 +15248,7 @@ CREATE TABLE oe_lender_watchlist (
   cleared_at             TEXT,
   added_by               TEXT
 , cure_deadline_at    TEXT, dunning_cycle       INTEGER NOT NULL DEFAULT 0, auto_escalated_at   TEXT, borrower_acked_at   TEXT);
+
 CREATE TABLE oe_lender_watchlist_events (
   id                  TEXT PRIMARY KEY,
   watchlist_id        TEXT NOT NULL,
@@ -14747,6 +15262,7 @@ CREATE TABLE oe_lender_watchlist_events (
   meta_json           TEXT,
   occurred_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_licence_applications (
   id                            TEXT PRIMARY KEY,
   application_number            TEXT UNIQUE NOT NULL,
@@ -14831,6 +15347,7 @@ CREATE TABLE oe_licence_applications (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_licence_applications_events (
   id                 TEXT PRIMARY KEY,
   application_id     TEXT NOT NULL,
@@ -14843,6 +15360,7 @@ CREATE TABLE oe_licence_applications_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_licence_obligations (
   id                    TEXT PRIMARY KEY,
   ipp_id                TEXT NOT NULL,
@@ -14879,6 +15397,7 @@ CREATE TABLE oe_licence_obligations (
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_licence_renewal_events (
   id              TEXT PRIMARY KEY,
   renewal_id      TEXT NOT NULL,
@@ -14891,6 +15410,7 @@ CREATE TABLE oe_licence_renewal_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_licence_renewals (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT NOT NULL UNIQUE,
@@ -14951,6 +15471,7 @@ CREATE TABLE oe_licence_renewals (
   created_at                  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_load_curtailment (
   id                      TEXT PRIMARY KEY,
   case_number             TEXT UNIQUE NOT NULL,
@@ -15033,6 +15554,7 @@ CREATE TABLE oe_load_curtailment (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_load_curtailment_events (
   id              TEXT PRIMARY KEY,
   curtailment_id  TEXT NOT NULL,
@@ -15045,6 +15567,7 @@ CREATE TABLE oe_load_curtailment_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_loan_defaults (
   id                      TEXT PRIMARY KEY,
   default_number          TEXT UNIQUE NOT NULL,
@@ -15128,6 +15651,7 @@ CREATE TABLE oe_loan_defaults (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_loan_defaults_events (
   id              TEXT PRIMARY KEY,
   default_id      TEXT NOT NULL,
@@ -15140,6 +15664,7 @@ CREATE TABLE oe_loan_defaults_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_loan_restructure (
   id                                                  TEXT PRIMARY KEY,
   restructure_number                                  TEXT UNIQUE NOT NULL,
@@ -15250,6 +15775,7 @@ CREATE TABLE oe_loan_restructure (
   created_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_loan_restructure_events (
   id                  TEXT PRIMARY KEY,
   restructure_id      TEXT NOT NULL,
@@ -15262,6 +15788,7 @@ CREATE TABLE oe_loan_restructure_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_loan_transfers (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -15374,6 +15901,7 @@ CREATE TABLE oe_loan_transfers (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_loan_transfers_events (
   id                 TEXT PRIMARY KEY,
   transfer_id        TEXT NOT NULL,
@@ -15386,6 +15914,7 @@ CREATE TABLE oe_loan_transfers_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_margin_calls (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -15402,6 +15931,7 @@ CREATE TABLE oe_margin_calls (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   satisfied_at        TEXT
 );
+
 CREATE TABLE oe_market_abuse_cases (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -15488,6 +16018,7 @@ CREATE TABLE oe_market_abuse_cases (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_market_abuse_cases_events (
   id                 TEXT PRIMARY KEY,
   case_id            TEXT NOT NULL,
@@ -15500,6 +16031,7 @@ CREATE TABLE oe_market_abuse_cases_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_market_conduct_exams (
   id                          TEXT PRIMARY KEY,
   participant_id              TEXT NOT NULL,   -- regulator conducting the examination
@@ -15561,6 +16093,7 @@ CREATE TABLE oe_market_conduct_exams (
   created_at                  TEXT NOT NULL,
   updated_at                  TEXT NOT NULL
 );
+
 CREATE TABLE oe_marketplace_reviews (
   id TEXT PRIMARY KEY,
   transaction_id TEXT NOT NULL REFERENCES oe_sustainability_transactions(id),
@@ -15570,6 +16103,7 @@ CREATE TABLE oe_marketplace_reviews (
   comment TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_methodology_amendments (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- carbon fund / project developer
@@ -15632,6 +16166,7 @@ CREATE TABLE oe_methodology_amendments (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_metrics_daily (
   id TEXT PRIMARY KEY,
   metric_date TEXT NOT NULL,                 -- YYYY-MM-DD
@@ -15643,6 +16178,7 @@ CREATE TABLE oe_metrics_daily (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(metric_date, chain_key)
 );
+
 CREATE TABLE oe_mfa_attempts (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -15651,6 +16187,7 @@ CREATE TABLE oe_mfa_attempts (
   ip                 TEXT,
   created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_mfa_enrollments (
   participant_id     TEXT PRIMARY KEY,
   secret_b32         TEXT NOT NULL,              -- TOTP shared secret (RFC 6238)
@@ -15662,6 +16199,7 @@ CREATE TABLE oe_mfa_enrollments (
   digits             INTEGER NOT NULL DEFAULT 6,
   period_seconds     INTEGER NOT NULL DEFAULT 30
 );
+
 CREATE TABLE oe_mfa_lockouts (
   participant_id  TEXT NOT NULL,
   ip              TEXT NOT NULL DEFAULT '*',
@@ -15670,6 +16208,7 @@ CREATE TABLE oe_mfa_lockouts (
   updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (participant_id, ip)
 );
+
 CREATE TABLE oe_mfa_policies (
   role                  TEXT PRIMARY KEY,
   required              INTEGER NOT NULL DEFAULT 0,
@@ -15679,6 +16218,7 @@ CREATE TABLE oe_mfa_policies (
   updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_by            TEXT
 );
+
 CREATE TABLE oe_mfa_recovery_codes (
   id                 TEXT PRIMARY KEY,
   participant_id     TEXT NOT NULL,
@@ -15686,6 +16226,7 @@ CREATE TABLE oe_mfa_recovery_codes (
   used_at            TEXT,                       -- NULL = available
   created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_milestone_variance_reports (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,
@@ -15739,6 +16280,7 @@ CREATE TABLE oe_milestone_variance_reports (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_mm_obligations (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -15756,6 +16298,7 @@ CREATE TABLE oe_mm_obligations (
                                                   -- active | suspended | terminated | expired
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 , consecutive_misses INTEGER DEFAULT 0, breach_status TEXT DEFAULT 'none', warning_threshold INTEGER DEFAULT 1, breach_threshold INTEGER DEFAULT 3, escalation_threshold INTEGER DEFAULT 5, last_breach_at TEXT, last_escalated_at TEXT, last_acknowledged_at TEXT, last_acknowledged_by TEXT);
+
 CREATE TABLE oe_mm_performance (
   id                TEXT PRIMARY KEY,
   obligation_id     TEXT NOT NULL,
@@ -15769,6 +16312,7 @@ CREATE TABLE oe_mm_performance (
   penalty_zar       REAL DEFAULT 0,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 , compliance_status TEXT, excused_reason TEXT, excused_by TEXT, excused_at TEXT);
+
 CREATE TABLE oe_mqtt_opcua_connector (
   id                                  TEXT PRIMARY KEY,
   connector_number                    TEXT UNIQUE NOT NULL,
@@ -15874,6 +16418,7 @@ CREATE TABLE oe_mqtt_opcua_connector (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_mqtt_opcua_connector_events (
   id                  TEXT PRIMARY KEY,
   connector_id        TEXT NOT NULL,
@@ -15888,6 +16433,7 @@ CREATE TABLE oe_mqtt_opcua_connector_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_mrv_chain_events (
   id TEXT PRIMARY KEY,
   submission_id TEXT NOT NULL REFERENCES mrv_submissions(id),
@@ -15904,6 +16450,7 @@ CREATE TABLE oe_mrv_chain_events (
   body_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_mypd_methodology (
   id              TEXT PRIMARY KEY,
   application_id  TEXT NOT NULL,
@@ -15923,6 +16470,7 @@ CREATE TABLE oe_mypd_methodology (
   approved_at     TEXT,
   notes           TEXT
 );
+
 CREATE TABLE oe_negotiation_rounds (
   id                TEXT PRIMARY KEY,
   rfq_id            TEXT NOT NULL,
@@ -15938,6 +16486,7 @@ CREATE TABLE oe_negotiation_rounds (
   decided_at        TEXT,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_nersa_reports (
   id                 TEXT PRIMARY KEY,
   year               INTEGER NOT NULL,
@@ -15951,6 +16500,7 @@ CREATE TABLE oe_nersa_reports (
   generated_by       TEXT,
   UNIQUE (year, quarter)
 );
+
 CREATE TABLE oe_ntt_comparison_battery (
   id                                      TEXT PRIMARY KEY,
   cycle_number                            TEXT UNIQUE NOT NULL,
@@ -16083,6 +16633,7 @@ CREATE TABLE oe_ntt_comparison_battery (
   created_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ntt_comparison_battery_events (
   id                  TEXT PRIMARY KEY,
   cycle_id            TEXT NOT NULL,
@@ -16097,6 +16648,7 @@ CREATE TABLE oe_ntt_comparison_battery_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_oem_field_change_order_events (
   id                 TEXT PRIMARY KEY,
   campaign_id        TEXT NOT NULL,
@@ -16109,6 +16661,7 @@ CREATE TABLE oe_oem_field_change_order_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_oem_field_change_orders (
   id                              TEXT PRIMARY KEY,
   campaign_number                 TEXT UNIQUE NOT NULL,
@@ -16208,6 +16761,7 @@ CREATE TABLE oe_oem_field_change_orders (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_offer_engagements (
   id                  TEXT PRIMARY KEY,
   offer_id            TEXT NOT NULL,
@@ -16225,6 +16779,7 @@ CREATE TABLE oe_offer_engagements (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_offtaker_delivery_verification (
   id                    TEXT PRIMARY KEY,
   obligation_id         TEXT NOT NULL,                           -- oe_offtaker_ppa_obligations.id
@@ -16244,6 +16799,7 @@ CREATE TABLE oe_offtaker_delivery_verification (
   notes                 TEXT,
   created_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_offtaker_ppa_obligations (
   id                     TEXT PRIMARY KEY,
   ppa_id                 TEXT NOT NULL,                          -- off_ppa_portfolio.id
@@ -16265,6 +16821,7 @@ CREATE TABLE oe_offtaker_ppa_obligations (
   created_at             TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_onboarding_provisioning_log (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -16275,12 +16832,14 @@ CREATE TABLE oe_onboarding_provisioning_log (
   detail_json     TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 , manifest TEXT DEFAULT '{}');
+
 CREATE TABLE oe_onboarding_state (
   user_id         TEXT NOT NULL,
   step_key        TEXT NOT NULL,
   completed_at    TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (user_id, step_key)
 );
+
 CREATE TABLE oe_permit_to_work (
   id                            TEXT PRIMARY KEY,
   permit_number                 TEXT UNIQUE NOT NULL,
@@ -16387,6 +16946,7 @@ CREATE TABLE oe_permit_to_work (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_permit_to_work_events (
   id                 TEXT PRIMARY KEY,
   permit_id          TEXT NOT NULL,
@@ -16399,6 +16959,7 @@ CREATE TABLE oe_permit_to_work_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_planned_outage_events (
   id          TEXT PRIMARY KEY,
   outage_id   TEXT NOT NULL,
@@ -16412,6 +16973,7 @@ CREATE TABLE oe_planned_outage_events (
   payload     TEXT,              -- JSON
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_planned_outages (
   id                  TEXT PRIMARY KEY,
   outage_number       TEXT UNIQUE NOT NULL,
@@ -16442,6 +17004,7 @@ CREATE TABLE oe_planned_outages (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_platform_events (
   id TEXT PRIMARY KEY,
   event TEXT NOT NULL,
@@ -16455,6 +17018,7 @@ CREATE TABLE oe_platform_events (
   data_json TEXT DEFAULT '{}',
   occurred_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_platform_revenue (
   id TEXT PRIMARY KEY,
   trigger_event TEXT NOT NULL,
@@ -16471,6 +17035,7 @@ CREATE TABLE oe_platform_revenue (
     CHECK(status IN ('pending','invoiced','paid','waived')),
   recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_pm_compliance (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -16569,6 +17134,7 @@ CREATE TABLE oe_pm_compliance (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_pm_compliance_events (
   id                 TEXT PRIMARY KEY,
   pm_id              TEXT NOT NULL,
@@ -16581,6 +17147,7 @@ CREATE TABLE oe_pm_compliance_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_pnl_attribution (
   id                                          TEXT PRIMARY KEY,
   pnl_number                                  TEXT UNIQUE NOT NULL,
@@ -16711,6 +17278,7 @@ CREATE TABLE oe_pnl_attribution (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_pnl_attribution_events (
   id                  TEXT PRIMARY KEY,
   pnl_id              TEXT NOT NULL,
@@ -16723,6 +17291,7 @@ CREATE TABLE oe_pnl_attribution_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_poa_cpa_inclusions (
   id                              TEXT PRIMARY KEY,
   cpa_number                      TEXT UNIQUE NOT NULL,
@@ -16841,6 +17410,7 @@ CREATE TABLE oe_poa_cpa_inclusions (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_poa_cpa_inclusions_events (
   id                 TEXT PRIMARY KEY,
   inclusion_id       TEXT NOT NULL,
@@ -16853,6 +17423,7 @@ CREATE TABLE oe_poa_cpa_inclusions_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_popia_retention_policies (
   data_type       TEXT PRIMARY KEY,                 -- 'session_logs' | 'audit_events' | 'pii_access_log' | etc
   retention_days  INTEGER NOT NULL,
@@ -16862,6 +17433,7 @@ CREATE TABLE oe_popia_retention_policies (
   notes           TEXT,
   updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_popia_sar_requests (
   id                  TEXT PRIMARY KEY,
   subject_email       TEXT NOT NULL,
@@ -16882,6 +17454,7 @@ CREATE TABLE oe_popia_sar_requests (
   rejection_reason    TEXT,
   ip                  TEXT
 );
+
 CREATE TABLE oe_position_breaches (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -16900,6 +17473,7 @@ CREATE TABLE oe_position_breaches (
   override_at     TEXT,
   override_reason TEXT
 );
+
 CREATE TABLE oe_position_limits (
   participant_id            TEXT NOT NULL,
   energy_type               TEXT NOT NULL,
@@ -16912,6 +17486,7 @@ CREATE TABLE oe_position_limits (
   set_at                    TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (participant_id, energy_type)
 );
+
 CREATE TABLE oe_poslimit_cases (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT NOT NULL UNIQUE,
@@ -16955,6 +17530,7 @@ CREATE TABLE oe_poslimit_cases (
   created_at                    TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_poslimit_events (
   id            TEXT PRIMARY KEY,
   poslimit_id   TEXT NOT NULL,
@@ -16966,6 +17542,7 @@ CREATE TABLE oe_poslimit_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ppa_annual_recon (
   id                                  TEXT PRIMARY KEY,
   recon_number                        TEXT UNIQUE NOT NULL,
@@ -17081,6 +17658,7 @@ CREATE TABLE oe_ppa_annual_recon (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_annual_recon_events (
   id                  TEXT PRIMARY KEY,
   recon_id            TEXT NOT NULL,
@@ -17093,6 +17671,7 @@ CREATE TABLE oe_ppa_annual_recon_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_change_in_law (
   id                       TEXT PRIMARY KEY,
   cil_number               TEXT UNIQUE NOT NULL,
@@ -17181,6 +17760,7 @@ CREATE TABLE oe_ppa_change_in_law (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_change_in_law_events (
   id                  TEXT PRIMARY KEY,
   change_in_law_id    TEXT NOT NULL,
@@ -17193,6 +17773,7 @@ CREATE TABLE oe_ppa_change_in_law_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_contract_chain (
   id                       TEXT PRIMARY KEY,
   ppa_number               TEXT UNIQUE NOT NULL,
@@ -17235,6 +17816,7 @@ CREATE TABLE oe_ppa_contract_chain (
   created_at               TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ppa_contract_chain_events (
   id          TEXT PRIMARY KEY,
   ppa_id      TEXT NOT NULL,
@@ -17246,6 +17828,7 @@ CREATE TABLE oe_ppa_contract_chain_events (
   payload     TEXT,              -- JSON
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_ppa_nomination_events (
   id                 TEXT PRIMARY KEY,
   nomination_id      TEXT NOT NULL,
@@ -17258,6 +17841,7 @@ CREATE TABLE oe_ppa_nomination_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_nominations (
   id                              TEXT PRIMARY KEY,
   nomination_number               TEXT UNIQUE NOT NULL,
@@ -17372,6 +17956,7 @@ CREATE TABLE oe_ppa_nominations (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_payment_securities (
   id                            TEXT PRIMARY KEY,
   security_number               TEXT UNIQUE NOT NULL,
@@ -17468,6 +18053,7 @@ CREATE TABLE oe_ppa_payment_securities (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_payment_securities_events (
   id                 TEXT PRIMARY KEY,
   security_id        TEXT NOT NULL,
@@ -17480,6 +18066,7 @@ CREATE TABLE oe_ppa_payment_securities_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_terminations (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -17597,6 +18184,7 @@ CREATE TABLE oe_ppa_terminations (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_ppa_terminations_events (
   id                 TEXT PRIMARY KEY,
   termination_id     TEXT NOT NULL,
@@ -17609,6 +18197,7 @@ CREATE TABLE oe_ppa_terminations_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_pr_chain (
   id                       TEXT PRIMARY KEY,
   case_number              TEXT NOT NULL UNIQUE,
@@ -17645,6 +18234,7 @@ CREATE TABLE oe_pr_chain (
   created_at               TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_pr_chain_events (
   id          TEXT PRIMARY KEY,
   case_id     TEXT NOT NULL,
@@ -17656,6 +18246,7 @@ CREATE TABLE oe_pr_chain_events (
   payload     TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_pretrade_credit_check (
   id                                                  TEXT PRIMARY KEY,
   check_number                                        TEXT UNIQUE NOT NULL,
@@ -17768,6 +18359,7 @@ CREATE TABLE oe_pretrade_credit_check (
   created_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_pretrade_credit_events (
   id                  TEXT PRIMARY KEY,
   check_id            TEXT NOT NULL,
@@ -17780,6 +18372,7 @@ CREATE TABLE oe_pretrade_credit_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_prime_rate (
   effective_from   TEXT PRIMARY KEY,                  -- YYYY-MM-DD
   rate_pct         REAL NOT NULL,
@@ -17787,6 +18380,7 @@ CREATE TABLE oe_prime_rate (
   updated_by       TEXT,
   updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_problem_records (
   id                       TEXT PRIMARY KEY,
   problem_number           TEXT UNIQUE NOT NULL,
@@ -17856,6 +18450,7 @@ CREATE TABLE oe_problem_records (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_problem_records_events (
   id              TEXT PRIMARY KEY,
   problem_id      TEXT NOT NULL,
@@ -17868,6 +18463,7 @@ CREATE TABLE oe_problem_records_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_procurement_chain_events (
   id          TEXT PRIMARY KEY,
   rfp_id      TEXT NOT NULL,
@@ -17881,6 +18477,7 @@ CREATE TABLE oe_procurement_chain_events (
   payload     TEXT,              -- JSON
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_procurement_rfps (
   id                  TEXT PRIMARY KEY,
   rfp_number          TEXT UNIQUE NOT NULL,
@@ -17913,6 +18510,7 @@ CREATE TABLE oe_procurement_rfps (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_project_change_order_events (
   id                  TEXT PRIMARY KEY,
   co_id               TEXT NOT NULL,
@@ -17925,6 +18523,7 @@ CREATE TABLE oe_project_change_order_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_project_change_orders (
   id                          TEXT PRIMARY KEY,
   co_number                   TEXT UNIQUE NOT NULL,
@@ -18027,6 +18626,7 @@ CREATE TABLE oe_project_change_orders (
   created_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_project_risks (
   id                                  TEXT PRIMARY KEY,
   risk_number                         TEXT UNIQUE NOT NULL,
@@ -18163,6 +18763,7 @@ CREATE TABLE oe_project_risks (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_project_risks_events (
   id            TEXT PRIMARY KEY,
   risk_id       TEXT NOT NULL,
@@ -18175,6 +18776,7 @@ CREATE TABLE oe_project_risks_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_protection_relay_tests (
   id                  TEXT PRIMARY KEY,
   chain_status        TEXT NOT NULL DEFAULT 'test_scheduled',
@@ -18200,6 +18802,7 @@ CREATE TABLE oe_protection_relay_tests (
   certificate_number  TEXT,
   next_test_due       TEXT
 );
+
 CREATE TABLE oe_public_comments (
   id              TEXT PRIMARY KEY,
   application_id  TEXT NOT NULL,
@@ -18216,6 +18819,7 @@ CREATE TABLE oe_public_comments (
   reviewed_at     TEXT,
   submitted_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_public_consultations (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- initiating regulator/admin
@@ -18275,6 +18879,7 @@ CREATE TABLE oe_public_consultations (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_punch_list (
   id                                  TEXT PRIMARY KEY,
   punch_number                        TEXT UNIQUE NOT NULL,
@@ -18373,6 +18978,7 @@ CREATE TABLE oe_punch_list (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_punch_list_events (
   id                  TEXT PRIMARY KEY,
   punch_id            TEXT NOT NULL,
@@ -18385,6 +18991,7 @@ CREATE TABLE oe_punch_list_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rec_devices (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -18418,6 +19025,7 @@ CREATE TABLE oe_rec_devices (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_rec_holdings (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -18437,6 +19045,7 @@ CREATE TABLE oe_rec_holdings (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_rec_issuance_requests (
   id TEXT PRIMARY KEY,
   device_id TEXT NOT NULL REFERENCES oe_rec_devices(id),
@@ -18461,6 +19070,7 @@ CREATE TABLE oe_rec_issuance_requests (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_rec_lifecycle (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT UNIQUE NOT NULL,
@@ -18560,6 +19170,7 @@ CREATE TABLE oe_rec_lifecycle (
   created_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rec_lifecycle_events (
   id              TEXT PRIMARY KEY,
   rec_id          TEXT NOT NULL,
@@ -18572,6 +19183,7 @@ CREATE TABLE oe_rec_lifecycle_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rec_metering_periods (
   id TEXT PRIMARY KEY,
   device_id TEXT NOT NULL REFERENCES oe_rec_devices(id),
@@ -18591,6 +19203,7 @@ CREATE TABLE oe_rec_metering_periods (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_rec_retirements (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -18606,6 +19219,7 @@ CREATE TABLE oe_rec_retirements (
   retired_at TEXT NOT NULL DEFAULT (datetime('now')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_reconciliation_attestation (
   id                                          TEXT PRIMARY KEY,
   attestation_number                          TEXT UNIQUE NOT NULL,
@@ -18748,6 +19362,7 @@ CREATE TABLE oe_reconciliation_attestation (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_reconciliation_attestation_events (
   id                  TEXT PRIMARY KEY,
   attestation_id      TEXT NOT NULL,
@@ -18762,6 +19377,7 @@ CREATE TABLE oe_reconciliation_attestation_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_regulator_complaints (
   id                       TEXT PRIMARY KEY,
   complaint_number         TEXT UNIQUE NOT NULL,
@@ -18845,6 +19461,7 @@ CREATE TABLE oe_regulator_complaints (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_regulator_complaints_events (
   id              TEXT PRIMARY KEY,
   complaint_id    TEXT NOT NULL,
@@ -18857,6 +19474,7 @@ CREATE TABLE oe_regulator_complaints_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_regulator_decisions (
   id                  TEXT PRIMARY KEY,
   application_id      TEXT NOT NULL,
@@ -18874,6 +19492,7 @@ CREATE TABLE oe_regulator_decisions (
   published_at        TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_regulator_escalation_rules (
   id                  TEXT PRIMARY KEY,
   rule_code           TEXT NOT NULL UNIQUE,
@@ -18888,6 +19507,7 @@ CREATE TABLE oe_regulator_escalation_rules (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_regulator_export_pack (
   id                                          TEXT PRIMARY KEY,
   pack_number                                 TEXT UNIQUE NOT NULL,
@@ -19024,6 +19644,7 @@ CREATE TABLE oe_regulator_export_pack (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_regulator_export_pack_events (
   id                  TEXT PRIMARY KEY,
   pack_id             TEXT NOT NULL,
@@ -19038,6 +19659,7 @@ CREATE TABLE oe_regulator_export_pack_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_regulator_inbox (
   id                  TEXT PRIMARY KEY,
   source_event        TEXT NOT NULL,          -- 'clearing.disclosure.published' etc.
@@ -19059,6 +19681,7 @@ CREATE TABLE oe_regulator_inbox (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_regulator_levies (
   id                       TEXT PRIMARY KEY,
   levy_number              TEXT UNIQUE NOT NULL,
@@ -19147,6 +19770,7 @@ CREATE TABLE oe_regulator_levies (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_regulator_levies_events (
   id              TEXT PRIMARY KEY,
   levy_id         TEXT NOT NULL,
@@ -19159,6 +19783,7 @@ CREATE TABLE oe_regulator_levies_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_report_submissions (
   id                          TEXT PRIMARY KEY,
   report_kind                 TEXT NOT NULL,        -- nersa_quarterly | sars_vat201 | sars_irp6 | sars_carbon_tax
@@ -19176,6 +19801,7 @@ CREATE TABLE oe_report_submissions (
   submitted_at                TEXT,
   created_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_reserve_account_chain (
   id                       TEXT PRIMARY KEY,
   reserve_number           TEXT UNIQUE NOT NULL,
@@ -19265,6 +19891,7 @@ CREATE TABLE oe_reserve_account_chain (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_reserve_account_chain_events (
   id                 TEXT PRIMARY KEY,
   reserve_account_id TEXT NOT NULL,
@@ -19277,6 +19904,7 @@ CREATE TABLE oe_reserve_account_chain_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_reserve_activations (
   id                            TEXT PRIMARY KEY,
   activation_number             TEXT UNIQUE NOT NULL,
@@ -19363,6 +19991,7 @@ CREATE TABLE oe_reserve_activations (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_reserve_activations_events (
   id                 TEXT PRIMARY KEY,
   activation_id      TEXT NOT NULL,
@@ -19375,6 +20004,7 @@ CREATE TABLE oe_reserve_activations_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_retirement_chain_events (
   id           TEXT PRIMARY KEY,
   retirement_id TEXT NOT NULL,
@@ -19388,6 +20018,7 @@ CREATE TABLE oe_retirement_chain_events (
   payload      TEXT,                  -- JSON
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_revenue_splits (
   id TEXT PRIMARY KEY,
   revenue_id TEXT NOT NULL,
@@ -19397,6 +20028,7 @@ CREATE TABLE oe_revenue_splits (
   amount_zar REAL NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_rez_capacity_allocations (
   id                                  TEXT PRIMARY KEY,
   allocation_number                   TEXT UNIQUE NOT NULL,
@@ -19519,6 +20151,7 @@ CREATE TABLE oe_rez_capacity_allocations (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rez_capacity_events (
   id            TEXT PRIMARY KEY,
   allocation_id TEXT NOT NULL,
@@ -19531,6 +20164,7 @@ CREATE TABLE oe_rez_capacity_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rfq_quotes (
   id                TEXT PRIMARY KEY,
   rfq_id            TEXT NOT NULL,
@@ -19552,6 +20186,7 @@ CREATE TABLE oe_rfq_quotes (
   expires_at        TEXT,
   UNIQUE (rfq_id, seller_id)                  -- one current quote per seller per RFQ
 );
+
 CREATE TABLE oe_rfqs (
   id                TEXT PRIMARY KEY,
   rfq_number        TEXT NOT NULL UNIQUE,
@@ -19582,6 +20217,7 @@ CREATE TABLE oe_rfqs (
   created_at        TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at        TEXT
 );
+
 CREATE TABLE oe_role_action_queue (
   id TEXT PRIMARY KEY,
   target_role TEXT NOT NULL,                 -- PlatformRole that must act
@@ -19603,6 +20239,7 @@ CREATE TABLE oe_role_action_queue (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 , tenant_id TEXT NOT NULL DEFAULT 'default');
+
 CREATE TABLE oe_rul_prediction_ml (
   id                                      TEXT PRIMARY KEY,
   model_number                            TEXT UNIQUE NOT NULL,
@@ -19728,6 +20365,7 @@ CREATE TABLE oe_rul_prediction_ml (
   created_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rul_prediction_ml_events (
   id                  TEXT PRIMARY KEY,
   model_id            TEXT NOT NULL,
@@ -19742,6 +20380,7 @@ CREATE TABLE oe_rul_prediction_ml_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_rum_events (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT,
@@ -19755,6 +20394,7 @@ CREATE TABLE oe_rum_events (
   device_category TEXT,                 -- mobile | tablet | desktop
   recorded_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_sap_oracle_erp_connector (
   id                                      TEXT PRIMARY KEY,
   connector_number                        TEXT UNIQUE NOT NULL,
@@ -19871,6 +20511,7 @@ CREATE TABLE oe_sap_oracle_erp_connector (
   created_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_sap_oracle_erp_connector_events (
   id                  TEXT PRIMARY KEY,
   connector_id        TEXT NOT NULL,
@@ -19885,6 +20526,7 @@ CREATE TABLE oe_sap_oracle_erp_connector_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_sars_reports (
   id                 TEXT PRIMARY KEY,
   period_type        TEXT NOT NULL,               -- vat201 | irp6 | carbon_tax
@@ -19897,6 +20539,7 @@ CREATE TABLE oe_sars_reports (
   generated_by       TEXT,
   UNIQUE (period_type, period_label)
 );
+
 CREATE TABLE oe_saved_filters (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT NOT NULL,
@@ -19909,6 +20552,7 @@ CREATE TABLE oe_saved_filters (
   last_used_at          TEXT,
   created_at            TEXT NOT NULL DEFAULT (datetime('now'))
 , shared_role TEXT, updated_at TEXT);
+
 CREATE TABLE oe_scada_connector (
   id                                  TEXT PRIMARY KEY,
   connector_number                    TEXT UNIQUE NOT NULL,
@@ -20010,6 +20654,7 @@ CREATE TABLE oe_scada_connector (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_scada_connector_events (
   id                  TEXT PRIMARY KEY,
   connector_id        TEXT NOT NULL,
@@ -20024,6 +20669,7 @@ CREATE TABLE oe_scada_connector_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_security_perfection (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT UNIQUE NOT NULL,
@@ -20118,6 +20764,7 @@ CREATE TABLE oe_security_perfection (
   created_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_security_perfection_events (
   id              TEXT PRIMARY KEY,
   perfection_id   TEXT NOT NULL,
@@ -20130,6 +20777,7 @@ CREATE TABLE oe_security_perfection_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_security_remediations (
   id                            TEXT PRIMARY KEY,
   remediation_number            TEXT UNIQUE NOT NULL,
@@ -20227,6 +20875,7 @@ CREATE TABLE oe_security_remediations (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_security_remediations_events (
   id                 TEXT PRIMARY KEY,
   remediation_id     TEXT NOT NULL,
@@ -20239,6 +20888,7 @@ CREATE TABLE oe_security_remediations_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_serial_registry_uri (
   id                 TEXT PRIMARY KEY,
   certificate_id     TEXT NOT NULL,
@@ -20251,6 +20901,7 @@ CREATE TABLE oe_serial_registry_uri (
   resolved_sha256    TEXT,           -- hash of the response payload for tamper detection
   created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_service_contract_events (
   id                  TEXT PRIMARY KEY,
   contract_id         TEXT NOT NULL,
@@ -20263,6 +20914,7 @@ CREATE TABLE oe_service_contract_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_service_contracts (
   id                       TEXT PRIMARY KEY,
   contract_number          TEXT UNIQUE NOT NULL,
@@ -20366,6 +21018,7 @@ CREATE TABLE oe_service_contracts (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_service_request_chain (
   id                                                TEXT PRIMARY KEY,
   request_number                                    TEXT UNIQUE NOT NULL,
@@ -20474,6 +21127,7 @@ CREATE TABLE oe_service_request_chain (
   created_at                                        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_service_request_chain_events (
   id                  TEXT PRIMARY KEY,
   request_id          TEXT NOT NULL,
@@ -20486,6 +21140,7 @@ CREATE TABLE oe_service_request_chain_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_settlement_cycles (
   id                  TEXT PRIMARY KEY,
   trade_date          TEXT NOT NULL,             -- T (the date traded)
@@ -20502,6 +21157,7 @@ CREATE TABLE oe_settlement_cycles (
   settled_at          TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_settlement_fails (
   id                              TEXT PRIMARY KEY,
   fail_number                     TEXT UNIQUE NOT NULL,
@@ -20614,6 +21270,7 @@ CREATE TABLE oe_settlement_fails (
   created_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_settlement_fails_events (
   id                 TEXT PRIMARY KEY,
   fail_id            TEXT NOT NULL,
@@ -20626,6 +21283,7 @@ CREATE TABLE oe_settlement_fails_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_settlement_instructions (
   id                  TEXT PRIMARY KEY,
   net_leg_id          TEXT,                       -- nullable for ad-hoc instructions
@@ -20644,6 +21302,7 @@ CREATE TABLE oe_settlement_instructions (
   failure_reason      TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_settlement_net_legs (
   id                  TEXT PRIMARY KEY,
   cycle_id            TEXT NOT NULL,
@@ -20657,6 +21316,7 @@ CREATE TABLE oe_settlement_net_legs (
   novated_at          TEXT,
   settled_at          TEXT
 );
+
 CREATE TABLE oe_signatures (
   id              TEXT PRIMARY KEY,
   document_kind   TEXT NOT NULL,            -- contract | regulator_pack | nersa_submission |
@@ -20675,6 +21335,7 @@ CREATE TABLE oe_signatures (
   verified_at     TEXT,
   notes           TEXT
 );
+
 CREATE TABLE oe_site_commissioning_events (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL REFERENCES om_sites(id),
@@ -20692,6 +21353,7 @@ CREATE TABLE oe_site_commissioning_events (
   body_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_sla_performance_reports (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- support / OEM operator
@@ -20747,6 +21409,7 @@ CREATE TABLE oe_sla_performance_reports (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_slb_kpi_ratchets (
   id                      TEXT PRIMARY KEY,
   participant_id          TEXT NOT NULL,
@@ -20799,6 +21462,7 @@ CREATE TABLE oe_slb_kpi_ratchets (
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
+
 CREATE TABLE oe_sll_kpi_compliance (
   id                                  TEXT PRIMARY KEY,
   compliance_number                   TEXT UNIQUE NOT NULL,
@@ -20937,6 +21601,7 @@ CREATE TABLE oe_sll_kpi_compliance (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_sll_kpi_events (
   id            TEXT PRIMARY KEY,
   compliance_id TEXT NOT NULL,
@@ -20949,6 +21614,7 @@ CREATE TABLE oe_sll_kpi_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_smart_meter_assets (
   id                    TEXT PRIMARY KEY,
   chain_status          TEXT NOT NULL DEFAULT 'ordered',
@@ -20986,6 +21652,7 @@ CREATE TABLE oe_smart_meter_assets (
   replacement_reason    TEXT,
   decommissioned_at     TEXT
 );
+
 CREATE TABLE oe_soiling_audit (
   id                                  TEXT PRIMARY KEY,
   audit_number                        TEXT UNIQUE NOT NULL,
@@ -21097,6 +21764,7 @@ CREATE TABLE oe_soiling_audit (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_soiling_audit_events (
   id                  TEXT PRIMARY KEY,
   audit_id            TEXT NOT NULL,
@@ -21109,6 +21777,7 @@ CREATE TABLE oe_soiling_audit_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_spare_parts_provisioning (
   id                            TEXT PRIMARY KEY,
   line_number                   TEXT UNIQUE NOT NULL,
@@ -21236,6 +21905,7 @@ CREATE TABLE oe_spare_parts_provisioning (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_spare_parts_provisioning_events (
   id                 TEXT PRIMARY KEY,
   provisioning_id    TEXT NOT NULL,
@@ -21248,6 +21918,7 @@ CREATE TABLE oe_spare_parts_provisioning_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_sseg_registrations (
   id                            TEXT PRIMARY KEY,
   registration_number           TEXT UNIQUE NOT NULL,
@@ -21334,6 +22005,7 @@ CREATE TABLE oe_sseg_registrations (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_sseg_registrations_events (
   id                 TEXT PRIMARY KEY,
   registration_id    TEXT NOT NULL,
@@ -21346,6 +22018,7 @@ CREATE TABLE oe_sseg_registrations_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_stage_gate_events (
   id                  TEXT PRIMARY KEY,
   gate_id             TEXT NOT NULL,
@@ -21359,6 +22032,7 @@ CREATE TABLE oe_stage_gate_events (
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (gate_id) REFERENCES oe_stage_gates(id)
 );
+
 CREATE TABLE oe_stage_gates (
   id                                    TEXT PRIMARY KEY,
   gate_index                            INTEGER NOT NULL CHECK (gate_index IN (0,1,2,3,4)),
@@ -21471,6 +22145,7 @@ CREATE TABLE oe_stage_gates (
   created_at                            TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                            TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_state_of_energy_reports (
   id                  TEXT PRIMARY KEY,
   year                INTEGER NOT NULL UNIQUE,
@@ -21488,6 +22163,7 @@ CREATE TABLE oe_state_of_energy_reports (
   generated_at        TEXT NOT NULL DEFAULT (datetime('now')),
   generated_by        TEXT
 );
+
 CREATE TABLE oe_station_participant_links (
   id                       TEXT PRIMARY KEY,
   station_id               TEXT NOT NULL,
@@ -21504,6 +22180,7 @@ CREATE TABLE oe_station_participant_links (
   created_at               TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_status_incident_updates (
   id          TEXT PRIMARY KEY,
   incident_id TEXT NOT NULL,
@@ -21512,6 +22189,7 @@ CREATE TABLE oe_status_incident_updates (
   author_id   TEXT NOT NULL,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_status_incidents (
   id                  TEXT PRIMARY KEY,
   title               TEXT NOT NULL,
@@ -21528,6 +22206,7 @@ CREATE TABLE oe_status_incidents (
   created_by          TEXT NOT NULL,
   updated_at          TEXT
 );
+
 CREATE TABLE oe_status_maintenance_windows (
   id                  TEXT PRIMARY KEY,
   title               TEXT NOT NULL,
@@ -21540,6 +22219,7 @@ CREATE TABLE oe_status_maintenance_windows (
   created_by          TEXT NOT NULL,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_status_metrics (
   ts                 TEXT NOT NULL,               -- minute-truncated UTC
   metric             TEXT NOT NULL,               -- api_latency_p50 | api_latency_p95 |
@@ -21548,6 +22228,7 @@ CREATE TABLE oe_status_metrics (
   value              REAL NOT NULL,
   PRIMARY KEY (ts, metric)
 );
+
 CREATE TABLE oe_status_subscribers (
   id                   TEXT PRIMARY KEY,
   channel              TEXT NOT NULL,                  -- email | webhook
@@ -21559,6 +22240,7 @@ CREATE TABLE oe_status_subscribers (
   unsubscribe_token    TEXT NOT NULL,                  -- one-click unsub
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_status_uptime_daily (
   day            TEXT NOT NULL,                       -- YYYY-MM-DD
   component      TEXT NOT NULL,
@@ -21566,6 +22248,7 @@ CREATE TABLE oe_status_uptime_daily (
   incident_count INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, component)
 );
+
 CREATE TABLE oe_step_up_sessions (
   id               TEXT PRIMARY KEY,
   participant_id   TEXT NOT NULL,
@@ -21576,6 +22259,7 @@ CREATE TABLE oe_step_up_sessions (
   authenticated_at TEXT NOT NULL DEFAULT (datetime('now')),
   expires_at       TEXT NOT NULL              -- per-policy grace
 );
+
 CREATE TABLE oe_strate_swift_connector (
   id                                  TEXT PRIMARY KEY,
   connector_number                    TEXT UNIQUE NOT NULL,
@@ -21686,6 +22370,7 @@ CREATE TABLE oe_strate_swift_connector (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_strate_swift_connector_events (
   id                  TEXT PRIMARY KEY,
   connector_id        TEXT NOT NULL,
@@ -21700,6 +22385,7 @@ CREATE TABLE oe_strate_swift_connector_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_submittal_rfi (
   id                                  TEXT PRIMARY KEY,
   submittal_rfi_number                TEXT UNIQUE NOT NULL,
@@ -21836,6 +22522,7 @@ CREATE TABLE oe_submittal_rfi (
   created_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_submittal_rfi_events (
   id                  TEXT PRIMARY KEY,
   submittal_rfi_id    TEXT NOT NULL,
@@ -21848,6 +22535,7 @@ CREATE TABLE oe_submittal_rfi_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_subscription_invoices (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,          -- the billed participant (company)
@@ -21903,6 +22591,7 @@ CREATE TABLE oe_subscription_invoices (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_substation_assets (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,   -- grid operator (NTCSA/Eskom/MV distributor)
@@ -21966,6 +22655,7 @@ CREATE TABLE oe_substation_assets (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE oe_support_ticket_events (
   id TEXT PRIMARY KEY,
   ticket_id TEXT NOT NULL,
@@ -21982,6 +22672,7 @@ CREATE TABLE oe_support_ticket_events (
   payload_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_surveillance_alerts (
   id                TEXT PRIMARY KEY,
   alert_type        TEXT NOT NULL,                -- wash_trade | layering | spoofing |
@@ -22004,6 +22695,7 @@ CREATE TABLE oe_surveillance_alerts (
   reported_at       TEXT,
   notes             TEXT
 );
+
 CREATE TABLE oe_sustainability_listings (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,                -- seller
@@ -22053,6 +22745,7 @@ CREATE TABLE oe_sustainability_listings (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_sustainability_transactions (
   id TEXT PRIMARY KEY,
   listing_id TEXT NOT NULL REFERENCES oe_sustainability_listings(id),
@@ -22099,6 +22792,7 @@ CREATE TABLE oe_sustainability_transactions (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_tariff_applications (
   id                  TEXT PRIMARY KEY,
   applicant_id        TEXT NOT NULL,
@@ -22120,6 +22814,7 @@ CREATE TABLE oe_tariff_applications (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT
 );
+
 CREATE TABLE oe_tariff_determinations (
   id                            TEXT PRIMARY KEY,
   determination_number          TEXT UNIQUE NOT NULL,
@@ -22211,6 +22906,7 @@ CREATE TABLE oe_tariff_determinations (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_tariff_determinations_events (
   id                 TEXT PRIMARY KEY,
   determination_id   TEXT NOT NULL,
@@ -22223,6 +22919,7 @@ CREATE TABLE oe_tariff_determinations_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_tariff_indexation (
   id                      TEXT PRIMARY KEY,
   indexation_number       TEXT UNIQUE NOT NULL,
@@ -22304,6 +23001,7 @@ CREATE TABLE oe_tariff_indexation (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_tariff_indexation_events (
   id              TEXT PRIMARY KEY,
   indexation_id   TEXT NOT NULL,
@@ -22316,6 +23014,7 @@ CREATE TABLE oe_tariff_indexation_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_tenant_usage (
   participant_id       TEXT NOT NULL,
   day                  TEXT NOT NULL,        -- YYYY-MM-DD
@@ -22331,6 +23030,7 @@ CREATE TABLE oe_tenant_usage (
   est_cost_usd         REAL    NOT NULL DEFAULT 0,
   PRIMARY KEY (participant_id, day)
 );
+
 CREATE TABLE oe_top_cases (
   id                          TEXT PRIMARY KEY,
   case_number                 TEXT NOT NULL UNIQUE,
@@ -22386,6 +23086,7 @@ CREATE TABLE oe_top_cases (
   created_at                  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at                  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_top_events (
   id              TEXT PRIMARY KEY,
   top_id          TEXT NOT NULL,
@@ -22398,6 +23099,7 @@ CREATE TABLE oe_top_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_trade_allocation_events (
   id              TEXT PRIMARY KEY,
   allocation_id   TEXT NOT NULL,
@@ -22410,6 +23112,7 @@ CREATE TABLE oe_trade_allocation_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_trade_allocations (
   id                       TEXT PRIMARY KEY,
   allocation_number        TEXT UNIQUE NOT NULL,
@@ -22496,6 +23199,7 @@ CREATE TABLE oe_trade_allocations (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_trade_reports (
   id                       TEXT PRIMARY KEY,
   report_number            TEXT UNIQUE NOT NULL,
@@ -22583,6 +23287,7 @@ CREATE TABLE oe_trade_reports (
   created_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at               TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_trade_reports_events (
   id            TEXT PRIMARY KEY,
   report_id     TEXT NOT NULL,
@@ -22595,6 +23300,7 @@ CREATE TABLE oe_trade_reports_events (
   payload       TEXT,
   created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_trading_party_link (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,        -- participants.id (== trading user.id)
@@ -22603,6 +23309,7 @@ CREATE TABLE oe_trading_party_link (
                     CHECK (link_type IN ('trading_party', 'surveillance_party')),
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_transmission_outage (
   id                                          TEXT PRIMARY KEY,
   outage_number                               TEXT UNIQUE NOT NULL,
@@ -22716,6 +23423,7 @@ CREATE TABLE oe_transmission_outage (
   created_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                                  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_transmission_outage_events (
   id                  TEXT PRIMARY KEY,
   outage_id           TEXT NOT NULL,
@@ -22728,6 +23436,7 @@ CREATE TABLE oe_transmission_outage_events (
   payload             TEXT,
   created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_trusted_devices (
   id                TEXT PRIMARY KEY,
   participant_id    TEXT NOT NULL,
@@ -22740,6 +23449,7 @@ CREATE TABLE oe_trusted_devices (
   revoked           INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_unserved_energy_claims (
   id                   TEXT PRIMARY KEY,
   chain_status         TEXT NOT NULL DEFAULT 'claim_submitted',
@@ -22761,6 +23471,7 @@ CREATE TABLE oe_unserved_energy_claims (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_variation_orders (
   id                  TEXT PRIMARY KEY,
   project_id          TEXT NOT NULL,
@@ -22787,6 +23498,7 @@ CREATE TABLE oe_variation_orders (
   rejected_at         TEXT,
   rejected_reason     TEXT
 );
+
 CREATE TABLE oe_vcm_holdings (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -22809,6 +23521,7 @@ CREATE TABLE oe_vcm_holdings (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_vcm_market_data (
   id TEXT PRIMARY KEY,
   methodology TEXT NOT NULL,
@@ -22825,6 +23538,7 @@ CREATE TABLE oe_vcm_market_data (
   computed_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(methodology, registry_standard, vintage_year)
 );
+
 CREATE TABLE oe_vcm_orders (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -22844,6 +23558,7 @@ CREATE TABLE oe_vcm_orders (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_vcm_pdd_sections (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES oe_vcm_projects(id),
@@ -22859,6 +23574,7 @@ CREATE TABLE oe_vcm_pdd_sections (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_vcm_projects (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -22896,6 +23612,7 @@ CREATE TABLE oe_vcm_projects (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 , vcm_tier TEXT CHECK(vcm_tier IN ('micro','small','large','mega')));
+
 CREATE TABLE oe_vcm_trades (
   id TEXT PRIMARY KEY,
   bid_order_id TEXT NOT NULL REFERENCES oe_vcm_orders(id),
@@ -22918,6 +23635,7 @@ CREATE TABLE oe_vcm_trades (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_vendor_escalation (
   id                      TEXT PRIMARY KEY,
   case_number             TEXT UNIQUE NOT NULL,
@@ -23009,6 +23727,7 @@ CREATE TABLE oe_vendor_escalation (
   created_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at              TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_vendor_escalation_events (
   id              TEXT PRIMARY KEY,
   escalation_id   TEXT NOT NULL,
@@ -23021,6 +23740,7 @@ CREATE TABLE oe_vendor_escalation_events (
   payload         TEXT,
   created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_virtual_ppa_settlements (
   id TEXT PRIMARY KEY,
   contract_ref TEXT NOT NULL,            -- underlying virtual/financial PPA (CfD) contract reference
@@ -23082,6 +23802,7 @@ CREATE TABLE oe_virtual_ppa_settlements (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_warranty_claim_events (
   id TEXT PRIMARY KEY,
   claim_id TEXT NOT NULL,
@@ -23098,6 +23819,7 @@ CREATE TABLE oe_warranty_claim_events (
   payload_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_warranty_claims (
   id TEXT PRIMARY KEY,
   claim_number TEXT NOT NULL UNIQUE,
@@ -23150,6 +23872,7 @@ CREATE TABLE oe_warranty_claims (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_warranty_recoveries (
   id                            TEXT PRIMARY KEY,
   case_number                   TEXT UNIQUE NOT NULL,
@@ -23269,6 +23992,7 @@ CREATE TABLE oe_warranty_recoveries (
   created_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_warranty_recoveries_events (
   id                 TEXT PRIMARY KEY,
   recovery_id        TEXT NOT NULL,
@@ -23281,6 +24005,7 @@ CREATE TABLE oe_warranty_recoveries_events (
   payload            TEXT,
   created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE oe_webauthn_credentials (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23293,6 +24018,7 @@ CREATE TABLE oe_webauthn_credentials (
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   revoked_at      TEXT
 );
+
 CREATE TABLE oe_webhook_deliveries (
   id                TEXT PRIMARY KEY,
   subscription_id   TEXT NOT NULL,
@@ -23305,6 +24031,7 @@ CREATE TABLE oe_webhook_deliveries (
   delivered_at      TEXT,
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_webhook_subscriptions (
   id                       TEXT PRIMARY KEY,
   participant_id           TEXT NOT NULL,
@@ -23320,6 +24047,7 @@ CREATE TABLE oe_webhook_subscriptions (
   created_by               TEXT NOT NULL,
   created_at               TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE oe_wheeling_access (
   id                        TEXT PRIMARY KEY,
   participant_id            TEXT NOT NULL,   -- offtaker requesting wheeling access
@@ -23379,6 +24107,7 @@ CREATE TABLE oe_wheeling_access (
   created_at                TEXT NOT NULL,
   updated_at                TEXT NOT NULL
 );
+
 CREATE TABLE oe_wheeling_agreements (
   id                  TEXT PRIMARY KEY,
   generator_id        TEXT NOT NULL,
@@ -23398,6 +24127,7 @@ CREATE TABLE oe_wheeling_agreements (
   notes               TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 , dispute_window_days INTEGER);
+
 CREATE TABLE off_btm_designs (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23416,6 +24146,7 @@ CREATE TABLE off_btm_designs (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE off_cfe_commitments (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23429,6 +24160,7 @@ CREATE TABLE off_cfe_commitments (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE off_contract_redlines (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23441,6 +24173,7 @@ CREATE TABLE off_contract_redlines (
   status          TEXT DEFAULT 'draft' CHECK (status IN ('draft','sent','received','accepted','rejected','superseded')),
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE off_energy_budgets (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23455,6 +24188,7 @@ CREATE TABLE off_energy_budgets (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE off_ppa_portfolio (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -23474,6 +24208,7 @@ CREATE TABLE off_ppa_portfolio (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 , cure_window_days INTEGER, take_or_pay_pct REAL);
+
 CREATE TABLE off_scope2_reports (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23494,6 +24229,7 @@ CREATE TABLE off_scope2_reports (
   created_at      TEXT DEFAULT (datetime('now')),
   UNIQUE (participant_id, reporting_year)
 );
+
 CREATE TABLE off_tou_optimisations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -23508,6 +24244,7 @@ CREATE TABLE off_tou_optimisations (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE offtaker_bills (
       id TEXT PRIMARY KEY,
       offtaker_id TEXT NOT NULL,
@@ -23516,6 +24253,7 @@ CREATE TABLE offtaker_bills (
       ai_result_json TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
 CREATE TABLE offtaker_budgets (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -23527,6 +24265,7 @@ CREATE TABLE offtaker_budgets (
   cost_centre TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE offtaker_delivery_points (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -23543,6 +24282,7 @@ CREATE TABLE offtaker_delivery_points (
   updated_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE
 );
+
 CREATE TABLE offtaker_site_group_members (
   id TEXT PRIMARY KEY,
   group_id TEXT NOT NULL REFERENCES offtaker_site_groups(id) ON DELETE CASCADE,
@@ -23551,6 +24291,7 @@ CREATE TABLE offtaker_site_group_members (
   added_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (group_id, delivery_point_id)
 );
+
 CREATE TABLE offtaker_site_groups (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -23562,6 +24303,7 @@ CREATE TABLE offtaker_site_groups (
   cost_centre TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_alerts (
   id            TEXT PRIMARY KEY,
   rule_id       TEXT,               -- nullable for one-off alerts
@@ -23577,6 +24319,7 @@ CREATE TABLE om_alerts (
   acknowledged_at TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_connections (
   id              TEXT PRIMARY KEY,
   site_id         TEXT NOT NULL,
@@ -23594,6 +24337,7 @@ CREATE TABLE om_connections (
   enabled         INTEGER NOT NULL DEFAULT 1,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_connector_runs (
   id              TEXT PRIMARY KEY,
   site_id         TEXT NOT NULL,
@@ -23610,6 +24354,7 @@ CREATE TABLE om_connector_runs (
   error_sample    TEXT,                     -- first error message if rejected > 0
   metadata        TEXT                      -- JSON: filename, sha256, user_agent, etc.
 );
+
 CREATE TABLE om_devices (
   id                    TEXT PRIMARY KEY,
   site_id               TEXT NOT NULL REFERENCES om_sites(id),
@@ -23629,6 +24374,7 @@ CREATE TABLE om_devices (
   location_in_plant     TEXT,              -- e.g. "Row 3, INV-7"
   created_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_faults (
   id                    TEXT PRIMARY KEY,
   site_id               TEXT NOT NULL,
@@ -23657,6 +24403,7 @@ CREATE TABLE om_faults (
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT
 );
+
 CREATE TABLE om_forecasts (
   id              TEXT PRIMARY KEY,
   site_id         TEXT NOT NULL,
@@ -23670,6 +24417,7 @@ CREATE TABLE om_forecasts (
   model_version   TEXT,
   confidence_pct  REAL
 );
+
 CREATE TABLE om_ingest_keys (
   id              TEXT PRIMARY KEY,
   site_id         TEXT NOT NULL,
@@ -23684,6 +24432,7 @@ CREATE TABLE om_ingest_keys (
   expires_at      TEXT,
   revoked         INTEGER NOT NULL DEFAULT 0
 );
+
 CREATE TABLE om_maintenance (
   id                  TEXT PRIMARY KEY,
   site_id             TEXT NOT NULL,
@@ -23705,6 +24454,7 @@ CREATE TABLE om_maintenance (
   auto_create_wo_days INTEGER DEFAULT 7, -- days before due_at to auto-create
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_part_movements (
   id          TEXT PRIMARY KEY,
   part_id     TEXT NOT NULL REFERENCES om_parts(id),
@@ -23715,6 +24465,7 @@ CREATE TABLE om_part_movements (
   reason      TEXT,
   occurred_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_parts (
   id              TEXT PRIMARY KEY,
   part_number     TEXT NOT NULL UNIQUE,
@@ -23729,6 +24480,7 @@ CREATE TABLE om_parts (
   warehouse_id    TEXT DEFAULT 'main',
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_portal_tokens (
   id            TEXT PRIMARY KEY,
   token         TEXT NOT NULL UNIQUE,    -- random opaque token
@@ -23744,6 +24496,7 @@ CREATE TABLE om_portal_tokens (
   created_by    TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_predictions (
   id                TEXT PRIMARY KEY,
   site_id           TEXT NOT NULL,
@@ -23761,6 +24514,7 @@ CREATE TABLE om_predictions (
   generated_at      TEXT NOT NULL DEFAULT (datetime('now')),
   closed_at         TEXT
 );
+
 CREATE TABLE om_retention_policy (
   k                   TEXT PRIMARY KEY,
   raw_keep_days       INTEGER NOT NULL DEFAULT 14,    -- om_telemetry
@@ -23768,6 +24522,7 @@ CREATE TABLE om_retention_policy (
   weekly_keep_days    INTEGER NOT NULL DEFAULT 3650,  -- 10 years
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_sites (
   id                    TEXT PRIMARY KEY,
   name                  TEXT NOT NULL,
@@ -23790,6 +24545,7 @@ CREATE TABLE om_sites (
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT
 , water_tariff_zar_kl REAL, commissioning_status TEXT NOT NULL DEFAULT 'planned', commissioning_due_at TEXT, commissioning_owner_id TEXT, commissioning_started_at TEXT, devices_registered_at TEXT, ingestion_wired_at TEXT, first_telemetry_at TEXT, energised_at TEXT, in_om_at TEXT, commissioning_failed_at TEXT, commissioning_failure_reason TEXT, last_commissioning_sla_breach_at TEXT);
+
 CREATE TABLE om_technicians (
   id                    TEXT PRIMARY KEY,
   participant_id        TEXT,              -- optional link if user-backed
@@ -23808,6 +24564,7 @@ CREATE TABLE om_technicians (
   contractor_id         TEXT,              -- if works for an O&M contractor
   created_at            TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_telemetry (
   id                    TEXT PRIMARY KEY,
   device_id             TEXT NOT NULL REFERENCES om_devices(id),
@@ -23828,6 +24585,7 @@ CREATE TABLE om_telemetry (
                                             -- gap | suspect | manual
   created_at            TEXT NOT NULL DEFAULT (datetime('now'))
 , flow_lps REAL, pressure_bar REAL, level_m REAL, treated_kl REAL, raw_kl REAL, pump_kw REAL);
+
 CREATE TABLE om_telemetry_daily (
   device_id          TEXT NOT NULL,
   site_id            TEXT NOT NULL,
@@ -23851,6 +24609,7 @@ CREATE TABLE om_telemetry_daily (
   rolled_at          TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (device_id, day)
 );
+
 CREATE TABLE om_telemetry_weekly (
   site_id           TEXT NOT NULL,
   iso_week          TEXT NOT NULL,                   -- YYYY-WW
@@ -23863,6 +24622,7 @@ CREATE TABLE om_telemetry_weekly (
   rolled_at         TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (site_id, iso_week)
 );
+
 CREATE TABLE om_wo_chain_events (
   id              TEXT PRIMARY KEY,
   wo_id           TEXT NOT NULL,
@@ -23876,6 +24636,7 @@ CREATE TABLE om_wo_chain_events (
   payload         TEXT,                  -- JSON
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_wo_events (
   id            TEXT PRIMARY KEY,
   wo_id         TEXT NOT NULL REFERENCES om_work_orders(id),
@@ -23886,6 +24647,7 @@ CREATE TABLE om_wo_events (
   payload       TEXT,                    -- JSON
   occurred_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE om_work_orders (
   id                    TEXT PRIMARY KEY,
   wo_number             TEXT NOT NULL UNIQUE,
@@ -23931,6 +24693,7 @@ CREATE TABLE om_work_orders (
   first_time_fix        INTEGER,           -- 1 if fault didn't recur in 7 days
   updated_at            TEXT
 , chain_status TEXT NOT NULL DEFAULT 'created', last_sla_breach_at TEXT, escalation_level INTEGER NOT NULL DEFAULT 0);
+
 CREATE TABLE ona_faults (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL REFERENCES ona_sites(id),
@@ -23947,6 +24710,7 @@ CREATE TABLE ona_faults (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 , source TEXT DEFAULT 'manual');
+
 CREATE TABLE ona_forecast_summary (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL,
@@ -23959,6 +24723,7 @@ CREATE TABLE ona_forecast_summary (
   last_updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (site_id, forecast_day)
 );
+
 CREATE TABLE ona_forecasts (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL REFERENCES ona_sites(id),
@@ -23970,6 +24735,7 @@ CREATE TABLE ona_forecasts (
   synced_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ona_maintenance (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL REFERENCES ona_sites(id),
@@ -23982,6 +24748,7 @@ CREATE TABLE ona_maintenance (
   status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled','in_progress','completed','cancelled')),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ona_nominations (
   id TEXT PRIMARY KEY,
   site_id TEXT NOT NULL REFERENCES ona_sites(id),
@@ -23995,6 +24762,7 @@ CREATE TABLE ona_nominations (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ona_sites (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -24007,6 +24775,7 @@ CREATE TABLE ona_sites (
   last_sync_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE participant_preferences (
   participant_id TEXT PRIMARY KEY,
   notify_email_contracts INTEGER DEFAULT 1,
@@ -24022,6 +24791,7 @@ CREATE TABLE participant_preferences (
   updated_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE
 );
+
 CREATE TABLE "participants" (
   id                       TEXT PRIMARY KEY,
   email                    TEXT UNIQUE NOT NULL,
@@ -24057,6 +24827,7 @@ CREATE TABLE "participants" (
   onboarding_skipped       INTEGER DEFAULT 0,
   participant_market_access TEXT DEFAULT 'full_trading'
 );
+
 CREATE TABLE password_reset_tokens (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
@@ -24066,6 +24837,7 @@ CREATE TABLE password_reset_tokens (
   requested_ip TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE payments (
   id TEXT PRIMARY KEY,
   invoice_id TEXT NOT NULL REFERENCES invoices(id),
@@ -24081,6 +24853,7 @@ CREATE TABLE payments (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pcaf_asset_classes (
   code            TEXT PRIMARY KEY,
   name            TEXT NOT NULL,
@@ -24088,6 +24861,7 @@ CREATE TABLE pcaf_asset_classes (
   guidance_doc    TEXT,
   display_order   INTEGER DEFAULT 0
 );
+
 CREATE TABLE pcaf_facilitated_emissions (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -24108,6 +24882,7 @@ CREATE TABLE pcaf_facilitated_emissions (
   notes               TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pcaf_financed_emissions (
   id                          TEXT PRIMARY KEY,
   participant_id              TEXT NOT NULL REFERENCES participants(id),  -- the bank / fund
@@ -24156,6 +24931,7 @@ CREATE TABLE pcaf_financed_emissions (
   computed_at                 TEXT DEFAULT (datetime('now')),
   created_at                  TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pcaf_insurance_emissions (
   id                            TEXT PRIMARY KEY,
   participant_id                TEXT NOT NULL REFERENCES participants(id),
@@ -24192,6 +24968,7 @@ CREATE TABLE pcaf_insurance_emissions (
   notes                         TEXT,
   created_at                    TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pcaf_targets (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -24209,6 +24986,7 @@ CREATE TABLE pcaf_targets (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE permanence_monitoring (
   id              TEXT PRIMARY KEY,
   project_id      TEXT NOT NULL REFERENCES cdr_projects(id),
@@ -24224,6 +25002,7 @@ CREATE TABLE permanence_monitoring (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pipeline_activities (
   id TEXT PRIMARY KEY,
   deal_id TEXT NOT NULL REFERENCES pipeline_deals(id),
@@ -24234,6 +25013,7 @@ CREATE TABLE pipeline_activities (
   completed_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pipeline_deals (
   id TEXT PRIMARY KEY,
   deal_name TEXT NOT NULL,
@@ -24251,6 +25031,7 @@ CREATE TABLE pipeline_deals (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE platform_ai_logs (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -24271,6 +25052,7 @@ CREATE TABLE platform_ai_logs (
   resolved_at         TEXT,
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE platform_anomaly_flags (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -24291,6 +25073,7 @@ CREATE TABLE platform_anomaly_flags (
   resolved_at         TEXT,
   resolved_by         TEXT
 );
+
 CREATE TABLE platform_modules (
   participant_id TEXT NOT NULL REFERENCES participants(id),
   module_id TEXT NOT NULL,
@@ -24299,6 +25082,7 @@ CREATE TABLE platform_modules (
   updated_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (participant_id, module_id)
 );
+
 CREATE TABLE platform_scenario_runs (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL REFERENCES participants(id),
@@ -24319,6 +25103,7 @@ CREATE TABLE platform_scenario_runs (
   computed_at         TEXT DEFAULT (datetime('now')),
   notes               TEXT
 );
+
 CREATE TABLE platform_scenarios (
   code            TEXT PRIMARY KEY,
   domain          TEXT NOT NULL CHECK (domain IN (
@@ -24332,6 +25117,7 @@ CREATE TABLE platform_scenarios (
   severity        TEXT CHECK (severity IN ('mild','moderate','severe','extreme')),
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_breaches (
   id TEXT PRIMARY KEY,
   discovered_at TEXT NOT NULL,
@@ -24349,6 +25135,7 @@ CREATE TABLE popia_breaches (
   lessons_learned TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_consent_records (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -24360,6 +25147,7 @@ CREATE TABLE popia_consent_records (
   user_agent TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_consents (
   participant_id TEXT PRIMARY KEY REFERENCES participants(id),
   marketing INTEGER DEFAULT 0,
@@ -24368,6 +25156,7 @@ CREATE TABLE popia_consents (
   analytics INTEGER DEFAULT 1,
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_corrections (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -24381,6 +25170,7 @@ CREATE TABLE popia_corrections (
   resolution_notes TEXT,
   requested_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_data_requests (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -24393,6 +25183,7 @@ CREATE TABLE popia_data_requests (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_dsar_requests (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -24403,6 +25194,7 @@ CREATE TABLE popia_dsar_requests (
   processed_at TEXT,
   requested_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_erasure_requests (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -24413,6 +25205,7 @@ CREATE TABLE popia_erasure_requests (
   resolution_notes TEXT,
   requested_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_objections (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -24424,6 +25217,7 @@ CREATE TABLE popia_objections (
   resolution_notes TEXT,
   requested_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE popia_pii_access_log (
   id TEXT PRIMARY KEY,
   actor_id TEXT NOT NULL REFERENCES participants(id),
@@ -24432,6 +25226,7 @@ CREATE TABLE popia_pii_access_log (
   justification TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE portfolio_temperature_alignment (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -24444,6 +25239,7 @@ CREATE TABLE portfolio_temperature_alignment (
   computed_at     TEXT DEFAULT (datetime('now')),
   notes           TEXT
 );
+
 CREATE TABLE ppa_marketplace_listings (
   id              TEXT PRIMARY KEY,
   seller_id       TEXT NOT NULL REFERENCES participants(id),
@@ -24465,6 +25261,7 @@ CREATE TABLE ppa_marketplace_listings (
   evidence_r2_key TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE ppa_marketplace_offers (
   id              TEXT PRIMARY KEY,
   listing_id      TEXT NOT NULL REFERENCES ppa_marketplace_listings(id),
@@ -24478,6 +25275,7 @@ CREATE TABLE ppa_marketplace_offers (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE pre_trade_checks (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -24491,6 +25289,7 @@ CREATE TABLE pre_trade_checks (
   credit_limit    REAL,
   checked_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE procurement_awards (
   id TEXT PRIMARY KEY,
   rfp_id TEXT NOT NULL REFERENCES procurement_rfps(id),
@@ -24503,6 +25302,7 @@ CREATE TABLE procurement_awards (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE procurement_bids (
   id TEXT PRIMARY KEY,
   rfp_id TEXT NOT NULL REFERENCES procurement_rfps(id),
@@ -24517,6 +25317,7 @@ CREATE TABLE procurement_bids (
   submitted_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 , technical_score REAL, sustainability_score REAL, delivery_score REAL, overall_score REAL);
+
 CREATE TABLE procurement_rfps (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -24531,6 +25332,7 @@ CREATE TABLE procurement_rfps (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE product_carbon_footprints (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL,
@@ -24556,6 +25358,7 @@ CREATE TABLE product_carbon_footprints (
   created_at                 TEXT DEFAULT (datetime('now')),
   UNIQUE (participant_id, product_code, reporting_year)
 );
+
 CREATE TABLE project_activities (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -24586,6 +25389,7 @@ CREATE TABLE project_activities (
   updated_at TEXT NOT NULL,
   UNIQUE(project_id, wbs_code)
 );
+
 CREATE TABLE project_baselines (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -24596,6 +25400,7 @@ CREATE TABLE project_baselines (
   notes TEXT,
   UNIQUE(project_id, name)
 );
+
 CREATE TABLE project_calendars (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -24604,6 +25409,7 @@ CREATE TABLE project_calendars (
   workdays TEXT NOT NULL,                 -- JSON
   created_at TEXT NOT NULL
 );
+
 CREATE TABLE project_cp_readiness (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -24615,6 +25421,7 @@ CREATE TABLE project_cp_readiness (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE project_disbursements (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -24638,6 +25445,7 @@ CREATE TABLE project_disbursements (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE project_financials (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -24652,6 +25460,7 @@ CREATE TABLE project_financials (
   loan_life_coverage_ratio REAL,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE project_generation (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -24667,6 +25476,7 @@ CREATE TABLE project_generation (
   net_payment_due REAL,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE project_milestones (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -24680,6 +25490,7 @@ CREATE TABLE project_milestones (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 , linked_activity_id TEXT);
+
 CREATE TABLE project_resources (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -24691,6 +25502,7 @@ CREATE TABLE project_resources (
   calendar_id TEXT,
   created_at TEXT NOT NULL
 );
+
 CREATE TABLE project_schedule_state (
   project_id TEXT PRIMARY KEY,
   version INTEGER NOT NULL DEFAULT 1,
@@ -24701,6 +25513,7 @@ CREATE TABLE project_schedule_state (
   finish_date TEXT,
   has_cycles INTEGER DEFAULT 0
 );
+
 CREATE TABLE public_comments (
   id              TEXT PRIMARY KEY,
   consultation_id TEXT NOT NULL REFERENCES public_consultations(id),
@@ -24715,6 +25528,7 @@ CREATE TABLE public_comments (
   consolidated_into TEXT,                            -- a determination id if folded
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE public_consultations (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24730,6 +25544,7 @@ CREATE TABLE public_consultations (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE public_hearings (
   id              TEXT PRIMARY KEY,
   consultation_id TEXT REFERENCES public_consultations(id),
@@ -24743,6 +25558,7 @@ CREATE TABLE public_hearings (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE rbac_invitations (
   id              TEXT PRIMARY KEY,
   token           TEXT UNIQUE NOT NULL,
@@ -24758,6 +25574,7 @@ CREATE TABLE rbac_invitations (
   accepted_at     TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 , project_id TEXT, deal_terms TEXT);
+
 CREATE TABLE rbac_permissions (
   key          TEXT PRIMARY KEY,   -- e.g. 'trading.write'
   domain       TEXT NOT NULL,      -- trading | settlement | carbon | ipp | lender | offtaker | grid | regulator | esums | documents | audit | users
@@ -24765,6 +25582,7 @@ CREATE TABLE rbac_permissions (
   display_name TEXT NOT NULL,
   description  TEXT
 );
+
 CREATE TABLE rbac_registrations (
   id              TEXT PRIMARY KEY,
   email           TEXT UNIQUE NOT NULL,
@@ -24784,11 +25602,13 @@ CREATE TABLE rbac_registrations (
   invitation_id   TEXT REFERENCES rbac_invitations(id),
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE rbac_role_permissions (
   role           TEXT NOT NULL,
   permission_key TEXT NOT NULL REFERENCES rbac_permissions(key),
   PRIMARY KEY (role, permission_key)
 );
+
 CREATE TABLE rec_certificates (
   id TEXT PRIMARY KEY,
   certificate_serial TEXT UNIQUE NOT NULL,
@@ -24804,6 +25624,7 @@ CREATE TABLE rec_certificates (
   owner_participant_id TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE rec_hourly_listings (
   id                  TEXT PRIMARY KEY,
   seller_id           TEXT NOT NULL REFERENCES participants(id),
@@ -24819,6 +25640,7 @@ CREATE TABLE rec_hourly_listings (
                        CHECK (status IN ('listed','partial','sold_out','withdrawn')),
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE rec_hourly_trades (
   id                  TEXT PRIMARY KEY,
   listing_id          TEXT NOT NULL REFERENCES rec_hourly_listings(id),
@@ -24832,6 +25654,7 @@ CREATE TABLE rec_hourly_trades (
   retirement_purpose  TEXT,                            -- '24/7 CFE matching','annual scope 2','voluntary'
   created_at          TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE rec_retirements (
   id TEXT PRIMARY KEY,
   rec_certificate_id TEXT NOT NULL REFERENCES rec_certificates(id),
@@ -24849,6 +25672,7 @@ CREATE TABLE rec_retirements (
   retired_at TEXT NOT NULL DEFAULT (datetime('now')),
   created_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE reg_annual_reports (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24868,6 +25692,7 @@ CREATE TABLE reg_annual_reports (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reg_complaints (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24887,6 +25712,7 @@ CREATE TABLE reg_complaints (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reg_compliance_monitoring (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24903,6 +25729,7 @@ CREATE TABLE reg_compliance_monitoring (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reg_inspections (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24921,6 +25748,7 @@ CREATE TABLE reg_inspections (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reg_licence_applications (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24943,6 +25771,7 @@ CREATE TABLE reg_licence_applications (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reg_public_register (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24961,6 +25790,7 @@ CREATE TABLE reg_public_register (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reg_tariff_applications (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -24978,6 +25808,7 @@ CREATE TABLE reg_tariff_applications (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_case_assignments (
   id TEXT PRIMARY KEY,
   subject_type TEXT NOT NULL CHECK (subject_type IN (
@@ -24990,6 +25821,7 @@ CREATE TABLE regulator_case_assignments (
   role TEXT DEFAULT 'lead',             -- 'lead','reviewer','observer'
   notes TEXT
 );
+
 CREATE TABLE regulator_determinations (
   id TEXT PRIMARY KEY,
   reference_number TEXT UNIQUE NOT NULL,
@@ -25006,6 +25838,7 @@ CREATE TABLE regulator_determinations (
   published_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_enforcement_case_events (
   id              TEXT PRIMARY KEY,
   case_id         TEXT NOT NULL,
@@ -25018,6 +25851,7 @@ CREATE TABLE regulator_enforcement_case_events (
   payload_json    TEXT,
   notes           TEXT
 );
+
 CREATE TABLE regulator_enforcement_cases (
   id TEXT PRIMARY KEY,
   case_number TEXT UNIQUE NOT NULL,
@@ -25042,6 +25876,7 @@ CREATE TABLE regulator_enforcement_cases (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_enforcement_events (
   id TEXT PRIMARY KEY,
   case_id TEXT NOT NULL REFERENCES regulator_enforcement_cases(id) ON DELETE CASCADE,
@@ -25052,6 +25887,7 @@ CREATE TABLE regulator_enforcement_events (
   actor_id TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_filings (
       id TEXT PRIMARY KEY,
       filing_type TEXT NOT NULL,
@@ -25062,6 +25898,7 @@ CREATE TABLE regulator_filings (
       evidence_json TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
 CREATE TABLE regulator_licence_action_workflow (
   id                  TEXT PRIMARY KEY,
   licence_id          TEXT,
@@ -25081,6 +25918,7 @@ CREATE TABLE regulator_licence_action_workflow (
   notes               TEXT,
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_licence_conditions (
   id TEXT PRIMARY KEY,
   licence_id TEXT NOT NULL REFERENCES regulator_licences(id) ON DELETE CASCADE,
@@ -25094,6 +25932,7 @@ CREATE TABLE regulator_licence_conditions (
   evidence_ref TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_licence_events (
   id TEXT PRIMARY KEY,
   licence_id TEXT NOT NULL REFERENCES regulator_licences(id) ON DELETE CASCADE,
@@ -25105,6 +25944,7 @@ CREATE TABLE regulator_licence_events (
   actor_id TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_licences (
   id TEXT PRIMARY KEY,
   licence_number TEXT UNIQUE NOT NULL,
@@ -25126,6 +25966,7 @@ CREATE TABLE regulator_licences (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_surveillance_alerts (
   id TEXT PRIMARY KEY,
   rule_id TEXT REFERENCES regulator_surveillance_rules(id),
@@ -25144,6 +25985,7 @@ CREATE TABLE regulator_surveillance_alerts (
   resolved_at TEXT,
   resolution_notes TEXT
 );
+
 CREATE TABLE regulator_surveillance_rules (
   id TEXT PRIMARY KEY,
   rule_code TEXT UNIQUE NOT NULL,
@@ -25158,6 +26000,7 @@ CREATE TABLE regulator_surveillance_rules (
   enabled BOOLEAN DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_surveillance_triage (
   id                  TEXT PRIMARY KEY,
   alert_id            TEXT NOT NULL,
@@ -25170,6 +26013,7 @@ CREATE TABLE regulator_surveillance_triage (
   enforcement_case_id TEXT,
   next_review_at      TEXT
 );
+
 CREATE TABLE regulator_tariff_decisions (
   id TEXT PRIMARY KEY,
   submission_id TEXT NOT NULL REFERENCES regulator_tariff_submissions(id),
@@ -25186,6 +26030,7 @@ CREATE TABLE regulator_tariff_decisions (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulator_tariff_submissions (
   id TEXT PRIMARY KEY,
   reference_number TEXT UNIQUE NOT NULL,
@@ -25204,6 +26049,7 @@ CREATE TABLE regulator_tariff_submissions (
   public_hearing_date TEXT,
   submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE regulatory_bodies (
   code            TEXT PRIMARY KEY,
   name            TEXT NOT NULL,
@@ -25219,6 +26065,7 @@ CREATE TABLE regulatory_bodies (
   description     TEXT,
   filing_doc_url  TEXT
 );
+
 CREATE TABLE regulatory_filings (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -25237,6 +26084,7 @@ CREATE TABLE regulatory_filings (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE report_catalog (
   code            TEXT PRIMARY KEY,
   role            TEXT NOT NULL,
@@ -25246,6 +26094,7 @@ CREATE TABLE report_catalog (
   framework       TEXT,
   default_period  TEXT NOT NULL DEFAULT 'monthly'    
 );
+
 CREATE TABLE reports_registry (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -25268,6 +26117,7 @@ CREATE TABLE reports_registry (
   generated_at    TEXT DEFAULT (datetime('now')),
   distributed_at  TEXT
 );
+
 CREATE TABLE request_stats (
   id              TEXT PRIMARY KEY,
   bucket_start    TEXT NOT NULL,   -- ISO, floored to 15-minute boundaries
@@ -25279,6 +26129,7 @@ CREATE TABLE request_stats (
   latency_ms_max  INTEGER NOT NULL DEFAULT 0,
   slow_count      INTEGER NOT NULL DEFAULT 0  -- latency > 1000ms
 );
+
 CREATE TABLE reserve_accounts (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -25291,6 +26142,7 @@ CREATE TABLE reserve_accounts (
   status TEXT DEFAULT 'active' CHECK (status IN ('active','drawn_down','closed')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE reserve_movements (
   id TEXT PRIMARY KEY,
   reserve_id TEXT NOT NULL REFERENCES reserve_accounts(id),
@@ -25301,6 +26153,7 @@ CREATE TABLE reserve_movements (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE resource_assignments (
   id TEXT PRIMARY KEY,
   activity_id TEXT NOT NULL,
@@ -25308,6 +26161,7 @@ CREATE TABLE resource_assignments (
   units REAL NOT NULL DEFAULT 1,
   UNIQUE(activity_id, resource_id)
 );
+
 CREATE TABLE risk_factor_history (
   factor_id     TEXT NOT NULL,
   as_of_date    TEXT NOT NULL,
@@ -25316,6 +26170,7 @@ CREATE TABLE risk_factor_history (
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (factor_id, as_of_date)
 );
+
 CREATE TABLE risk_factors (
   id            TEXT PRIMARY KEY,
   name          TEXT NOT NULL,
@@ -25324,6 +26179,7 @@ CREATE TABLE risk_factors (
   source        TEXT,                   -- mark_prices, external_feed_xyz
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE risk_portfolios (
   id                 TEXT PRIMARY KEY,
   name               TEXT NOT NULL,
@@ -25333,6 +26189,7 @@ CREATE TABLE risk_portfolios (
   created_at         TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at         TEXT
 );
+
 CREATE TABLE risk_scenario_results (
   id                TEXT PRIMARY KEY,
   scenario_id       TEXT NOT NULL,
@@ -25342,6 +26199,7 @@ CREATE TABLE risk_scenario_results (
   breakdown_json    TEXT,                   -- per-factor contribution
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE risk_scenarios (
   id                  TEXT PRIMARY KEY,
   name                TEXT NOT NULL,
@@ -25352,6 +26210,7 @@ CREATE TABLE risk_scenarios (
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT
 );
+
 CREATE TABLE risk_var_results (
   id                TEXT PRIMARY KEY,
   portfolio_id      TEXT NOT NULL,
@@ -25364,6 +26223,7 @@ CREATE TABLE risk_var_results (
   components_json   TEXT,                  -- [{factor_id,name,contribution_zar,pct}]
   created_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE scenario_runs (
   id                  TEXT PRIMARY KEY,
   participant_id      TEXT NOT NULL REFERENCES participants(id),
@@ -25385,6 +26245,7 @@ CREATE TABLE scenario_runs (
   computed_at         TEXT DEFAULT (datetime('now')),
   notes               TEXT
 );
+
 CREATE TABLE scope2_disclosures (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -25401,6 +26262,7 @@ CREATE TABLE scope2_disclosures (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE sectoral_pathways (
   id              TEXT PRIMARY KEY,
   pathway_code    TEXT NOT NULL,                     -- 'IEA_NZE_2050','NGFS_NET_ZERO'
@@ -25411,6 +26273,7 @@ CREATE TABLE sectoral_pathways (
   notes           TEXT,
   UNIQUE (pathway_code, sector, year)
 );
+
 CREATE TABLE sensitive_rate_counters (
         bucket_key TEXT PRIMARY KEY,
         window_start INTEGER NOT NULL,
@@ -25418,6 +26281,7 @@ CREATE TABLE sensitive_rate_counters (
         max_requests INTEGER NOT NULL,
         expires_at INTEGER NOT NULL
       );
+
 CREATE TABLE servitudes (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -25429,6 +26293,7 @@ CREATE TABLE servitudes (
   registration_date TEXT,
   notes TEXT
 );
+
 CREATE TABLE sessions (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
@@ -25443,6 +26308,7 @@ CREATE TABLE sessions (
   revoked_at TEXT,
   revoked_reason TEXT
 );
+
 CREATE TABLE settlement_breaks (
   id                   TEXT PRIMARY KEY,
   invoice_id           TEXT NOT NULL,
@@ -25467,6 +26333,7 @@ CREATE TABLE settlement_breaks (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE settlement_calendar (
   id                 TEXT PRIMARY KEY,
   trading_day        TEXT NOT NULL,                  -- YYYY-MM-DD (T+0)
@@ -25482,6 +26349,7 @@ CREATE TABLE settlement_calendar (
   updated_at         TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (trading_day, market_zone)
 );
+
 CREATE TABLE settlement_disputes (
   id TEXT PRIMARY KEY,
   invoice_id TEXT NOT NULL REFERENCES invoices(id),
@@ -25495,6 +26363,7 @@ CREATE TABLE settlement_disputes (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE settlement_dlq (
   id TEXT PRIMARY KEY,
   run_id TEXT REFERENCES settlement_runs(id),
@@ -25511,6 +26380,7 @@ CREATE TABLE settlement_dlq (
   resolution_notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE settlement_dvp_locks (
   cycle_id          TEXT PRIMARY KEY,
   lock_status       TEXT NOT NULL DEFAULT 'open',
@@ -25526,6 +26396,7 @@ CREATE TABLE settlement_dvp_locks (
   created_at        TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE settlement_fail_escalations (
   id                TEXT PRIMARY KEY,
   instruction_id    TEXT NOT NULL,
@@ -25537,6 +26408,7 @@ CREATE TABLE settlement_fail_escalations (
   resolved_by       TEXT,
   notes             TEXT
 );
+
 CREATE TABLE settlement_fees (
   id                  TEXT PRIMARY KEY,
   invoice_id          TEXT NOT NULL,
@@ -25552,6 +26424,7 @@ CREATE TABLE settlement_fees (
   applied_by          TEXT,                      -- system user id, or 'system' for engine
   UNIQUE (invoice_id, fee_type, calc_rule_version)
 );
+
 CREATE TABLE settlement_run_events (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL REFERENCES settlement_runs(id) ON DELETE CASCADE,
@@ -25561,6 +26434,7 @@ CREATE TABLE settlement_run_events (
   message TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE settlement_runs (
   id TEXT PRIMARY KEY,
   run_type TEXT NOT NULL CHECK (run_type IN (
@@ -25580,6 +26454,7 @@ CREATE TABLE settlement_runs (
   error_message TEXT,
   idempotency_key TEXT UNIQUE            -- prevents double-runs for the same period/type
 );
+
 CREATE TABLE siem_delivery_log (
   id TEXT PRIMARY KEY,
   forwarder_id TEXT NOT NULL REFERENCES siem_forwarders(id),
@@ -25590,6 +26465,7 @@ CREATE TABLE siem_delivery_log (
   attempted_at TEXT NOT NULL DEFAULT (datetime('now')),
   duration_ms INTEGER
 );
+
 CREATE TABLE siem_forwarder_cursors (
   forwarder_id TEXT NOT NULL REFERENCES siem_forwarders(id) ON DELETE CASCADE,
   stream TEXT NOT NULL,                        -- 'audit' | 'pii' | 'cascade_dlq' | 'cron_failure'
@@ -25598,6 +26474,7 @@ CREATE TABLE siem_forwarder_cursors (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (forwarder_id, stream)
 );
+
 CREATE TABLE siem_forwarders (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,                          -- human label
@@ -25616,6 +26493,7 @@ CREATE TABLE siem_forwarders (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE site_accruals (
   id                       TEXT PRIMARY KEY,
   station_id               TEXT NOT NULL REFERENCES solax_stations(id) ON DELETE CASCADE,
@@ -25634,6 +26512,7 @@ CREATE TABLE site_accruals (
   created_at               TEXT NOT NULL,
   updated_at               TEXT NOT NULL
 );
+
 CREATE TABLE sll_kpis (
   id              TEXT PRIMARY KEY,
   loan_id         TEXT REFERENCES loan_originations(id),
@@ -25653,6 +26532,7 @@ CREATE TABLE sll_kpis (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE solax_backfill_jobs (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -25673,6 +26553,7 @@ CREATE TABLE solax_backfill_jobs (
   updated_at      TEXT NOT NULL,
   UNIQUE(participant_id, station_id)
 );
+
 CREATE TABLE solax_stations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
@@ -25691,6 +26572,7 @@ CREATE TABLE solax_stations (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL
 , manufacturer TEXT NOT NULL DEFAULT 'solax', tariff_rate_zar_per_kwh REAL, lender_participant_id TEXT, carbon_participant_id TEXT, offtaker_participant_id TEXT, carbon_project_id TEXT, tariff_step_date TEXT, tariff_step_rate REAL);
+
 CREATE TABLE spend_category_hints (
   id              TEXT PRIMARY KEY,
   pattern         TEXT NOT NULL,                     -- regex / phrase
@@ -25701,8 +26583,11 @@ CREATE TABLE spend_category_hints (
   confidence      REAL,
   notes           TEXT
 );
+
 CREATE TABLE sqlite_sequence(name,seq);
+
 CREATE TABLE station_telemetry_snapshot (station_id TEXT PRIMARY KEY REFERENCES solax_stations(id) ON DELETE CASCADE, ts TEXT NOT NULL, ac_kw REAL, dc_kw REAL, daily_kwh REAL, total_kwh REAL, battery_soc REAL, temperature_c REAL, online INTEGER NOT NULL DEFAULT 0, raw_json TEXT, updated_at TEXT NOT NULL);
+
 CREATE TABLE statutory_checks (
   id TEXT PRIMARY KEY,
   document_id TEXT NOT NULL REFERENCES contract_documents(id),
@@ -25715,6 +26600,7 @@ CREATE TABLE statutory_checks (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE stress_results (
   id TEXT PRIMARY KEY,
   scenario_id TEXT NOT NULL REFERENCES stress_scenarios(id),
@@ -25730,6 +26616,7 @@ CREATE TABLE stress_results (
   notes TEXT,
   run_by TEXT REFERENCES participants(id)
 );
+
 CREATE TABLE stress_scenarios (
   id TEXT PRIMARY KEY,
   scenario_name TEXT UNIQUE NOT NULL,
@@ -25738,6 +26625,7 @@ CREATE TABLE stress_scenarios (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE support_cross_tenant_access (
   id              TEXT PRIMARY KEY,
   agent_id        TEXT NOT NULL,
@@ -25748,6 +26636,7 @@ CREATE TABLE support_cross_tenant_access (
   ticket_id       TEXT,
   accessed_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE support_escalations (
   id              TEXT PRIMARY KEY,
   ticket_id       TEXT NOT NULL,
@@ -25760,6 +26649,7 @@ CREATE TABLE support_escalations (
   escalated_at    TEXT NOT NULL DEFAULT (datetime('now')),
   resolved_at     TEXT
 );
+
 CREATE TABLE support_ticket_comments (
   id              TEXT PRIMARY KEY,
   ticket_id       TEXT NOT NULL,
@@ -25769,6 +26659,7 @@ CREATE TABLE support_ticket_comments (
     CHECK (visibility IN ('public','internal')),
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE support_tickets (
   id              TEXT PRIMARY KEY,
   ticket_number   TEXT UNIQUE NOT NULL,
@@ -25795,6 +26686,7 @@ CREATE TABLE support_tickets (
     'resolved','closed','escalated'
   )), triaged_at TEXT, first_responded_at TEXT, waiting_since TEXT, reopened_at TEXT, escalated_at TEXT, escalation_reason TEXT, next_sla_due_at TEXT, next_sla_window TEXT
   CHECK (next_sla_window IS NULL OR next_sla_window IN ('triage','first_response','resolution')), last_sla_breach_at TEXT, sla_breach_count INTEGER NOT NULL DEFAULT 0, triaged_by TEXT, closed_by TEXT);
+
 CREATE TABLE syndication_participants (
   id              TEXT PRIMARY KEY,
   loan_id         TEXT NOT NULL REFERENCES loan_originations(id),
@@ -25808,6 +26700,7 @@ CREATE TABLE syndication_participants (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tariff_products (
   id TEXT PRIMARY KEY,
   tariff_code TEXT UNIQUE NOT NULL,
@@ -25825,6 +26718,7 @@ CREATE TABLE tariff_products (
   source_doc_r2_key TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_invoices (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -25845,6 +26739,7 @@ CREATE TABLE tenant_invoices (
   paid_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_plans (
   id TEXT PRIMARY KEY,
   plan_code TEXT UNIQUE NOT NULL,
@@ -25860,6 +26755,7 @@ CREATE TABLE tenant_plans (
   support_tier TEXT DEFAULT 'business_hours',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_provisioning_requests (
   id TEXT PRIMARY KEY,
   requested_name TEXT NOT NULL,
@@ -25881,6 +26777,7 @@ CREATE TABLE tenant_provisioning_requests (
   approved_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_rate_limit_events (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -25890,6 +26787,7 @@ CREATE TABLE tenant_rate_limit_events (
   allowed_count INTEGER DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_rate_limits (
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
   route_prefix TEXT NOT NULL,          -- e.g. '/api/trading' or '*'
@@ -25899,6 +26797,7 @@ CREATE TABLE tenant_rate_limits (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (tenant_id, route_prefix)
 );
+
 CREATE TABLE tenant_sso_providers (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -25919,6 +26818,7 @@ CREATE TABLE tenant_sso_providers (
   enabled BOOLEAN DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_subscriptions (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -25933,6 +26833,7 @@ CREATE TABLE tenant_subscriptions (
   cancellation_reason TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE tenant_usage_snapshots (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -25945,6 +26846,7 @@ CREATE TABLE tenant_usage_snapshots (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (tenant_id, snapshot_date)
 );
+
 CREATE TABLE tenants (
   id TEXT PRIMARY KEY,
   slug TEXT UNIQUE NOT NULL,
@@ -25954,6 +26856,7 @@ CREATE TABLE tenants (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 , name TEXT, legal_entity TEXT, registration_number TEXT, vat_number TEXT, primary_contact_email TEXT, primary_contact_phone TEXT, billing_email TEXT, country TEXT DEFAULT 'ZA', tier TEXT DEFAULT 'standard', status TEXT DEFAULT 'active', activated_at TEXT, suspended_at TEXT, closed_at TEXT);
+
 CREATE TABLE threads (
   id TEXT PRIMARY KEY,
   entity_type TEXT NOT NULL,
@@ -25964,6 +26867,7 @@ CREATE TABLE threads (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trade_allocations (
   id                  TEXT PRIMARY KEY,
   match_id            TEXT NOT NULL,              -- trade_matches.id
@@ -25980,6 +26884,7 @@ CREATE TABLE trade_allocations (
   created_by          TEXT,
   UNIQUE (match_id, participant_id, sub_account, lot_id)
 );
+
 CREATE TABLE trade_confirmations (
   id              TEXT PRIMARY KEY,
   trade_id        TEXT NOT NULL,                     -- joins trade_fills(id)
@@ -25993,6 +26898,7 @@ CREATE TABLE trade_confirmations (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trade_exceptions (
   id                   TEXT PRIMARY KEY,
   match_id             TEXT NOT NULL,              -- trade_matches.id
@@ -26019,6 +26925,7 @@ CREATE TABLE trade_exceptions (
   created_at           TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trade_fees (
   id                 TEXT PRIMARY KEY,
   match_id           TEXT NOT NULL,                -- trade_matches.id
@@ -26035,6 +26942,7 @@ CREATE TABLE trade_fees (
   applied_by         TEXT,
   UNIQUE (match_id, participant_id, fee_type, calc_rule_version)
 );
+
 CREATE TABLE trade_fills (
   id              TEXT PRIMARY KEY,
   order_id        TEXT NOT NULL,
@@ -26054,6 +26962,7 @@ CREATE TABLE trade_fills (
   match_id        TEXT REFERENCES trade_matches(id),
   shard_key       TEXT
 );
+
 CREATE TABLE trade_history (
   id TEXT PRIMARY KEY,
   match_id TEXT NOT NULL REFERENCES trade_matches(id),
@@ -26062,6 +26971,7 @@ CREATE TABLE trade_history (
   details TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trade_matches (
   id TEXT PRIMARY KEY,
   buy_order_id TEXT NOT NULL REFERENCES trade_orders(id),
@@ -26073,7 +26983,9 @@ CREATE TABLE trade_matches (
   escrow_id TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending','settling','settled','disputed','cancelled'))
 );
+
 CREATE TABLE trade_order_amendments (id TEXT PRIMARY KEY, order_id TEXT NOT NULL, amended_by TEXT NOT NULL, amended_at TEXT NOT NULL DEFAULT (datetime('now')), prev_price REAL, new_price REAL, prev_volume_mwh REAL NOT NULL, new_volume_mwh REAL NOT NULL, prev_remaining_mwh REAL NOT NULL, new_remaining_mwh REAL NOT NULL, lost_priority INTEGER NOT NULL DEFAULT 0, reason TEXT);
+
 CREATE TABLE trade_order_rejections (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26088,6 +27000,7 @@ CREATE TABLE trade_order_rejections (
   snapshot_json   TEXT,        -- credit_limit, open_exposure, free_collateral, position, market_state
   external_ref    TEXT
 );
+
 CREATE TABLE trade_orders (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL REFERENCES participants(id),
@@ -26104,6 +27017,7 @@ CREATE TABLE trade_orders (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 , remaining_volume_mwh REAL, price REAL, order_type TEXT DEFAULT 'limit', post_only INTEGER NOT NULL DEFAULT 0, reduce_only INTEGER NOT NULL DEFAULT 0, stop_trigger_price REAL, display_size_mwh REAL, amend_count INTEGER NOT NULL DEFAULT 0, good_till TEXT, posted_at TEXT, time_in_force TEXT, shard_key TEXT, external_ref TEXT);
+
 CREATE TABLE trader_algo_rules (
       id TEXT PRIMARY KEY,
       trader_id TEXT NOT NULL,
@@ -26118,6 +27032,7 @@ CREATE TABLE trader_algo_rules (
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
 CREATE TABLE trader_csa_terms (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26137,6 +27052,7 @@ CREATE TABLE trader_csa_terms (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trader_hedging_strategies (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26154,6 +27070,7 @@ CREATE TABLE trader_hedging_strategies (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trader_options_positions (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26177,6 +27094,7 @@ CREATE TABLE trader_options_positions (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trader_pnl_attribution (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26199,6 +27117,7 @@ CREATE TABLE trader_pnl_attribution (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trader_positions (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26213,6 +27132,7 @@ CREATE TABLE trader_positions (
   updated_at      TEXT DEFAULT (datetime('now')),
   UNIQUE (participant_id, energy_type, delivery_date)
 );
+
 CREATE TABLE trader_risk_limits (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -26230,6 +27150,7 @@ CREATE TABLE trader_risk_limits (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trader_t2_settlements (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26247,6 +27168,7 @@ CREATE TABLE trader_t2_settlements (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE trader_var_calculations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL,
@@ -26265,6 +27187,7 @@ CREATE TABLE trader_var_calculations (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE universal_categories (
   code            TEXT PRIMARY KEY,
   domain          TEXT NOT NULL,                     -- 'trading','grid','ipp_project','regulator_tariff','lender_credit','offtaker_demand','climate'
@@ -26273,6 +27196,7 @@ CREATE TABLE universal_categories (
   description     TEXT,
   display_order   INTEGER DEFAULT 0
 );
+
 CREATE TABLE universal_pathways (
   id              TEXT PRIMARY KEY,
   pathway_code    TEXT NOT NULL,                     -- 'REIPPPP_AWARDS','SA_DEMAND','JSE_LISTINGS','NPL_RATIO','SAPP_CAPACITY','REG_TARIFF_PATH'
@@ -26288,6 +27212,7 @@ CREATE TABLE universal_pathways (
   notes           TEXT,
   UNIQUE (pathway_code, series_name, year)
 );
+
 CREATE TABLE user_view_prefs (
   id             TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -26297,6 +27222,7 @@ CREATE TABLE user_view_prefs (
   updated_at     TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (participant_id, scope_key)
 );
+
 CREATE TABLE utility_bill_validations (
   id              TEXT PRIMARY KEY,
   participant_id  TEXT NOT NULL REFERENCES participants(id),
@@ -26315,6 +27241,7 @@ CREATE TABLE utility_bill_validations (
   notes           TEXT,
   created_at      TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE vault_files (
   id TEXT PRIMARY KEY,
   entity_type TEXT NOT NULL,
@@ -26326,6 +27253,7 @@ CREATE TABLE vault_files (
   uploaded_by TEXT NOT NULL REFERENCES participants(id),
   created_at TEXT DEFAULT (datetime('now'))
 );
+
 CREATE TABLE voltage_management_zones (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT DEFAULT 'default' NOT NULL,
@@ -26340,6 +27268,7 @@ CREATE TABLE voltage_management_zones (
   last_observed_at TEXT,
   notes           TEXT
 );
+
 CREATE TABLE waterfall_allocations (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL REFERENCES waterfall_runs(id) ON DELETE CASCADE,
@@ -26348,6 +27277,7 @@ CREATE TABLE waterfall_allocations (
   shortfall_zar REAL DEFAULT 0,
   notes TEXT
 );
+
 CREATE TABLE waterfall_runs (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -26363,6 +27293,7 @@ CREATE TABLE waterfall_runs (
   executed_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE waterfall_structures (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES ipp_projects(id),
@@ -26372,6 +27303,7 @@ CREATE TABLE waterfall_structures (
   created_by TEXT REFERENCES participants(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 CREATE TABLE waterfall_tranches (
   id TEXT PRIMARY KEY,
   waterfall_id TEXT NOT NULL REFERENCES waterfall_structures(id) ON DELETE CASCADE,
@@ -26383,6 +27315,7 @@ CREATE TABLE waterfall_tranches (
   target_account_id TEXT,              -- REFERENCES reserve_accounts(id) when applicable
   notes TEXT
 );
+
 CREATE TABLE zone_loss_factors (
   id TEXT PRIMARY KEY,
   zone_code TEXT NOT NULL REFERENCES nodal_zones(code),
@@ -26394,2672 +27327,4977 @@ CREATE TABLE zone_loss_factors (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ======================================================================
--- INDEXES (2309)
--- ======================================================================
-
 CREATE INDEX idx_action_queue_status ON action_queue(status);
+
 CREATE INDEX idx_activities_critical ON project_activities(project_id, is_critical);
+
 CREATE INDEX idx_activities_parent  ON project_activities(parent_id);
+
 CREATE INDEX idx_activities_project ON project_activities(project_id, sort_order);
+
 CREATE INDEX idx_admin_billing_runs_status
   ON admin_billing_runs (status, created_at);
+
 CREATE INDEX idx_admin_flag_overrides_flag
   ON admin_feature_flag_overrides (flag_key, occurred_at);
+
 CREATE INDEX idx_admin_tenant_events_tenant
   ON admin_tenant_lifecycle_events (tenant_id, occurred_at);
+
 CREATE INDEX idx_aggfc_date ON grid_aggregated_forecasts(forecast_for_date, technology);
+
 CREATE INDEX idx_ai_decisions_participant
   ON ai_decisions (participant_id, created_at DESC);
+
 CREATE INDEX idx_ai_decisions_prompt_hash
   ON ai_decisions (prompt_hash);
+
 CREATE INDEX idx_ai_decisions_surface_created
   ON ai_decisions (surface, created_at DESC);
+
 CREATE INDEX idx_ai_lender_advice_lender
   ON ai_lender_advice (lender_participant_id, accepted_at);
+
 CREATE INDEX idx_ai_lender_advice_test
   ON ai_lender_advice (covenant_test_id, created_at);
+
 CREATE INDEX idx_ai_logs_part ON ai_classification_logs(participant_id, created_at);
+
 CREATE INDEX idx_ai_settlement_run_failures_failure
   ON ai_settlement_run_failures (failure_code, created_at);
+
 CREATE INDEX idx_ai_settlement_run_failures_run
   ON ai_settlement_run_failures (run_id, created_at);
+
 CREATE INDEX idx_ai_trade_amendments_order
   ON ai_trade_amendments (order_id, created_at);
+
 CREATE INDEX idx_ai_trade_amendments_participant
   ON ai_trade_amendments (participant_id, accepted_at);
+
 CREATE INDEX idx_ala_day ON audit_log_archives(day_bucket DESC);
+
 CREATE INDEX idx_algo_blocks_participant
   ON oe_algo_trading_blocks(participant_id, is_active);
+
 CREATE INDEX idx_algo_certifications_events_thread ON oe_algo_certifications_events(cert_id, created_at);
+
 CREATE INDEX idx_algo_certifications_horizon ON oe_algo_certifications(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_anc_award_tender ON ancillary_service_awards(tender_id);
+
 CREATE INDEX idx_anc_bid_participant ON ancillary_service_bids(participant_id);
+
 CREATE INDEX idx_anc_bid_tender ON ancillary_service_bids(tender_id, price_zar_mw_h);
+
 CREATE INDEX idx_anc_deliv_award ON ancillary_service_deliveries(award_id);
+
 CREATE INDEX idx_anc_tender_product ON ancillary_service_tenders(product_id);
+
 CREATE INDEX idx_anc_tender_status ON ancillary_service_tenders(status);
+
 CREATE INDEX idx_anomaly_part_status ON esg_anomaly_flags(participant_id, status);
+
 CREATE INDEX idx_assignments_activity ON resource_assignments(activity_id);
+
 CREATE INDEX idx_assignments_resource ON resource_assignments(resource_id);
+
 CREATE INDEX idx_audit_chain_domain ON audit_chain(domain, sequence_no);
+
 CREATE INDEX idx_audit_chain_entity ON audit_chain(entity_table, entity_id);
+
 CREATE INDEX idx_audit_chain_tenant ON audit_chain(tenant_id, sequence_no);
+
 CREATE INDEX idx_audit_events_actor
   ON audit_events (actor_id, created_at DESC);
+
 CREATE INDEX idx_audit_events_entity
   ON audit_events (entity_type, sequence_no DESC);
+
 CREATE INDEX idx_audit_events_entity_id
   ON audit_events (entity_id);
+
 CREATE INDEX idx_audit_events_preimage_version
   ON audit_events (entity_type, preimage_version);
+
 CREATE INDEX idx_audit_exports_entity
   ON audit_exports (entity_type, generated_at DESC);
+
 CREATE INDEX idx_audit_logs_actor
   ON audit_logs(actor_id, created_at DESC);
+
 CREATE INDEX idx_audit_logs_created
   ON audit_logs(created_at DESC);
+
 CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+
 CREATE INDEX idx_audit_recon_breaks_run
   ON audit_recon_breaks (run_id);
+
 CREATE INDEX idx_audit_recon_runs_entity
   ON audit_recon_runs (entity_type, started_at DESC);
+
 CREATE INDEX idx_availability_guarantee_events_thread ON oe_availability_guarantee_events(guarantee_id, created_at);
+
 CREATE INDEX idx_availability_guarantees_horizon ON oe_availability_guarantees(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_backfill_jobs_participant ON solax_backfill_jobs(participant_id, status);
+
 CREATE INDEX idx_backup_log_generated_at ON backup_log(generated_at);
+
 CREATE UNIQUE INDEX idx_backup_log_key   ON backup_log(key);
+
 CREATE INDEX idx_best_execution_events_thread ON oe_best_execution_events(rfq_id, created_at);
+
 CREATE INDEX idx_best_execution_horizon ON oe_best_execution(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_bill_val_part ON utility_bill_validations(participant_id, reading_month);
+
 CREATE INDEX idx_bnotice_bond ON ipp_bond_notices(bond_id);
+
 CREATE INDEX idx_bnotice_status ON ipp_bond_notices(status);
+
 CREATE INDEX idx_bond_exp_status ON ipp_performance_bonds(expiry_status);
+
 CREATE INDEX idx_bond_expiry  ON ipp_performance_bonds(expiry_at);
+
 CREATE INDEX idx_bond_project ON ipp_performance_bonds(project_id);
+
 CREATE INDEX idx_bond_status  ON ipp_performance_bonds(status);
+
 CREATE INDEX idx_brp_noms_brp_period ON brp_period_nominations(brp_participant_id, period_start);
+
 CREATE INDEX idx_brp_noms_period ON brp_period_nominations(period_start);
+
 CREATE INDEX idx_business_day_market_zone
   ON business_day_calendar (market_zone, date);
+
 CREATE INDEX idx_calendars_project ON project_calendars(project_id);
+
 CREATE INDEX idx_cap_adequacy_participant
   ON oe_capital_adequacy_reports(participant_id);
+
 CREATE INDEX idx_cap_adequacy_status
   ON oe_capital_adequacy_reports(chain_status);
+
 CREATE INDEX idx_carbon_budget_participant
   ON oe_carbon_budget_registrations(participant_id, chain_status);
+
 CREATE INDEX idx_carbon_certs_participant
   ON carbon_retirement_certificates (participant_id, status);
+
 CREATE INDEX idx_carbon_certs_retirement
   ON carbon_retirement_certificates (retirement_id);
+
 CREATE INDEX idx_carbon_erpas_events_thread ON oe_carbon_erpas_events(erpa_id, created_at);
+
 CREATE INDEX idx_carbon_erpas_horizon ON oe_carbon_erpas(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_carbon_holdings_participant ON carbon_holdings(participant_id);
+
 CREATE INDEX idx_carbon_mrv_participant
   ON carbon_mrv_workflow (participant_id, submitted_at);
+
 CREATE INDEX idx_carbon_mrv_project
   ON carbon_mrv_workflow (project_id, status);
+
 CREATE INDEX idx_carbon_offset_claims_events_thread ON oe_carbon_offset_claims_events(claim_id, created_at);
+
 CREATE INDEX idx_carbon_offset_claims_horizon ON oe_carbon_offset_claims(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_carbon_projects_developer ON carbon_projects(developer_id);
+
 CREATE INDEX idx_carbon_projects_status ON carbon_projects(status);
+
 CREATE INDEX idx_carbon_registration_events_thread ON oe_carbon_registration_events(project_id, created_at);
+
 CREATE INDEX idx_carbon_registration_horizon ON oe_carbon_registration(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_carbon_retire_chain   ON carbon_retirements(chain_status);
+
 CREATE INDEX idx_carbon_retire_scope   ON carbon_retirements(scope);
+
 CREATE INDEX idx_carbon_retire_sla     ON carbon_retirements(sla_deadline_at);
+
 CREATE INDEX idx_carbon_reversals_events_thread ON oe_carbon_reversals_events(reversal_id, created_at);
+
 CREATE INDEX idx_carbon_reversals_horizon ON oe_carbon_reversals(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_carbon_trades_buyer ON carbon_trades(buyer_id);
+
 CREATE INDEX idx_carbon_trades_seller ON carbon_trades(seller_id);
+
 CREATE INDEX idx_carbon_vintage_workflow_stage
   ON carbon_vintage_workflow (current_stage, participant_id);
+
 CREATE INDEX idx_carbon_vintage_workflow_vintage
   ON carbon_vintage_workflow (vintage_id);
+
 CREATE INDEX idx_cascade_rule_audit_rule
   ON oe_cascade_rule_audit(rule_id, created_at);
+
 CREATE INDEX idx_cascade_rule_audit_source
   ON oe_cascade_rule_audit(source_entity_type, source_entity_id);
+
 CREATE INDEX idx_cbt_jurisdiction
   ON oe_cross_border_trades(counterparty_jurisdiction);
+
 CREATE INDEX idx_cbt_participant
   ON oe_cross_border_trades(participant_id);
+
 CREATE INDEX idx_cbt_sed_ipp
   ON oe_cbt_sed_reports(ipp_id, reporting_year);
+
 CREATE INDEX idx_cbt_sed_project
   ON oe_cbt_sed_reports(project_name, reipppp_bid_window);
+
 CREATE INDEX idx_cbt_sed_status
   ON oe_cbt_sed_reports(chain_status, sla_deadline);
+
 CREATE INDEX idx_cbt_status
   ON oe_cross_border_trades(chain_status);
+
 CREATE INDEX idx_ccr_lender ON oe_construction_cost_reports(lender_id);
+
 CREATE INDEX idx_ccr_month ON oe_construction_cost_reports(report_month);
+
 CREATE INDEX idx_ccr_project ON oe_construction_cost_reports(project_id);
+
 CREATE INDEX idx_ccr_status ON oe_construction_cost_reports(chain_status);
+
 CREATE INDEX idx_cdr_projects_status_cat ON cdr_projects(status, category);
+
 CREATE INDEX idx_cds_date ON clearing_disclosure_snapshots(as_of_date);
+
 CREATE INDEX idx_cert_bundles_participant
   ON oe_certificate_bundles(participant_id, bundle_status);
+
 CREATE INDEX idx_cfe_gen_part_hour ON cfe_hourly_generation(participant_id, hour_utc);
+
 CREATE INDEX idx_cfe_load_part_hour ON cfe_hourly_load(participant_id, hour_utc);
+
 CREATE INDEX idx_chain_signatories_entity
   ON chain_signatories (entity_type, entity_id);
+
 CREATE UNIQUE INDEX idx_chain_signatories_unique
   ON chain_signatories (entity_type, entity_id, participant_id);
+
 CREATE INDEX idx_change_requests_events_thread ON oe_change_requests_events(change_id, created_at);
+
 CREATE INDEX idx_change_requests_horizon ON oe_change_requests(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ci_participant
   ON oe_credit_insurance(participant_id);
+
 CREATE INDEX idx_ci_project
   ON oe_credit_insurance(project_ref);
+
 CREATE INDEX idx_ci_status
   ON oe_credit_insurance(chain_status);
+
 CREATE INDEX idx_clearing_obligations_run ON clearing_obligations(run_id);
+
 CREATE INDEX idx_clearing_runs_day ON clearing_runs(trading_day DESC);
+
 CREATE INDEX idx_cod_chain_events_thread ON oe_cod_chain_events(cod_id, created_at);
+
 CREATE INDEX idx_cod_chain_horizon ON oe_cod_chain(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_collateral_movements_acc ON collateral_movements(account_id, created_at DESC);
+
 CREATE INDEX idx_collateral_part_status ON collateral_accounts(participant_id, status);
+
 CREATE INDEX idx_comm_eng_project ON community_engagements(project_id, engagement_date DESC);
+
 CREATE INDEX idx_comm_part ON community_engagements_v2(participant_id, engagement_date);
+
 CREATE INDEX idx_comm_stake_project ON community_stakeholders(project_id);
+
 CREATE INDEX idx_compliance_inspections_events_thread ON oe_compliance_inspections_events(inspection_id, created_at);
+
 CREATE INDEX idx_compliance_inspections_horizon ON oe_compliance_inspections(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_connection_energization_events_thread ON oe_connection_energization_events(energization_id, created_at);
+
 CREATE INDEX idx_connection_energization_horizon ON oe_connection_energization(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_contract_documents_counterparty ON contract_documents(counterparty_id);
+
 CREATE INDEX idx_contract_documents_creator ON contract_documents(creator_id);
+
 CREATE INDEX idx_contract_documents_phase ON contract_documents(phase);
+
 CREATE INDEX idx_contract_templates_category ON contract_templates(category);
+
 CREATE INDEX idx_contract_templates_code ON contract_templates(code);
+
 CREATE INDEX idx_counterparty_margin_events_thread ON oe_counterparty_margin_events(margin_id, created_at);
+
 CREATE INDEX idx_counterparty_margin_horizon ON oe_counterparty_margin(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_cov_tests_covenant ON covenant_tests(covenant_id, test_date DESC);
+
 CREATE INDEX idx_cov_tests_result ON covenant_tests(result, test_date DESC);
+
 CREATE INDEX idx_cov_waivers_status ON covenant_waivers(status);
+
 CREATE INDEX idx_covenant_certificate_events_thread ON oe_covenant_certificate_events(certificate_id, created_at);
+
 CREATE INDEX idx_covenant_certificates_horizon ON oe_covenant_certificates(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_covenants_code ON covenants(covenant_code);
+
 CREATE INDEX idx_covenants_lender ON covenants(lender_participant_id);
+
 CREATE INDEX idx_covenants_project ON covenants(project_id);
+
 CREATE INDEX idx_cp_clearance_facility
   ON oe_cp_clearances(facility_ref);
+
 CREATE INDEX idx_cp_clearance_participant
   ON oe_cp_clearances(participant_id);
+
 CREATE INDEX idx_cp_clearance_status
   ON oe_cp_clearances(chain_status);
+
 CREATE INDEX idx_cp_req_part ON counterparty_data_requests(requestor_id, reporting_year);
+
 CREATE INDEX idx_cp_req_token ON counterparty_data_requests(share_token);
+
 CREATE INDEX idx_cp_site_date ON consumption_profiles(delivery_point_id, profile_date);
+
 CREATE INDEX idx_cp_tracker_actor     ON oe_cp_tracker(actor_id);
+
 CREATE INDEX idx_cp_tracker_created   ON oe_cp_tracker(created_at);
+
 CREATE INDEX idx_cp_tracker_project   ON oe_cp_tracker(project_ref);
+
 CREATE INDEX idx_cp_tracker_sla       ON oe_cp_tracker(sla_deadline, sla_breached);
+
 CREATE INDEX idx_cp_tracker_status    ON oe_cp_tracker(chain_status);
+
 CREATE INDEX idx_cp_tracker_tier      ON oe_cp_tracker(cp_tier);
+
 CREATE INDEX idx_cpoffer_kind    ON oe_counterparty_offers (offer_kind);
+
 CREATE INDEX idx_cpoffer_offeror ON oe_counterparty_offers (offeror_participant_id);
+
 CREATE INDEX idx_cpoffer_target  ON oe_counterparty_offers (target_role, status);
+
 CREATE INDEX idx_cq_part_status ON connection_queue(participant_id, status, queue_position);
+
 CREATE INDEX idx_credit_facility_applications_events_thread ON oe_credit_facility_applications_events(application_id, created_at);
+
 CREATE INDEX idx_credit_facility_applications_horizon ON oe_credit_facility_applications(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_credit_limits_part_eff ON credit_limits(participant_id, effective_from DESC);
+
 CREATE INDEX idx_crediting_period_renewals_events_thread ON oe_crediting_period_renewals_events(renewal_id, created_at);
+
 CREATE INDEX idx_crediting_period_renewals_horizon ON oe_crediting_period_renewals(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_creg_sync_registry ON carbon_registry_sync_log(registry_id, created_at DESC);
+
 CREATE INDEX idx_creg_sync_status ON carbon_registry_sync_log(status);
+
 CREATE INDEX idx_crt_participant
   ON oe_carbon_registry_transfers(participant_id);
+
 CREATE INDEX idx_crt_project
   ON oe_carbon_registry_transfers(project_id);
+
 CREATE INDEX idx_crt_status
   ON oe_carbon_registry_transfers(chain_status);
+
 CREATE INDEX idx_csat_participant
   ON oe_csat_records(participant_id);
+
 CREATE INDEX idx_csat_status
   ON oe_csat_records(chain_status);
+
 CREATE INDEX idx_csat_ticket
   ON oe_csat_records(ticket_id);
+
 CREATE INDEX idx_cto_ret_claim ON carbon_tax_offset_retirements(claim_id);
+
 CREATE INDEX idx_cto_taxpayer ON carbon_tax_offset_claims(taxpayer_participant_id, tax_year);
+
 CREATE INDEX idx_ctr_class       ON oe_carbon_tax_returns(tax_class);
+
 CREATE INDEX idx_ctr_participant ON oe_carbon_tax_returns(participant_id);
+
 CREATE INDEX idx_ctr_period      ON oe_carbon_tax_returns(tax_period, fiscal_year);
+
 CREATE INDEX idx_ctr_status      ON oe_carbon_tax_returns(chain_status);
+
 CREATE INDEX idx_curt_notice_status ON curtailment_notices(status, issued_at DESC);
+
 CREATE INDEX idx_curtailment_claims_events_thread ON oe_curtailment_claims_events(claim_id, created_at);
+
 CREATE INDEX idx_curtailment_claims_horizon ON oe_curtailment_claims(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_da_part_delivery ON day_ahead_blocks(participant_id, delivery_date);
+
 CREATE INDEX idx_dd_part ON ipp_drawdown_requests(participant_id, status, requested_at);
+
 CREATE INDEX idx_deal_links_from ON oe_deal_links(from_kind, from_id);
+
 CREATE INDEX idx_deal_links_group ON oe_deal_links(link_group_id);
+
 CREATE INDEX idx_deal_links_kind ON oe_deal_links(link_kind);
+
 CREATE INDEX idx_deal_links_to ON oe_deal_links(to_kind, to_id);
+
 CREATE INDEX idx_deal_objectives_owner ON oe_deal_objectives(owner_id);
+
 CREATE INDEX idx_deal_objectives_status ON oe_deal_objectives(status);
+
 CREATE INDEX idx_deal_offers_counter ON oe_deal_offers(counter_of);
+
 CREATE INDEX idx_deal_offers_expiry ON oe_deal_offers(expiry);
+
 CREATE INDEX idx_deal_offers_provider ON oe_deal_offers(provider_id);
+
 CREATE INDEX idx_deal_offers_request ON oe_deal_offers(request_id);
+
 CREATE INDEX idx_deal_offers_syndicate ON oe_deal_offers(syndicate_id);
+
 CREATE INDEX idx_deal_offers_type_status ON oe_deal_offers(deal_type, status);
+
 CREATE INDEX idx_deal_requests_demand ON oe_deal_requests(demand_id);
+
 CREATE INDEX idx_deal_requests_objective ON oe_deal_requests(objective_id);
+
 CREATE INDEX idx_deal_requests_type_status ON oe_deal_requests(deal_type, status);
+
 CREATE INDEX idx_deal_requests_window ON oe_deal_requests(bid_window_close);
+
 CREATE INDEX idx_deal_room_investors_room ON deal_room_investors(deal_room_id);
+
 CREATE INDEX idx_delivery_points_participant
   ON offtaker_delivery_points(participant_id, status);
+
 CREATE INDEX idx_deps_pred    ON activity_dependencies(predecessor_id);
+
 CREATE INDEX idx_deps_project ON activity_dependencies(project_id);
+
 CREATE INDEX idx_deps_succ    ON activity_dependencies(successor_id);
+
 CREATE INDEX idx_disbursement_cases_borrower ON oe_disbursement_cases(borrower_party);
+
 CREATE INDEX idx_disbursement_cases_horizon ON oe_disbursement_cases(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_disbursement_cases_lender   ON oe_disbursement_cases(lender_party);
+
 CREATE INDEX idx_disbursement_cases_project  ON oe_disbursement_cases(project_id);
+
 CREATE INDEX idx_disbursement_cases_sla      ON oe_disbursement_cases(sla_deadline_at);
+
 CREATE INDEX idx_disbursement_cases_status   ON oe_disbursement_cases(chain_status);
+
 CREATE INDEX idx_disbursement_cases_tier     ON oe_disbursement_cases(tranche_tier);
+
 CREATE INDEX idx_disbursement_events_created      ON oe_disbursement_events(created_at);
+
 CREATE INDEX idx_disbursement_events_disbursement ON oe_disbursement_events(disbursement_id);
+
 CREATE INDEX idx_disbursement_events_thread ON oe_disbursement_events(disbursement_id, created_at);
+
 CREATE INDEX idx_disc_subs_part_year ON disclosure_submissions(participant_id, reporting_year, jurisdiction);
+
 CREATE INDEX idx_dispatch_date ON grid_dispatch_schedules(schedule_date, status);
+
 CREATE INDEX idx_dispatch_instr_participant ON dispatch_instructions(participant_id, issued_at DESC);
+
 CREATE INDEX idx_dispatch_instr_status ON dispatch_instructions(status);
+
 CREATE INDEX idx_dispatch_sch_day ON dispatch_schedules(trading_day, schedule_type);
+
 CREATE INDEX idx_disposition_cases_horizon ON oe_disposition_cases(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_disposition_cases_officer    ON oe_disposition_cases(assigned_officer);
+
 CREATE INDEX idx_disposition_cases_party      ON oe_disposition_cases(source_party);
+
 CREATE INDEX idx_disposition_cases_sla        ON oe_disposition_cases(sla_deadline_at);
+
 CREATE INDEX idx_disposition_cases_status     ON oe_disposition_cases(chain_status);
+
 CREATE INDEX idx_disposition_cases_tier       ON oe_disposition_cases(severity_tier);
+
 CREATE INDEX idx_disposition_cases_wave       ON oe_disposition_cases(source_wave);
+
 CREATE INDEX idx_disposition_events_created     ON oe_disposition_events(created_at);
+
 CREATE INDEX idx_disposition_events_disposition ON oe_disposition_events(disposition_id);
+
 CREATE INDEX idx_disposition_events_thread ON oe_disposition_events(disposition_id, created_at);
+
 CREATE INDEX idx_dlp_defects_participant ON oe_ipp_dlp_defects(participant_id);
+
 CREATE INDEX idx_dlp_defects_project ON oe_ipp_dlp_defects(project_id);
+
 CREATE INDEX idx_dlp_defects_severity ON oe_ipp_dlp_defects(severity_class);
+
 CREATE INDEX idx_dlp_defects_sla ON oe_ipp_dlp_defects(sla_deadline, is_sla_breached);
+
 CREATE INDEX idx_dlp_defects_status ON oe_ipp_dlp_defects(status);
+
 CREATE INDEX idx_dlq_event ON cascade_dlq(event);
+
 CREATE INDEX idx_dlq_next_attempt ON cascade_dlq(status, next_attempt_at);
+
 CREATE INDEX idx_dlq_status_seen ON cascade_dlq(status, first_seen_at DESC);
+
 CREATE INDEX idx_docjob_owner   ON oe_doc_jobs (owner_id, status);
+
 CREATE INDEX idx_docjob_subject ON oe_doc_jobs (subject_type, subject_id);
+
 CREATE INDEX idx_docjob_type    ON oe_doc_jobs (doc_type);
+
 CREATE INDEX idx_dr_events_date
   ON oe_demand_response_events(event_date);
+
 CREATE INDEX idx_dr_events_participant
   ON oe_demand_response_events(participant_id);
+
 CREATE INDEX idx_dr_events_prog ON demand_response_events(program_id, event_start);
+
 CREATE INDEX idx_dr_events_status
   ON oe_demand_response_events(chain_status);
+
 CREATE INDEX idx_drawdown_chain_events_thread ON oe_drawdown_chain_events(drawdown_id, created_at);
+
 CREATE INDEX idx_drawdown_chain_horizon ON oe_drawdown_chain(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_dscr_participant
   ON oe_dscr_reports(participant_id);
+
 CREATE UNIQUE INDEX idx_dscr_period
   ON oe_dscr_reports(participant_id, reporting_period)
   WHERE dfi_reference IS NULL;
+
 CREATE INDEX idx_dscr_status
   ON oe_dscr_reports(chain_status);
+
 CREATE INDEX idx_dsp_participant ON dispatch_schedule_periods(participant_id, period_start);
+
 CREATE INDEX idx_dsp_schedule ON dispatch_schedule_periods(schedule_id, period_start);
+
 CREATE INDEX idx_dsr_deadline ON oe_data_subject_requests(sla_deadline);
+
 CREATE INDEX idx_dsr_status ON oe_data_subject_requests(chain_status);
+
 CREATE INDEX idx_dsr_tenant ON oe_data_subject_requests(tenant_id);
+
 CREATE INDEX idx_dsr_type ON oe_data_subject_requests(request_type);
+
 CREATE INDEX idx_dts_at ON data_tier_snapshots(snapshot_at DESC);
+
 CREATE INDEX idx_dvp_status ON settlement_dvp_locks(lock_status);
+
 CREATE INDEX idx_ec_participant
   ON oe_export_curtailments(participant_id);
+
 CREATE INDEX idx_ec_site
   ON oe_export_curtailments(site_id);
+
 CREATE INDEX idx_ec_status
   ON oe_export_curtailments(chain_status);
+
 CREATE INDEX idx_ed_commitment_events_thread ON oe_ed_commitment_events(commitment_id, created_at);
+
 CREATE INDEX idx_ed_commitments_horizon ON oe_ed_commitments(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ed_sed_project ON ed_sed_spend(project_id, period);
+
 CREATE INDEX idx_emp_compliance_reports_ipp    ON oe_emp_compliance_reports(ipp_id);
+
 CREATE INDEX idx_emp_compliance_reports_sla    ON oe_emp_compliance_reports(sla_deadline, sla_breached);
+
 CREATE INDEX idx_emp_compliance_reports_status ON oe_emp_compliance_reports(chain_status);
+
 CREATE INDEX idx_emp_compliance_reports_tier   ON oe_emp_compliance_reports(tier);
+
 CREATE INDEX idx_env_auth_decision ON environmental_authorisations(decision);
+
 CREATE INDEX idx_env_auth_project ON environmental_authorisations(project_id);
+
 CREATE INDEX idx_env_comp_authorisation ON environmental_compliance(authorisation_id);
+
 CREATE INDEX idx_env_oblig_part ON env_compliance_obligations(participant_id, status, due_date);
+
 CREATE INDEX idx_eop_contingency
   ON oe_eop_activations(contingency_at);
+
 CREATE INDEX idx_eop_participant
   ON oe_eop_activations(participant_id);
+
 CREATE INDEX idx_eop_status
   ON oe_eop_activations(chain_status);
+
 CREATE INDEX idx_epc_part ON epc_contractors(participant_id, rating);
+
 CREATE INDEX idx_epc_project ON epc_contracts(project_id);
+
 CREATE INDEX idx_epc_var_contract ON epc_variations(epc_contract_id);
+
 CREATE INDEX idx_error_log_created_at   ON error_log(created_at);
+
 CREATE INDEX idx_error_log_participant  ON error_log(participant_id);
+
 CREATE INDEX idx_error_log_route        ON error_log(route);
+
 CREATE INDEX idx_error_log_source       ON error_log(source);
+
 CREATE INDEX idx_esap_compliance_created    ON oe_esap_compliance(created_at);
+
 CREATE INDEX idx_esap_compliance_project    ON oe_esap_compliance(project_id);
+
 CREATE INDEX idx_esap_compliance_sla        ON oe_esap_compliance(sla_deadline, sla_breached);
+
 CREATE INDEX idx_esap_compliance_status     ON oe_esap_compliance(chain_status);
+
 CREATE INDEX idx_esap_compliance_tier       ON oe_esap_compliance(commitment_tier);
+
 CREATE INDEX idx_esap_participant
   ON oe_esap_monitoring(participant_id);
+
 CREATE INDEX idx_esap_project
   ON oe_esap_monitoring(project_ref);
+
 CREATE INDEX idx_esap_status
   ON oe_esap_monitoring(chain_status);
+
 CREATE INDEX idx_esg_act_counterparty
   ON esg_activity_transactions(counterparty_id, activity_date DESC);
+
 CREATE INDEX idx_esg_act_part_date
   ON esg_activity_transactions(participant_id, activity_date DESC);
+
 CREATE INDEX idx_esg_act_scope
   ON esg_activity_transactions(scope, scope3_category, activity_date DESC);
+
 CREATE INDEX idx_esg_act_tenant
   ON esg_activity_transactions(tenant_id, scope, activity_date DESC);
+
 CREATE INDEX idx_esg_data_participant ON esg_data(participant_id);
+
 CREATE INDEX idx_esg_disclosures
   ON esg_disclosures(participant_id, reporting_year, framework);
+
 CREATE INDEX idx_esg_factors_lookup
   ON esg_emission_factors(activity_code, region, valid_from, tenant_id);
+
 CREATE INDEX idx_esg_reports_participant ON esg_reports(participant_id);
+
 CREATE INDEX idx_esg_reports_participant_created
   ON esg_reports (participant_id, created_at DESC);
+
 CREATE INDEX idx_esg_supplier_part
   ON esg_supplier_engagements(participant_id, status, supplier_id);
+
 CREATE INDEX idx_esums_carbon_credits_participant
   ON esums_carbon_credits(participant_id);
+
 CREATE INDEX idx_esums_carbon_credits_station
   ON esums_carbon_credits(station_id, period_start);
+
 CREATE INDEX idx_esums_carbon_credits_status
   ON esums_carbon_credits(status);
+
 CREATE INDEX idx_esums_ds_participant ON esums_data_sources(participant_id);
+
 CREATE INDEX idx_esums_ds_site ON esums_data_sources(site_id);
+
 CREATE INDEX idx_esums_projects_ipp ON esums_projects(ipp_project_id);
+
 CREATE INDEX idx_esums_projects_participant ON esums_projects(participant_id);
+
 CREATE INDEX idx_esums_settlement_invoices_from
   ON esums_settlement_invoices(from_participant_id);
+
 CREATE INDEX idx_esums_settlement_invoices_station
   ON esums_settlement_invoices(station_id, period_start);
+
 CREATE INDEX idx_esums_settlement_invoices_status
   ON esums_settlement_invoices(status);
+
 CREATE INDEX idx_esums_settlement_invoices_to
   ON esums_settlement_invoices(to_participant_id);
+
 CREATE INDEX idx_esums_tel_device_ts ON esums_telemetry(device_id, ts DESC);
+
 CREATE INDEX idx_esums_tel_site_ts ON esums_telemetry(site_id, ts DESC);
+
 CREATE INDEX idx_evt_participant ON email_verification_tokens(participant_id);
+
 CREATE INDEX idx_fam_actor          ON oe_facility_amendments(actor_id);
+
 CREATE INDEX idx_fam_class          ON oe_facility_amendments(amendment_class);
+
 CREATE INDEX idx_fam_created        ON oe_facility_amendments(created_at);
+
 CREATE INDEX idx_fam_facility       ON oe_facility_amendments(facility_id);
+
 CREATE INDEX idx_fam_sla            ON oe_facility_amendments(sla_deadline, sla_breached);
+
 CREATE INDEX idx_fam_status         ON oe_facility_amendments(chain_status);
+
 CREATE INDEX idx_fcr_participant
   ON oe_fsca_conduct_reports(participant_id);
+
 CREATE UNIQUE INDEX idx_fcr_period
   ON oe_fsca_conduct_reports(participant_id, reporting_period)
   WHERE fsca_submission_ref IS NULL;
+
 CREATE INDEX idx_fcr_status
   ON oe_fsca_conduct_reports(chain_status);
+
 CREATE INDEX idx_ffo_flag ON feature_flag_overrides(flag_id);
+
 CREATE INDEX idx_ffo_participant ON feature_flag_overrides(participant_id);
+
 CREATE INDEX idx_ffo_tenant ON feature_flag_overrides(tenant_id);
+
 CREATE INDEX idx_fmc_actor_id      ON oe_ipp_force_majeure_chain(actor_id);
+
 CREATE INDEX idx_fmc_category      ON oe_ipp_force_majeure_chain(fm_category);
+
 CREATE INDEX idx_fmc_chain_status  ON oe_ipp_force_majeure_chain(chain_status);
+
 CREATE INDEX idx_fmc_created       ON oe_ipp_force_majeure_chain(created_at);
+
 CREATE INDEX idx_fmc_ppa_id        ON oe_ipp_force_majeure_chain(ppa_id);
+
 CREATE INDEX idx_fmc_sla           ON oe_ipp_force_majeure_chain(sla_deadline, sla_breached);
+
 CREATE INDEX idx_fsca_report_participant
   ON oe_fsca_compliance_reports(participant_id, report_year);
+
 CREATE INDEX idx_fsca_report_status
   ON oe_fsca_compliance_reports(chain_status);
+
 CREATE UNIQUE INDEX idx_fsca_report_year_participant
   ON oe_fsca_compliance_reports(participant_id, report_year);
+
 CREATE INDEX idx_fund_commitments_fund ON fund_commitments(fund_id);
+
 CREATE UNIQUE INDEX idx_gbr_isin_year
   ON oe_green_bond_reports(bond_isin, report_year) WHERE bond_isin IS NOT NULL;
+
 CREATE INDEX idx_gbr_participant ON oe_green_bond_reports(participant_id, report_year);
+
 CREATE INDEX idx_gbr_status      ON oe_green_bond_reports(chain_status);
+
 CREATE INDEX idx_gca_applicant ON grid_connection_applications(applicant_participant_id);
+
 CREATE INDEX idx_gca_connections_horizon ON oe_gca_connections(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_gca_events_thread ON oe_gca_events(gca_id, created_at);
+
 CREATE INDEX idx_gca_status ON grid_connection_applications(status);
+
 CREATE INDEX idx_gca_substation ON grid_connection_applications(substation);
+
 CREATE INDEX idx_gce_app ON grid_connection_events(application_id, event_date DESC);
+
 CREATE INDEX idx_gendoc_by      ON generated_documents (generated_by);
+
 CREATE INDEX idx_gendoc_entity  ON generated_documents (entity_type, entity_id);
+
 CREATE INDEX idx_gendoc_type    ON generated_documents (doc_type);
+
 CREATE INDEX idx_grid_ancillary_award_events
   ON grid_ancillary_award_events (award_id, occurred_at);
+
 CREATE INDEX idx_grid_capacity_allocations_events_thread ON oe_grid_capacity_allocations_events(allocation_id, created_at);
+
 CREATE INDEX idx_grid_capacity_allocations_horizon ON oe_grid_capacity_allocations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_grid_code_compliance_events_thread ON oe_grid_code_compliance_events(compliance_id, created_at);
+
 CREATE INDEX idx_grid_code_compliance_horizon ON oe_grid_code_compliance(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_grid_connections_project ON grid_connections(project_id);
+
 CREATE INDEX idx_grid_curtail_events_curtail
   ON grid_curtailment_events (curtailment_id, occurred_at);
+
 CREATE INDEX idx_grid_outage_reported ON grid_outages(reported_at DESC);
+
 CREATE INDEX idx_grid_outage_responses_outage
   ON grid_outage_responses (outage_id, responded_at);
+
 CREATE INDEX idx_grid_outage_status ON grid_outages(status);
+
 CREATE INDEX idx_grid_outage_updates ON grid_outage_updates(outage_id, update_at DESC);
+
 CREATE INDEX idx_grid_wheel_charges_agreement_month
   ON oe_grid_wheeling_charges(agreement_id, period_month);
+
 CREATE INDEX idx_grid_wheel_charges_deadline
   ON oe_grid_wheeling_charges(dispute_deadline_at);
+
 CREATE INDEX idx_grid_wheel_charges_status
   ON oe_grid_wheeling_charges(status);
+
 CREATE INDEX idx_grid_wheel_disputes_charge
   ON oe_grid_wheeling_disputes(charge_id);
+
 CREATE INDEX idx_grid_wheel_disputes_status
   ON oe_grid_wheeling_disputes(status);
+
 CREATE INDEX idx_gt_participant
   ON oe_green_tariff_disclosures(participant_id);
+
 CREATE UNIQUE INDEX idx_gt_period
   ON oe_green_tariff_disclosures(participant_id, disclosure_period, green_tariff_class)
   WHERE ppa_ref IS NULL;
+
 CREATE INDEX idx_gt_status
   ON oe_green_tariff_disclosures(chain_status);
+
 CREATE INDEX idx_gtia_gca
   ON oe_gtia(gca_ref);
+
 CREATE INDEX idx_gtia_participant
   ON oe_gtia(participant_id);
+
 CREATE INDEX idx_gtia_status
   ON oe_gtia(chain_status);
+
 CREATE INDEX idx_hse_incident_events_thread ON oe_hse_incident_events(incident_id, created_at);
+
 CREATE INDEX idx_hse_incidents_horizon ON oe_hse_incidents(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ics_delivery ON oe_interconnector_schedules(delivery_start);
+
 CREATE INDEX idx_ics_interconnector ON oe_interconnector_schedules(interconnector_id);
+
 CREATE INDEX idx_ics_status ON oe_interconnector_schedules(chain_status);
+
 CREATE INDEX idx_ics_tenant ON oe_interconnector_schedules(tenant_id);
+
 CREATE INDEX idx_idem_expires ON idempotency_keys(expires_at);
+
 CREATE INDEX idx_idem_scope_created ON idempotency_keys(scope, created_at DESC);
+
 CREATE INDEX idx_ie_cert_disbursement ON ie_certifications(disbursement_id);
+
 CREATE INDEX idx_ie_cert_project ON ie_certifications(project_id, cert_issue_date DESC);
+
 CREATE INDEX idx_ie_cert_status ON ie_certifications(status);
+
 CREATE INDEX idx_imbalance_monthly_period ON imbalance_monthly_totals(period);
+
 CREATE INDEX idx_imbalance_monthly_settled ON imbalance_monthly_totals(settled, period);
+
 CREATE INDEX idx_imbalance_prices_published ON imbalance_prices(published_at);
+
 CREATE INDEX idx_imbalance_runs_started ON imbalance_settlement_runs(started_at);
+
 CREATE INDEX idx_imbalance_settlements_brp ON imbalance_settlements(brp_participant_id, period_start);
+
 CREATE INDEX idx_imbalance_settlements_period ON imbalance_settlements(period_start);
+
 CREATE INDEX idx_imbalance_settlements_run ON imbalance_settlements(run_id);
+
 CREATE INDEX idx_ins_claim_policy ON insurance_claims(policy_id);
+
 CREATE INDEX idx_ins_expiry ON insurance_policies(period_end);
+
 CREATE INDEX idx_ins_part_status ON insurance_policies_v2(participant_id, status, effective_to);
+
 CREATE INDEX idx_ins_project ON insurance_policies(project_id);
+
 CREATE INDEX idx_insurance_claim_chain_events_thread ON oe_insurance_claim_chain_events(claim_id, created_at);
+
 CREATE INDEX idx_insurance_claim_chain_horizon ON oe_insurance_claim_chain(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_intelligence_resolved ON intelligence_items(resolved);
+
 CREATE INDEX idx_invoice_confirmations_invoice
   ON invoice_confirmations (invoice_id);
+
 CREATE INDEX idx_invoice_line_items_invoice
   ON invoice_line_items (invoice_id, sequence_no);
+
 CREATE INDEX idx_invoice_line_items_type
   ON invoice_line_items (line_type);
+
 CREATE INDEX idx_invoices_from ON invoices(from_participant_id);
+
 CREATE INDEX idx_invoices_status ON invoices(status);
+
 CREATE INDEX idx_invoices_to ON invoices(to_participant_id);
+
 CREATE INDEX idx_ipp_acs_participant ON oe_ipp_annual_compliance_assessments(participant_id);
+
 CREATE INDEX idx_ipp_acs_sla         ON oe_ipp_annual_compliance_assessments(sla_deadline, sla_breached);
+
 CREATE INDEX idx_ipp_acs_status      ON oe_ipp_annual_compliance_assessments(chain_status);
+
 CREATE INDEX idx_ipp_ael_participant
   ON oe_ipp_ael_applications(participant_id);
+
 CREATE INDEX idx_ipp_ael_project
   ON oe_ipp_ael_applications(project_id);
+
 CREATE INDEX idx_ipp_ael_sla
   ON oe_ipp_ael_applications(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_ael_status
   ON oe_ipp_ael_applications(chain_status);
+
 CREATE INDEX idx_ipp_anr_participant
   ON oe_ipp_annual_reports(participant_id);
+
 CREATE INDEX idx_ipp_anr_project
   ON oe_ipp_annual_reports(project_id);
+
 CREATE INDEX idx_ipp_anr_sla
   ON oe_ipp_annual_reports(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_anr_status
   ON oe_ipp_annual_reports(chain_status);
+
 CREATE INDEX idx_ipp_aud_participant ON oe_ipp_annual_audits(participant_id);
+
 CREATE INDEX idx_ipp_aud_sla         ON oe_ipp_annual_audits(sla_deadline, sla_breached);
+
 CREATE INDEX idx_ipp_aud_status      ON oe_ipp_annual_audits(chain_status);
+
 CREATE INDEX idx_ipp_bbbee_project
   ON oe_ipp_bbbee_verification(project_ref);
+
 CREATE INDEX idx_ipp_bbbee_sla
   ON oe_ipp_bbbee_verification(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_bbbee_status
   ON oe_ipp_bbbee_verification(chain_status);
+
 CREATE INDEX idx_ipp_bfs_participant
   ON oe_ipp_bfs_studies(participant_id);
+
 CREATE INDEX idx_ipp_bfs_project
   ON oe_ipp_bfs_studies(project_id);
+
 CREATE INDEX idx_ipp_bfs_sla
   ON oe_ipp_bfs_studies(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_bfs_status
   ON oe_ipp_bfs_studies(chain_status);
+
 CREATE INDEX idx_ipp_ccc_participant
   ON oe_ipp_ccc_negotiations(participant_id);
+
 CREATE INDEX idx_ipp_ccc_project
   ON oe_ipp_ccc_negotiations(project_id);
+
 CREATE INDEX idx_ipp_ccc_sla
   ON oe_ipp_ccc_negotiations(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_ccc_status
   ON oe_ipp_ccc_negotiations(chain_status);
+
 CREATE INDEX idx_ipp_cd_participant
   ON oe_ipp_contractor_defaults(participant_id);
+
 CREATE INDEX idx_ipp_cd_project
   ON oe_ipp_contractor_defaults(project_id);
+
 CREATE INDEX idx_ipp_cd_sla
   ON oe_ipp_contractor_defaults(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_cd_status
   ON oe_ipp_contractor_defaults(chain_status);
+
 CREATE INDEX idx_ipp_cep_project
   ON oe_ipp_cep_compliance(project_ref);
+
 CREATE INDEX idx_ipp_cep_sla
   ON oe_ipp_cep_compliance(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_cep_status
   ON oe_ipp_cep_compliance(chain_status);
+
 CREATE INDEX idx_ipp_construction_diary_horizon ON oe_ipp_construction_diary(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ipp_ctr_participant
   ON oe_ipp_community_trust_reports(participant_id);
+
 CREATE INDEX idx_ipp_ctr_project
   ON oe_ipp_community_trust_reports(project_id);
+
 CREATE INDEX idx_ipp_ctr_sla
   ON oe_ipp_community_trust_reports(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_ctr_status
   ON oe_ipp_community_trust_reports(chain_status);
+
 CREATE INDEX idx_ipp_diary_day_type ON oe_ipp_construction_diary(day_type);
+
 CREATE INDEX idx_ipp_diary_project_date ON oe_ipp_construction_diary(project_id, diary_date);
+
 CREATE INDEX idx_ipp_diary_status ON oe_ipp_construction_diary(chain_status);
+
 CREATE INDEX idx_ipp_eam_participant
   ON oe_ipp_ea_amendments(participant_id);
+
 CREATE INDEX idx_ipp_eam_project
   ON oe_ipp_ea_amendments(project_id);
+
 CREATE INDEX idx_ipp_eam_sla
   ON oe_ipp_ea_amendments(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_eam_status
   ON oe_ipp_ea_amendments(chain_status);
+
 CREATE INDEX idx_ipp_eco_participant
   ON oe_ipp_eco_reports(participant_id);
+
 CREATE INDEX idx_ipp_eco_project
   ON oe_ipp_eco_reports(project_id);
+
 CREATE INDEX idx_ipp_eco_sla
   ON oe_ipp_eco_reports(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_eco_status
   ON oe_ipp_eco_reports(chain_status);
+
 CREATE INDEX idx_ipp_eqt_sla    ON oe_ipp_equity_transfers(sla_due_date, sla_breached);
+
 CREATE INDEX idx_ipp_eqt_status ON oe_ipp_equity_transfers(chain_status);
+
 CREATE INDEX idx_ipp_esmr_project
   ON oe_ipp_esmr(project_ref);
+
 CREATE INDEX idx_ipp_esmr_sla
   ON oe_ipp_esmr(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_esmr_status
   ON oe_ipp_esmr(chain_status);
+
 CREATE INDEX idx_ipp_fm_chain_status
   ON oe_ipp_fm(chain_status);
+
 CREATE INDEX idx_ipp_fm_participant
   ON oe_ipp_fm(participant_id);
+
 CREATE INDEX idx_ipp_fm_project
   ON oe_ipp_fm(project_id);
+
 CREATE INDEX idx_ipp_fm_sla
   ON oe_ipp_force_majeure(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_fm_sla_due_at
   ON oe_ipp_fm(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_fm_status
   ON oe_ipp_force_majeure(chain_status);
+
 CREATE INDEX idx_ipp_gcc_participant
   ON oe_ipp_grid_compliance(participant_id);
+
 CREATE INDEX idx_ipp_gcc_project
   ON oe_ipp_grid_compliance(project_id);
+
 CREATE INDEX idx_ipp_gcc_sla
   ON oe_ipp_grid_compliance(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_gcc_status
   ON oe_ipp_grid_compliance(chain_status);
+
 CREATE INDEX idx_ipp_hra_participant
   ON oe_ipp_hra_assessments(participant_id);
+
 CREATE INDEX idx_ipp_hra_project
   ON oe_ipp_hra_assessments(project_id);
+
 CREATE INDEX idx_ipp_hra_sla
   ON oe_ipp_hra_assessments(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_hra_status
   ON oe_ipp_hra_assessments(chain_status);
+
 CREATE INDEX idx_ipp_iear_project
   ON oe_ipp_ie_annual_reviews(project_ref);
+
 CREATE INDEX idx_ipp_iear_sla
   ON oe_ipp_ie_annual_reviews(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_iear_status
   ON oe_ipp_ie_annual_reviews(chain_status);
+
 CREATE INDEX idx_ipp_insr_project
   ON oe_ipp_insurance_renewals(project_ref);
+
 CREATE INDEX idx_ipp_insr_sla
   ON oe_ipp_insurance_renewals(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_insr_status
   ON oe_ipp_insurance_renewals(chain_status);
+
 CREATE INDEX idx_ipp_issue_events_iss ON oe_ipp_issue_events(issue_id);
+
 CREATE INDEX idx_ipp_issues_breached  ON oe_ipp_issues(sla_breached);
+
 CREATE INDEX idx_ipp_issues_category  ON oe_ipp_issues(category);
+
 CREATE INDEX idx_ipp_issues_created   ON oe_ipp_issues(created_at);
+
 CREATE INDEX idx_ipp_issues_priority  ON oe_ipp_issues(priority);
+
 CREATE INDEX idx_ipp_issues_project   ON oe_ipp_issues(project_id);
+
 CREATE INDEX idx_ipp_issues_reg       ON oe_ipp_issues(regulator_relevant);
+
 CREATE INDEX idx_ipp_issues_safety    ON oe_ipp_issues(is_safety);
+
 CREATE INDEX idx_ipp_issues_sg_ref    ON oe_ipp_issues(stage_gate_ref);
+
 CREATE INDEX idx_ipp_issues_status   ON oe_ipp_issues(chain_status);
+
 CREATE INDEX idx_ipp_issues_w118      ON oe_ipp_issues(w118_block_ref);
+
 CREATE INDEX idx_ipp_land_amd_participant
   ON oe_ipp_land_amendments(participant_id);
+
 CREATE INDEX idx_ipp_land_amd_project
   ON oe_ipp_land_amendments(project_id);
+
 CREATE INDEX idx_ipp_land_amd_sla
   ON oe_ipp_land_amendments(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_land_amd_status
   ON oe_ipp_land_amendments(chain_status);
+
 CREATE INDEX idx_ipp_lc_reports_project
   ON oe_ipp_lc_reports(project_ref);
+
 CREATE INDEX idx_ipp_lc_reports_sla
   ON oe_ipp_lc_reports(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_lc_reports_status
   ON oe_ipp_lc_reports(chain_status);
+
 CREATE INDEX idx_ipp_lcr_sla    ON oe_ipp_licence_returns(sla_due_date, sla_breached);
+
 CREATE INDEX idx_ipp_lcr_status ON oe_ipp_licence_returns(chain_status);
+
 CREATE INDEX idx_ipp_lrep_project
   ON oe_ipp_lender_reporting(project_ref);
+
 CREATE INDEX idx_ipp_lrep_sla
   ON oe_ipp_lender_reporting(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_lrep_status
   ON oe_ipp_lender_reporting(chain_status);
+
 CREATE INDEX idx_ipp_lta_participant
   ON oe_ipp_lta_certificates(participant_id);
+
 CREATE INDEX idx_ipp_lta_project
   ON oe_ipp_lta_certificates(project_id);
+
 CREATE INDEX idx_ipp_lta_sla
   ON oe_ipp_lta_certificates(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_lta_status
   ON oe_ipp_lta_certificates(chain_status);
+
 CREATE INDEX idx_ipp_mc_project
   ON oe_ipp_milestone_certifications(project_ref);
+
 CREATE INDEX idx_ipp_mc_sla
   ON oe_ipp_milestone_certifications(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_mc_status
   ON oe_ipp_milestone_certifications(chain_status);
+
 CREATE INDEX idx_ipp_method_statements_horizon ON oe_ipp_method_statements(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ipp_mir_events_mir_id     ON oe_ipp_mir_events(mir_id);
+
 CREATE INDEX idx_ipp_mirs_chain_status     ON oe_ipp_mirs(chain_status);
+
 CREATE INDEX idx_ipp_mirs_floor_ie_witnessed       ON oe_ipp_mirs(floor_ie_witnessed);
+
 CREATE INDEX idx_ipp_mirs_floor_lender_hold_point  ON oe_ipp_mirs(floor_lender_hold_point);
+
 CREATE INDEX idx_ipp_mirs_is_reportable    ON oe_ipp_mirs(is_reportable);
+
 CREATE INDEX idx_ipp_mirs_material_category ON oe_ipp_mirs(material_category);
+
 CREATE INDEX idx_ipp_mirs_material_tier    ON oe_ipp_mirs(material_tier);
+
 CREATE INDEX idx_ipp_mirs_project_id       ON oe_ipp_mirs(project_id);
+
 CREATE INDEX idx_ipp_mirs_sla_breached     ON oe_ipp_mirs(sla_breached);
+
 CREATE INDEX idx_ipp_ms_events_thread ON oe_ipp_ms_events(ms_id, created_at);
+
 CREATE INDEX idx_ipp_ncr_events_thread ON oe_ipp_ncr_events(ncr_id, created_at);
+
 CREATE INDEX idx_ipp_ncrs_horizon ON oe_ipp_ncrs(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ipp_om_contract_participant
   ON oe_ipp_om_contracts(participant_id);
+
 CREATE INDEX idx_ipp_om_contract_project
   ON oe_ipp_om_contracts(project_id);
+
 CREATE INDEX idx_ipp_om_contract_sla
   ON oe_ipp_om_contracts(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_om_contract_status
   ON oe_ipp_om_contracts(chain_status);
+
 CREATE INDEX idx_ipp_pcn_events_claim_id ON oe_ipp_pcn_events(claim_id);
+
 CREATE INDEX idx_ipp_progress_claims_chain_status ON oe_ipp_progress_claims(chain_status);
+
 CREATE INDEX idx_ipp_progress_claims_claim_tier ON oe_ipp_progress_claims(claim_tier);
+
 CREATE INDEX idx_ipp_progress_claims_claim_type ON oe_ipp_progress_claims(claim_type);
+
 CREATE INDEX idx_ipp_progress_claims_floor_ie_milestone ON oe_ipp_progress_claims(floor_ie_milestone_payment);
+
 CREATE INDEX idx_ipp_progress_claims_floor_lender_cert ON oe_ipp_progress_claims(floor_lender_certification_required);
+
 CREATE INDEX idx_ipp_progress_claims_is_reportable ON oe_ipp_progress_claims(is_reportable);
+
 CREATE INDEX idx_ipp_progress_claims_project_id ON oe_ipp_progress_claims(project_id);
+
 CREATE INDEX idx_ipp_progress_claims_sla_breached ON oe_ipp_progress_claims(sla_breached);
+
 CREATE INDEX idx_ipp_projects_developer ON ipp_projects(developer_id);
+
 CREATE INDEX idx_ipp_projects_status ON ipp_projects(status);
+
 CREATE INDEX idx_ipp_psec_project
   ON oe_ipp_perf_securities(project_ref);
+
 CREATE INDEX idx_ipp_psec_sla
   ON oe_ipp_perf_securities(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_psec_status
   ON oe_ipp_perf_securities(chain_status);
+
 CREATE INDEX idx_ipp_qgr_participant ON oe_ipp_quarterly_gen_reports(participant_id);
+
 CREATE INDEX idx_ipp_qgr_sla         ON oe_ipp_quarterly_gen_reports(sla_deadline, sla_breached);
+
 CREATE INDEX idx_ipp_qgr_status      ON oe_ipp_quarterly_gen_reports(chain_status);
+
 CREATE INDEX idx_ipp_refinancing_chain_status
   ON oe_ipp_refinancing(chain_status);
+
 CREATE INDEX idx_ipp_refinancing_participant
   ON oe_ipp_refinancing(participant_id);
+
 CREATE INDEX idx_ipp_refinancing_project
   ON oe_ipp_refinancing(project_id);
+
 CREATE INDEX idx_ipp_refinancing_sla_due_at
   ON oe_ipp_refinancing(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_risk_events_risk ON oe_ipp_risk_events(risk_id);
+
 CREATE INDEX idx_ipp_risks_breached   ON oe_ipp_risks(sla_breached);
+
 CREATE INDEX idx_ipp_risks_category   ON oe_ipp_risks(risk_category);
+
 CREATE INDEX idx_ipp_risks_project    ON oe_ipp_risks(project_id);
+
 CREATE INDEX idx_ipp_risks_safety     ON oe_ipp_risks(is_safety);
+
 CREATE INDEX idx_ipp_risks_score      ON oe_ipp_risks(risk_score);
+
 CREATE INDEX idx_ipp_risks_sg_ref     ON oe_ipp_risks(stage_gate_ref);
+
 CREATE INDEX idx_ipp_risks_status    ON oe_ipp_risks(chain_status);
+
 CREATE INDEX idx_ipp_risks_tier       ON oe_ipp_risks(risk_tier);
+
 CREATE INDEX idx_ipp_risks_triggered  ON oe_ipp_risks(triggered_at);
+
 CREATE INDEX idx_ipp_risks_w118       ON oe_ipp_risks(w118_block_ref);
+
 CREATE INDEX idx_ipp_rpr_sla ON oe_ipp_reipppp_reports(sla_due_date, sla_breached);
+
 CREATE INDEX idx_ipp_rpr_status ON oe_ipp_reipppp_reports(chain_status);
+
 CREATE INDEX idx_ipp_sed_project
   ON oe_ipp_sed_compliance(project_ref);
+
 CREATE INDEX idx_ipp_sed_sla
   ON oe_ipp_sed_compliance(sla_due_date)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_sed_status
   ON oe_ipp_sed_compliance(chain_status);
+
 CREATE INDEX idx_ipp_si_participant ON oe_ipp_site_instructions(participant_id);
+
 CREATE INDEX idx_ipp_si_project    ON oe_ipp_site_instructions(project_id);
+
 CREATE INDEX idx_ipp_si_sla        ON oe_ipp_site_instructions(sla_deadline, is_sla_breached);
+
 CREATE INDEX idx_ipp_si_status     ON oe_ipp_site_instructions(status);
+
 CREATE INDEX idx_ipp_si_type       ON oe_ipp_site_instructions(instruction_type);
+
 CREATE INDEX idx_ipp_sth_breached     ON oe_ipp_stakeholders(sla_breached);
+
 CREATE INDEX idx_ipp_sth_ep4          ON oe_ipp_stakeholders(floor_ep4_required);
+
 CREATE INDEX idx_ipp_sth_events       ON oe_ipp_stakeholder_events(stakeholder_id);
+
 CREATE INDEX idx_ipp_sth_power        ON oe_ipp_stakeholders(power_score);
+
 CREATE INDEX idx_ipp_sth_project      ON oe_ipp_stakeholders(project_id);
+
 CREATE INDEX idx_ipp_sth_reportable   ON oe_ipp_stakeholders(is_reportable);
+
 CREATE INDEX idx_ipp_sth_status       ON oe_ipp_stakeholders(chain_status);
+
 CREATE INDEX idx_ipp_sth_tier         ON oe_ipp_stakeholders(stakeholder_tier);
+
 CREATE INDEX idx_ipp_sth_type         ON oe_ipp_stakeholders(stakeholder_type);
+
 CREATE INDEX idx_ipp_sub_chain_status      ON oe_ipp_subcontractors (chain_status);
+
 CREATE INDEX idx_ipp_sub_ed_reporting      ON oe_ipp_subcontractors (floor_reipppp_ed_reporting);
+
 CREATE INDEX idx_ipp_sub_is_reportable     ON oe_ipp_subcontractors (is_reportable);
+
 CREATE INDEX idx_ipp_sub_ohsa_notification ON oe_ipp_subcontractors (floor_ohsa_notification);
+
 CREATE INDEX idx_ipp_sub_project_id        ON oe_ipp_subcontractors (project_id);
+
 CREATE INDEX idx_ipp_sub_sla_breached      ON oe_ipp_subcontractors (sla_breached);
+
 CREATE INDEX idx_ipp_sub_tier              ON oe_ipp_subcontractors (subcontractor_tier);
+
 CREATE INDEX idx_ipp_sub_trade_category    ON oe_ipp_subcontractors (trade_category);
+
 CREATE INDEX idx_ipp_tqs_chain_status ON oe_ipp_tqs(chain_status);
+
 CREATE INDEX idx_ipp_tqs_discipline ON oe_ipp_tqs(discipline);
+
 CREATE INDEX idx_ipp_tqs_floor_ie_notification_required ON oe_ipp_tqs(floor_ie_notification_required);
+
 CREATE INDEX idx_ipp_tqs_floor_structural_safety ON oe_ipp_tqs(floor_structural_safety);
+
 CREATE INDEX idx_ipp_tqs_is_reportable ON oe_ipp_tqs(is_reportable);
+
 CREATE INDEX idx_ipp_tqs_project_id ON oe_ipp_tqs(project_id);
+
 CREATE INDEX idx_ipp_tqs_query_urgency ON oe_ipp_tqs(query_urgency);
+
 CREATE INDEX idx_ipp_tqs_sla_breached ON oe_ipp_tqs(sla_breached);
+
 CREATE INDEX idx_ipp_wul_participant
   ON oe_ipp_wul_applications(participant_id);
+
 CREATE INDEX idx_ipp_wul_project
   ON oe_ipp_wul_applications(project_id);
+
 CREATE INDEX idx_ipp_wul_sla
   ON oe_ipp_wul_applications(sla_due_at)
   WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipp_wul_status
   ON oe_ipp_wul_applications(chain_status);
+
 CREATE INDEX idx_ippcoc_participant ON oe_ipp_change_of_control(participant_id);
+
 CREATE INDEX idx_ippcoc_project     ON oe_ipp_change_of_control(project_id);
+
 CREATE INDEX idx_ippcoc_sla         ON oe_ipp_change_of_control(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippcoc_status      ON oe_ipp_change_of_control(chain_status);
+
 CREATE INDEX idx_ippct_participant ON oe_ipp_commissioning_test(participant_id);
+
 CREATE INDEX idx_ippct_project ON oe_ipp_commissioning_test(project_id);
+
 CREATE INDEX idx_ippct_sla ON oe_ipp_commissioning_test(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippct_status ON oe_ipp_commissioning_test(chain_status);
+
 CREATE INDEX idx_ippec_participant ON oe_ipp_env_closure(participant_id);
+
 CREATE INDEX idx_ippec_project ON oe_ipp_env_closure(project_id);
+
 CREATE INDEX idx_ippec_sla ON oe_ipp_env_closure(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippec_status ON oe_ipp_env_closure(chain_status);
+
 CREATE INDEX idx_ippfcc_participant ON oe_ipp_final_completion(participant_id);
+
 CREATE INDEX idx_ippfcc_project ON oe_ipp_final_completion(project_id);
+
 CREATE INDEX idx_ippfcc_sla ON oe_ipp_final_completion(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippfcc_status ON oe_ipp_final_completion(chain_status);
+
 CREATE INDEX idx_ippie_participant ON oe_ipp_ie_cert(participant_id);
+
 CREATE INDEX idx_ippie_project ON oe_ipp_ie_cert(project_id);
+
 CREATE INDEX idx_ippie_sla ON oe_ipp_ie_cert(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippie_status ON oe_ipp_ie_cert(chain_status);
+
 CREATE INDEX idx_ipplr_participant ON oe_ipp_land_register(participant_id);
+
 CREATE INDEX idx_ipplr_project ON oe_ipp_land_register(project_id);
+
 CREATE INDEX idx_ipplr_sla ON oe_ipp_land_register(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipplr_status ON oe_ipp_land_register(chain_status);
+
 CREATE INDEX idx_ippomh_participant ON oe_ipp_om_handover(participant_id);
+
 CREATE INDEX idx_ippomh_project ON oe_ipp_om_handover(project_id);
+
 CREATE INDEX idx_ippomh_sla ON oe_ipp_om_handover(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippomh_status ON oe_ipp_om_handover(chain_status);
+
 CREATE UNIQUE INDEX idx_ipppc_cert_number ON oe_ipp_payment_certs(project_id, cert_number);
+
 CREATE INDEX idx_ipppc_participant ON oe_ipp_payment_certs(participant_id);
+
 CREATE INDEX idx_ipppc_project ON oe_ipp_payment_certs(project_id);
+
 CREATE INDEX idx_ipppc_sla ON oe_ipp_payment_certs(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipppc_status ON oe_ipp_payment_certs(chain_status);
+
 CREATE INDEX idx_ippppavar_participant ON oe_ipp_ppa_variation(participant_id);
+
 CREATE INDEX idx_ippppavar_project     ON oe_ipp_ppa_variation(project_id);
+
 CREATE INDEX idx_ippppavar_sla         ON oe_ipp_ppa_variation(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippppavar_status      ON oe_ipp_ppa_variation(chain_status);
+
 CREATE INDEX idx_ipptpa_participant ON oe_ipp_tpa(participant_id);
+
 CREATE INDEX idx_ipptpa_project ON oe_ipp_tpa(project_id);
+
 CREATE INDEX idx_ipptpa_sla ON oe_ipp_tpa(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ipptpa_status ON oe_ipp_tpa(chain_status);
+
 CREATE INDEX idx_ippvo_participant ON oe_ipp_variation_orders(participant_id);
+
 CREATE INDEX idx_ippvo_project ON oe_ipp_variation_orders(project_id);
+
 CREATE INDEX idx_ippvo_sla ON oe_ipp_variation_orders(sla_due_at) WHERE sla_breached = 0;
+
 CREATE INDEX idx_ippvo_status ON oe_ipp_variation_orders(chain_status);
+
 CREATE INDEX idx_ippvo_tier ON oe_ipp_variation_orders(value_tier);
+
 CREATE INDEX idx_isda_counterparty ON oe_isda_agreements(counterparty_id);
+
 CREATE INDEX idx_isda_status ON oe_isda_agreements(chain_status);
+
 CREATE INDEX idx_isda_tenant ON oe_isda_agreements(tenant_id);
+
 CREATE INDEX idx_isda_tier ON oe_isda_agreements(counterparty_tier);
+
 CREATE INDEX idx_itp_inspection_events_thread ON oe_itp_inspection_events(itp_id, created_at);
+
 CREATE INDEX idx_itp_inspection_horizon ON oe_itp_inspection(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_journey_feature_config_role ON journey_feature_config(role);
+
 CREATE UNIQUE INDEX idx_kyc_participant ON oe_kyc_verifications(participant_id);
+
 CREATE INDEX idx_kyc_risk              ON oe_kyc_verifications(risk_level);
+
 CREATE INDEX idx_kyc_status            ON oe_kyc_verifications(chain_status);
+
 CREATE INDEX idx_kyc_sub_tenant ON oe_kyc_submissions(tenant_id);
+
 CREATE INDEX idx_land_part ON land_leases(participant_id, status);
+
 CREATE INDEX idx_land_project ON land_parcels(project_id);
+
 CREATE INDEX idx_ledger_actor_date      ON ledger_transactions(actor_id, business_date DESC);
+
 CREATE INDEX idx_ledger_contract        ON ledger_transactions(contract_id);
+
 CREATE INDEX idx_ledger_module_date     ON ledger_transactions(module, business_date DESC);
+
 CREATE INDEX idx_ledger_party_a_date    ON ledger_transactions(party_a_id, business_date DESC);
+
 CREATE INDEX idx_ledger_party_b_date    ON ledger_transactions(party_b_id, business_date DESC);
+
 CREATE INDEX idx_ledger_project         ON ledger_transactions(project_id);
+
 CREATE INDEX idx_ledger_source          ON ledger_transactions(source_table, source_id);
+
 CREATE INDEX idx_ledger_tenant_module   ON ledger_transactions(tenant_id, module, business_date DESC);
+
 CREATE INDEX idx_lender_covenant_actions_covenant
   ON lender_covenant_actions (covenant_id, status);
+
 CREATE INDEX idx_lender_covenant_actions_lender
   ON lender_covenant_actions (lender_participant_id, status, filed_at);
+
 CREATE INDEX idx_lender_covenant_actions_test
   ON lender_covenant_actions (covenant_test_id);
+
 CREATE INDEX idx_licence_applications_events_thread ON oe_licence_applications_events(application_id, created_at);
+
 CREATE INDEX idx_licence_applications_horizon ON oe_licence_applications(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_licence_obligations_actor    ON oe_licence_obligations(actor_id);
+
 CREATE INDEX idx_licence_obligations_class    ON oe_licence_obligations(obligation_class);
+
 CREATE INDEX idx_licence_obligations_created  ON oe_licence_obligations(created_at);
+
 CREATE INDEX idx_licence_obligations_ipp      ON oe_licence_obligations(ipp_id);
+
 CREATE INDEX idx_licence_obligations_sla      ON oe_licence_obligations(sla_deadline, sla_breached);
+
 CREATE INDEX idx_licence_obligations_status   ON oe_licence_obligations(chain_status);
+
 CREATE INDEX idx_licence_renewal_events_created ON oe_licence_renewal_events(created_at);
+
 CREATE INDEX idx_licence_renewal_events_renewal ON oe_licence_renewal_events(renewal_id);
+
 CREATE INDEX idx_licence_renewal_events_thread ON oe_licence_renewal_events(renewal_id, created_at);
+
 CREATE INDEX idx_licence_renewals_applicant  ON oe_licence_renewals(applicant_party_id);
+
 CREATE INDEX idx_licence_renewals_class      ON oe_licence_renewals(licence_class);
+
 CREATE INDEX idx_licence_renewals_expiry     ON oe_licence_renewals(current_expiry_date);
+
 CREATE INDEX idx_licence_renewals_horizon ON oe_licence_renewals(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_licence_renewals_licence    ON oe_licence_renewals(licence_id);
+
 CREATE INDEX idx_licence_renewals_sla        ON oe_licence_renewals(sla_deadline_at);
+
 CREATE INDEX idx_licence_renewals_status     ON oe_licence_renewals(chain_status);
+
 CREATE INDEX idx_load_curtailment_events_thread ON oe_load_curtailment_events(curtailment_id, created_at);
+
 CREATE INDEX idx_load_curtailment_horizon ON oe_load_curtailment(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_loan_defaults_events_thread ON oe_loan_defaults_events(default_id, created_at);
+
 CREATE INDEX idx_loan_defaults_horizon ON oe_loan_defaults(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_loan_transfers_events_thread ON oe_loan_transfers_events(transfer_id, created_at);
+
 CREATE INDEX idx_loan_transfers_horizon ON oe_loan_transfers(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_locks_expires ON advisory_locks(expires_at);
+
 CREATE INDEX idx_login_attempts_email ON login_attempts(email, attempted_at);
+
 CREATE INDEX idx_login_attempts_ip ON login_attempts(ip, attempted_at);
+
 CREATE INDEX idx_loi_drafts_from ON loi_drafts(from_participant_id);
+
 CREATE INDEX idx_loi_drafts_status ON loi_drafts(status);
+
 CREATE INDEX idx_loi_drafts_to ON loi_drafts(to_participant_id);
+
 CREATE INDEX idx_ma_participant
   ON oe_methodology_amendments(participant_id);
+
 CREATE INDEX idx_ma_project
   ON oe_methodology_amendments(project_ref);
+
 CREATE INDEX idx_ma_status
   ON oe_methodology_amendments(chain_status);
+
 CREATE INDEX idx_manufacturer_creds_participant ON manufacturer_credentials(participant_id);
+
 CREATE UNIQUE INDEX idx_manufacturer_creds_unique ON manufacturer_credentials(participant_id, manufacturer);
+
 CREATE INDEX idx_margin_calls_part_asof ON margin_calls(participant_id, as_of DESC);
+
 CREATE INDEX idx_margin_reservations_order
   ON margin_reservations (order_id);
+
 CREATE INDEX idx_margin_reservations_participant_status
   ON margin_reservations (participant_id, status);
+
 CREATE INDEX idx_mark_prices_lookup ON mark_prices(energy_type, delivery_date, mark_date DESC);
+
 CREATE INDEX idx_market_abuse_cases_events_thread ON oe_market_abuse_cases_events(case_id, created_at);
+
 CREATE INDEX idx_market_abuse_cases_horizon ON oe_market_abuse_cases(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_market_prints_minute ON market_prints(minute_bucket DESC);
+
 CREATE INDEX idx_marketplace_listings_active
   ON oe_sustainability_listings(chain_status, listing_type, technology);
+
 CREATE INDEX idx_marketplace_listings_seller ON marketplace_listings(seller_id);
+
 CREATE INDEX idx_marketplace_transactions_buyer
   ON oe_sustainability_transactions(buyer_id, chain_status);
+
 CREATE INDEX idx_marketplace_transactions_listing
   ON oe_sustainability_transactions(listing_id);
+
 CREATE INDEX idx_marketplace_transactions_seller
   ON oe_sustainability_transactions(seller_id, chain_status);
+
 CREATE INDEX idx_mce_participant
   ON oe_market_conduct_exams(participant_id);
+
 CREATE INDEX idx_mce_status
   ON oe_market_conduct_exams(chain_status);
+
 CREATE INDEX idx_mce_subject
   ON oe_market_conduct_exams(subject_participant_id);
+
 CREATE INDEX idx_mes_status ON margin_enforcement_state(gate_status);
+
 CREATE INDEX idx_metering_readings_connection ON metering_readings(connection_id);
+
 CREATE INDEX idx_mic_connection ON meter_ingest_channels(connection_id);
+
 CREATE INDEX idx_mic_health ON meter_ingest_channels(health_status);
+
 CREATE INDEX idx_mir_channel ON meter_ingest_raw(channel_id, received_at DESC);
+
 CREATE INDEX idx_mir_hash ON meter_ingest_raw(hash_sha256);
+
 CREATE INDEX idx_mir_normalised ON meter_ingest_raw(normalised);
+
 CREATE INDEX idx_mis_channel ON meter_ingest_sessions(channel_id, opened_at DESC);
+
 CREATE INDEX idx_mra_conn_month ON metering_readings_archives(connection_id, month_bucket DESC);
+
 CREATE INDEX idx_mrd_conn_month ON metering_readings_daily(connection_id, month_bucket DESC);
+
 CREATE INDEX idx_mrd_month ON metering_readings_daily(month_bucket DESC);
+
 CREATE INDEX idx_mrv_evt_submission ON oe_mrv_chain_events(submission_id, created_at DESC);
+
 CREATE INDEX idx_mrv_evt_type ON oe_mrv_chain_events(event_type);
+
 CREATE INDEX idx_mrv_project ON mrv_submissions(project_id, reporting_period_start DESC);
+
 CREATE INDEX idx_mrv_status ON mrv_submissions(status);
+
 CREATE INDEX idx_mrv_verif_submission ON mrv_verifications(submission_id);
+
 CREATE INDEX idx_mvs_participant
   ON oe_milestone_variance_reports(participant_id);
+
 CREATE INDEX idx_mvs_status
   ON oe_milestone_variance_reports(chain_status);
+
 CREATE INDEX idx_nom_part_date ON ipp_nominations(participant_id, delivery_date);
+
 CREATE INDEX idx_notifications_participant ON notifications(participant_id);
+
 CREATE INDEX idx_notifications_read ON notifications(read);
+
 CREATE INDEX idx_ob_period ON offtaker_budgets(participant_id, period);
+
 CREATE INDEX idx_oe_a11y_path ON oe_accessibility_audits(page_path, audited_at);
+
 CREATE INDEX idx_oe_acb_breached    ON oe_audit_chain_block(sla_breached);
+
 CREATE INDEX idx_oe_acb_breaks      ON oe_audit_chain_block(cross_chain_break_count);
+
 CREATE INDEX idx_oe_acb_cadence     ON oe_audit_chain_block(block_cadence);
+
 CREATE INDEX idx_oe_acb_events_block ON oe_audit_chain_block_events(block_id);
+
 CREATE INDEX idx_oe_acb_events_type  ON oe_audit_chain_block_events(event_type);
+
 CREATE INDEX idx_oe_acb_health      ON oe_audit_chain_block(block_health_band);
+
 CREATE INDEX idx_oe_acb_height      ON oe_audit_chain_block(block_height);
+
 CREATE INDEX idx_oe_acb_reportable  ON oe_audit_chain_block(is_reportable);
+
 CREATE INDEX idx_oe_acb_sla         ON oe_audit_chain_block(sla_deadline_at);
+
 CREATE INDEX idx_oe_acb_status      ON oe_audit_chain_block(chain_status);
+
 CREATE INDEX idx_oe_acb_tenant      ON oe_audit_chain_block(tenant_id);
+
 CREATE INDEX idx_oe_acb_tier        ON oe_audit_chain_block(current_tier);
+
 CREATE INDEX idx_oe_aco_events_c    ON oe_algo_certifications_events(cert_id);
+
 CREATE INDEX idx_oe_aco_events_type ON oe_algo_certifications_events(event_type);
+
 CREATE INDEX idx_oe_aco_firm      ON oe_algo_certifications(firm_party_id);
+
 CREATE INDEX idx_oe_aco_sla       ON oe_algo_certifications(sla_deadline_at);
+
 CREATE INDEX idx_oe_aco_status    ON oe_algo_certifications(chain_status);
+
 CREATE INDEX idx_oe_aco_submitted ON oe_algo_certifications(registration_submitted_at);
+
 CREATE INDEX idx_oe_aco_system    ON oe_algo_certifications(system_code);
+
 CREATE INDEX idx_oe_aco_tier      ON oe_algo_certifications(algo_tier);
+
 CREATE INDEX idx_oe_adml_asset_class    ON oe_anomaly_detection_ml(asset_class);
+
 CREATE INDEX idx_oe_adml_breached       ON oe_anomaly_detection_ml(sla_breached);
+
 CREATE INDEX idx_oe_adml_created        ON oe_anomaly_detection_ml(created_at);
+
 CREATE INDEX idx_oe_adml_events_mdl  ON oe_anomaly_detection_ml_events(model_id);
+
 CREATE INDEX idx_oe_adml_events_type ON oe_anomaly_detection_ml_events(event_type);
+
 CREATE INDEX idx_oe_adml_family         ON oe_anomaly_detection_ml(model_family);
+
 CREATE INDEX idx_oe_adml_inbox_ref      ON oe_anomaly_detection_ml(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_adml_regulator_ref  ON oe_anomaly_detection_ml(regulator_ref);
+
 CREATE INDEX idx_oe_adml_status         ON oe_anomaly_detection_ml(chain_status);
+
 CREATE INDEX idx_oe_adml_tier           ON oe_anomaly_detection_ml(current_tier);
+
 CREATE INDEX idx_oe_adml_w118_block     ON oe_anomaly_detection_ml(w118_block_ref);
+
 CREATE INDEX idx_oe_adml_w71_ref        ON oe_anomaly_detection_ml(w71_asset_prognostics_ref);
+
 CREATE INDEX idx_oe_ai_actions_msg ON oe_ai_actions(message_id);
+
 CREATE INDEX idx_oe_ai_msg_sess ON oe_ai_messages(session_id, created_at);
+
 CREATE INDEX idx_oe_ai_sess_part ON oe_ai_sessions(participant_id, last_message_at DESC);
+
 CREATE INDEX idx_oe_algo_part   ON oe_algo_executions(participant_id, created_at);
+
 CREATE INDEX idx_oe_algo_slices_algo ON oe_algo_slices(algo_id, slice_index);
+
 CREATE INDEX idx_oe_algo_status ON oe_algo_executions(status, start_at);
+
 CREATE INDEX idx_oe_alloc_events_alloc ON oe_trade_allocation_events(allocation_id);
+
 CREATE INDEX idx_oe_alloc_events_type  ON oe_trade_allocation_events(event_type);
+
 CREATE INDEX idx_oe_alloc_exec     ON oe_trade_allocations(executing_party);
+
 CREATE INDEX idx_oe_alloc_instr    ON oe_trade_allocations(instrument);
+
 CREATE INDEX idx_oe_alloc_sla      ON oe_trade_allocations(sla_deadline_at);
+
 CREATE INDEX idx_oe_alloc_status   ON oe_trade_allocations(chain_status);
+
 CREATE INDEX idx_oe_alloc_tier     ON oe_trade_allocations(notional_tier);
+
 CREATE INDEX idx_oe_anc_disp_contract ON oe_ancillary_dispatch(contract_id, triggered_at);
+
 CREATE INDEX idx_oe_anc_part ON oe_ancillary_contracts(participant_id, status);
+
 CREATE INDEX idx_oe_api_keys_hash ON oe_api_keys(key_hash);
+
 CREATE INDEX idx_oe_api_keys_part ON oe_api_keys(participant_id, revoked);
+
 CREATE INDEX idx_oe_appeals_dec ON oe_appeals(decision_id);
+
 CREATE INDEX idx_oe_article6_beneficiary  ON oe_article6_adjustments(beneficiary_country_iso);
+
 CREATE INDEX idx_oe_article6_host         ON oe_article6_adjustments(host_country_iso);
+
 CREATE INDEX idx_oe_article6_retirement   ON oe_article6_adjustments(retirement_id);
+
 CREATE INDEX idx_oe_article6_status       ON oe_article6_adjustments(ca_status);
+
 CREATE INDEX idx_oe_asset_prognostics_events_pid ON oe_asset_prognostics_events(prognostic_id);
+
 CREATE INDEX idx_oe_asset_prognostics_site ON oe_asset_prognostics(site_id);
+
 CREATE INDEX idx_oe_asset_prognostics_status ON oe_asset_prognostics(status);
+
 CREATE INDEX idx_oe_asset_prognostics_tier ON oe_asset_prognostics(tier);
+
 CREATE INDEX idx_oe_auctions_status ON oe_auctions(status, ends_at);
+
 CREATE INDEX idx_oe_audits_lic ON oe_compliance_audits(licensee_id, status);
+
 CREATE INDEX idx_oe_availg_contractor ON oe_availability_guarantees(contractor_party_id);
+
 CREATE INDEX idx_oe_availg_events_g    ON oe_availability_guarantee_events(guarantee_id);
+
 CREATE INDEX idx_oe_availg_events_type ON oe_availability_guarantee_events(event_type);
+
 CREATE INDEX idx_oe_availg_opened     ON oe_availability_guarantees(period_open_at);
+
 CREATE INDEX idx_oe_availg_period     ON oe_availability_guarantees(reporting_period);
+
 CREATE INDEX idx_oe_availg_sla        ON oe_availability_guarantees(sla_deadline_at);
+
 CREATE INDEX idx_oe_availg_status     ON oe_availability_guarantees(chain_status);
+
 CREATE INDEX idx_oe_availg_tier       ON oe_availability_guarantees(shortfall_tier);
+
 CREATE INDEX idx_oe_bess_soh_bess        ON oe_bess_soh(bess_id);
+
 CREATE INDEX idx_oe_bess_soh_events_p    ON oe_bess_soh_events(programme_id);
+
 CREATE INDEX idx_oe_bess_soh_events_type ON oe_bess_soh_events(event_type);
+
 CREATE INDEX idx_oe_bess_soh_operator    ON oe_bess_soh(operator_id);
+
 CREATE INDEX idx_oe_bess_soh_owner       ON oe_bess_soh(owner_id);
+
 CREATE INDEX idx_oe_bess_soh_reportable  ON oe_bess_soh(is_reportable);
+
 CREATE INDEX idx_oe_bess_soh_site        ON oe_bess_soh(site_id);
+
 CREATE INDEX idx_oe_bess_soh_sla         ON oe_bess_soh(sla_deadline_at);
+
 CREATE INDEX idx_oe_bess_soh_status      ON oe_bess_soh(chain_status);
+
 CREATE INDEX idx_oe_bess_soh_tier        ON oe_bess_soh(soh_tier);
+
 CREATE INDEX idx_oe_best_execution_client   ON oe_best_execution(client_party_id);
+
 CREATE INDEX idx_oe_best_execution_desk     ON oe_best_execution(desk_party_id);
+
 CREATE INDEX idx_oe_best_execution_events_rfq  ON oe_best_execution_events(rfq_id);
+
 CREATE INDEX idx_oe_best_execution_events_type ON oe_best_execution_events(event_type);
+
 CREATE INDEX idx_oe_best_execution_received ON oe_best_execution(rfq_received_at);
+
 CREATE INDEX idx_oe_best_execution_sla      ON oe_best_execution(sla_deadline_at);
+
 CREATE INDEX idx_oe_best_execution_status   ON oe_best_execution(chain_status);
+
 CREATE INDEX idx_oe_best_execution_tier     ON oe_best_execution(client_tier);
+
 CREATE INDEX idx_oe_bids_auction ON oe_auction_bids(auction_id, bid_amount_zar);
+
 CREATE INDEX idx_oe_blocks_reporter ON oe_block_trades(reporter_id, reported_at);
+
 CREATE INDEX idx_oe_breach_part ON oe_position_breaches(participant_id, status);
+
 CREATE INDEX idx_oe_bs_part ON oe_blackstart_units(participant_id, status);
+
 CREATE INDEX idx_oe_bsc_assessed   ON oe_black_start_capabilities(needs_assessed_at);
+
 CREATE INDEX idx_oe_bsc_cranking   ON oe_black_start_capabilities(cranking_source);
+
 CREATE INDEX idx_oe_bsc_events_c    ON oe_black_start_capabilities_events(capability_id);
+
 CREATE INDEX idx_oe_bsc_events_type ON oe_black_start_capabilities_events(event_type);
+
 CREATE INDEX idx_oe_bsc_role       ON oe_black_start_capabilities(restoration_role);
+
 CREATE INDEX idx_oe_bsc_sla        ON oe_black_start_capabilities(sla_deadline_at);
+
 CREATE INDEX idx_oe_bsc_status     ON oe_black_start_capabilities(chain_status);
+
 CREATE INDEX idx_oe_bsc_tier       ON oe_black_start_capabilities(capability_tier);
+
 CREATE INDEX idx_oe_bsc_voltage    ON oe_black_start_capabilities(voltage_class);
+
 CREATE INDEX idx_oe_bsc_zone       ON oe_black_start_capabilities(restoration_zone);
+
 CREATE INDEX idx_oe_bxt_cp            ON oe_benchmark_transitions(counterparty_id);
+
 CREATE INDEX idx_oe_bxt_events_t    ON oe_benchmark_transition_events(transition_id);
+
 CREATE INDEX idx_oe_bxt_events_type ON oe_benchmark_transition_events(event_type);
+
 CREATE INDEX idx_oe_bxt_instrument    ON oe_benchmark_transitions(instrument_type);
+
 CREATE INDEX idx_oe_bxt_legacy        ON oe_benchmark_transitions(legacy_benchmark);
+
 CREATE INDEX idx_oe_bxt_reportable    ON oe_benchmark_transitions(is_reportable);
+
 CREATE INDEX idx_oe_bxt_sla           ON oe_benchmark_transitions(sla_deadline_at);
+
 CREATE INDEX idx_oe_bxt_status        ON oe_benchmark_transitions(chain_status);
+
 CREATE INDEX idx_oe_bxt_tier          ON oe_benchmark_transitions(transition_tier);
+
 CREATE INDEX idx_oe_carbon_reg_developer ON oe_carbon_registration(developer_party_id);
+
 CREATE INDEX idx_oe_carbon_reg_events_project ON oe_carbon_registration_events(project_id);
+
 CREATE INDEX idx_oe_carbon_reg_events_type    ON oe_carbon_registration_events(event_type);
+
 CREATE INDEX idx_oe_carbon_reg_sla       ON oe_carbon_registration(sla_deadline_at);
+
 CREATE INDEX idx_oe_carbon_reg_standard  ON oe_carbon_registration(standard);
+
 CREATE INDEX idx_oe_carbon_reg_status    ON oe_carbon_registration(chain_status);
+
 CREATE INDEX idx_oe_carbon_reg_submitted ON oe_carbon_registration(pin_submitted_at);
+
 CREATE INDEX idx_oe_carbon_reg_tier      ON oe_carbon_registration(project_tier);
+
 CREATE INDEX idx_oe_cclaim_events_claim ON oe_curtailment_claims_events(claim_id);
+
 CREATE INDEX idx_oe_cclaim_events_type  ON oe_curtailment_claims_events(event_type);
+
 CREATE INDEX idx_oe_cclaim_logged   ON oe_curtailment_claims(curtailment_logged_at);
+
 CREATE INDEX idx_oe_cclaim_seller   ON oe_curtailment_claims(seller_party_id);
+
 CREATE INDEX idx_oe_cclaim_sla      ON oe_curtailment_claims(sla_deadline_at);
+
 CREATE INDEX idx_oe_cclaim_status   ON oe_curtailment_claims(chain_status);
+
 CREATE INDEX idx_oe_cclaim_tier     ON oe_curtailment_claims(facility_tier);
+
 CREATE INDEX idx_oe_cclaim_type     ON oe_curtailment_claims(curtailment_type);
+
 CREATE INDEX idx_oe_ccm_counterparty  ON oe_counterparty_margin(counterparty_id);
+
 CREATE INDEX idx_oe_ccm_events_case ON oe_counterparty_margin_events(margin_id);
+
 CREATE INDEX idx_oe_ccm_events_type ON oe_counterparty_margin_events(event_type);
+
 CREATE INDEX idx_oe_ccm_product       ON oe_counterparty_margin(product_class);
+
 CREATE INDEX idx_oe_ccm_sla           ON oe_counterparty_margin(sla_deadline_at);
+
 CREATE INDEX idx_oe_ccm_status        ON oe_counterparty_margin(chain_status);
+
 CREATE INDEX idx_oe_ccm_tier          ON oe_counterparty_margin(severity_tier);
+
 CREATE INDEX idx_oe_ccp_events_a    ON oe_ccp_assessments_events(assessment_id);
+
 CREATE INDEX idx_oe_ccp_events_type ON oe_ccp_assessments_events(event_type);
+
 CREATE INDEX idx_oe_ccp_label       ON oe_ccp_assessments(label_class);
+
 CREATE INDEX idx_oe_ccp_project     ON oe_ccp_assessments(project_id);
+
 CREATE INDEX idx_oe_ccp_requested   ON oe_ccp_assessments(requested_at);
+
 CREATE INDEX idx_oe_ccp_sector      ON oe_ccp_assessments(sector);
+
 CREATE INDEX idx_oe_ccp_sla         ON oe_ccp_assessments(sla_deadline_at);
+
 CREATE INDEX idx_oe_ccp_status      ON oe_ccp_assessments(chain_status);
+
 CREATE INDEX idx_oe_ccp_tier        ON oe_ccp_assessments(assessment_tier);
+
 CREATE INDEX idx_oe_ccr_band          ON oe_carbon_credit_rating(rating_band);
+
 CREATE INDEX idx_oe_ccr_breached      ON oe_carbon_credit_rating(sla_breached);
+
 CREATE INDEX idx_oe_ccr_events_rid    ON oe_carbon_credit_rating_events(rating_id);
+
 CREATE INDEX idx_oe_ccr_events_type   ON oe_carbon_credit_rating_events(event_type);
+
 CREATE INDEX idx_oe_ccr_issuer        ON oe_carbon_credit_rating(issuer_id);
+
 CREATE INDEX idx_oe_ccr_monitoring    ON oe_carbon_credit_rating(last_monitoring_data_at);
+
 CREATE INDEX idx_oe_ccr_project       ON oe_carbon_credit_rating(project_id);
+
 CREATE INDEX idx_oe_ccr_rater         ON oe_carbon_credit_rating(rater_id);
+
 CREATE INDEX idx_oe_ccr_reportable    ON oe_carbon_credit_rating(is_reportable);
+
 CREATE INDEX idx_oe_ccr_sla           ON oe_carbon_credit_rating(sla_deadline_at);
+
 CREATE INDEX idx_oe_ccr_status        ON oe_carbon_credit_rating(chain_status);
+
 CREATE INDEX idx_oe_ccr_tenant        ON oe_carbon_credit_rating(tenant_id);
+
 CREATE INDEX idx_oe_ccr_tier          ON oe_carbon_credit_rating(current_tier);
+
 CREATE INDEX idx_oe_cea_breached      ON oe_control_environment_audit(sla_breached);
+
 CREATE INDEX idx_oe_cea_classification ON oe_control_environment_audit(control_classification);
+
 CREATE INDEX idx_oe_cea_created       ON oe_control_environment_audit(created_at);
+
 CREATE INDEX idx_oe_cea_events_ctl  ON oe_control_environment_audit_events(control_id);
+
 CREATE INDEX idx_oe_cea_events_type ON oe_control_environment_audit_events(event_type);
+
 CREATE INDEX idx_oe_cea_framework     ON oe_control_environment_audit(control_framework);
+
 CREATE INDEX idx_oe_cea_inbox_ref     ON oe_control_environment_audit(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_cea_parent        ON oe_control_environment_audit(parent_control_id);
+
 CREATE INDEX idx_oe_cea_regulator_ref ON oe_control_environment_audit(regulator_ref);
+
 CREATE INDEX idx_oe_cea_status        ON oe_control_environment_audit(chain_status);
+
 CREATE INDEX idx_oe_cea_tier          ON oe_control_environment_audit(current_tier);
+
 CREATE INDEX idx_oe_cea_w118_low      ON oe_control_environment_audit(w118_block_height_range_low);
+
 CREATE INDEX idx_oe_cea_w119_pack     ON oe_control_environment_audit(w119_export_pack_ref);
+
 CREATE INDEX idx_oe_cea_w120_att      ON oe_control_environment_audit(w120_attestation_ref);
+
 CREATE INDEX idx_oe_cen_events_cen  ON oe_connection_energization_events(energization_id);
+
 CREATE INDEX idx_oe_cen_events_type ON oe_connection_energization_events(event_type);
+
 CREATE INDEX idx_oe_cen_facility  ON oe_connection_energization(facility_id);
+
 CREATE INDEX idx_oe_cen_sla       ON oe_connection_energization(sla_deadline_at);
+
 CREATE INDEX idx_oe_cen_status    ON oe_connection_energization(chain_status);
+
 CREATE INDEX idx_oe_cen_tech      ON oe_connection_energization(technology);
+
 CREATE INDEX idx_oe_cen_tier      ON oe_connection_energization(connection_tier);
+
 CREATE INDEX idx_oe_cfa_applicant ON oe_credit_facility_applications(applicant_party_id);
+
 CREATE INDEX idx_oe_cfa_events_app  ON oe_credit_facility_applications_events(application_id);
+
 CREATE INDEX idx_oe_cfa_events_type ON oe_credit_facility_applications_events(event_type);
+
 CREATE INDEX idx_oe_cfa_received  ON oe_credit_facility_applications(application_received_at);
+
 CREATE INDEX idx_oe_cfa_sla       ON oe_credit_facility_applications(sla_deadline_at);
+
 CREATE INDEX idx_oe_cfa_status    ON oe_credit_facility_applications(chain_status);
+
 CREATE INDEX idx_oe_cfa_tier      ON oe_credit_facility_applications(facility_tier);
+
 CREATE INDEX idx_oe_chg_class   ON oe_change_requests(change_class);
+
 CREATE INDEX idx_oe_chg_events_chg  ON oe_change_requests_events(change_id);
+
 CREATE INDEX idx_oe_chg_events_type ON oe_change_requests_events(event_type);
+
 CREATE INDEX idx_oe_chg_owner   ON oe_change_requests(owner_party_id);
+
 CREATE INDEX idx_oe_chg_req     ON oe_change_requests(change_requested_at);
+
 CREATE INDEX idx_oe_chg_service ON oe_change_requests(service_name);
+
 CREATE INDEX idx_oe_chg_sla     ON oe_change_requests(sla_deadline_at);
+
 CREATE INDEX idx_oe_chg_status  ON oe_change_requests(chain_status);
+
 CREATE INDEX idx_oe_cil_events_cil  ON oe_ppa_change_in_law_events(change_in_law_id);
+
 CREATE INDEX idx_oe_cil_events_type ON oe_ppa_change_in_law_events(event_type);
+
 CREATE INDEX idx_oe_cil_offtaker  ON oe_ppa_change_in_law(offtaker_name);
+
 CREATE INDEX idx_oe_cil_sla       ON oe_ppa_change_in_law(sla_deadline_at);
+
 CREATE INDEX idx_oe_cil_status    ON oe_ppa_change_in_law(chain_status);
+
 CREATE INDEX idx_oe_cil_tier      ON oe_ppa_change_in_law(change_in_law_tier);
+
 CREATE INDEX idx_oe_cil_type      ON oe_ppa_change_in_law(change_type);
+
 CREATE INDEX idx_oe_cinsp_events_insp ON oe_compliance_inspections_events(inspection_id);
+
 CREATE INDEX idx_oe_cinsp_events_type ON oe_compliance_inspections_events(event_type);
+
 CREATE INDEX idx_oe_cinsp_officer    ON oe_compliance_inspections(officer_party_id);
+
 CREATE INDEX idx_oe_cinsp_respondent ON oe_compliance_inspections(respondent_party_id);
+
 CREATE INDEX idx_oe_cinsp_scheduled  ON oe_compliance_inspections(inspection_scheduled_at);
+
 CREATE INDEX idx_oe_cinsp_sla        ON oe_compliance_inspections(sla_deadline_at);
+
 CREATE INDEX idx_oe_cinsp_status     ON oe_compliance_inspections(chain_status);
+
 CREATE INDEX idx_oe_cinsp_tier       ON oe_compliance_inspections(contravention_tier);
+
 CREATE INDEX idx_oe_cis_category      ON oe_carbon_issuances(category);
+
 CREATE INDEX idx_oe_cis_events_i    ON oe_carbon_issuances_events(issuance_id);
+
 CREATE INDEX idx_oe_cis_events_type ON oe_carbon_issuances_events(event_type);
+
 CREATE INDEX idx_oe_cis_project       ON oe_carbon_issuances(project_id);
+
 CREATE INDEX idx_oe_cis_requested     ON oe_carbon_issuances(requested_at);
+
 CREATE INDEX idx_oe_cis_sla           ON oe_carbon_issuances(sla_deadline_at);
+
 CREATE INDEX idx_oe_cis_status        ON oe_carbon_issuances(chain_status);
+
 CREATE INDEX idx_oe_cis_tier          ON oe_carbon_issuances(issuance_tier);
+
 CREATE INDEX idx_oe_cis_transfer      ON oe_carbon_issuances(transfer_type);
+
 CREATE INDEX idx_oe_cis_vintage       ON oe_carbon_issuances(vintage_year);
+
 CREATE INDEX idx_oe_cis_vmk           ON oe_carbon_issuances(vintage_monitoring_key);
+
 CREATE INDEX idx_oe_clear_loss_def ON oe_clearing_loss_events(default_event_id);
+
 CREATE INDEX idx_oe_clear_part ON oe_clearing_contributions(participant_id, fund_id);
+
 CREATE INDEX idx_oe_cnotice_class      ON oe_consultation_notices(consultation_class);
+
 CREATE INDEX idx_oe_cnotice_drafted    ON oe_consultation_notices(drafted_at);
+
 CREATE INDEX idx_oe_cnotice_events_n    ON oe_consultation_notices_events(notice_id);
+
 CREATE INDEX idx_oe_cnotice_events_type ON oe_consultation_notices_events(event_type);
+
 CREATE INDEX idx_oe_cnotice_gazette    ON oe_consultation_notices(gazette_publication_at);
+
 CREATE INDEX idx_oe_cnotice_kind       ON oe_consultation_notices(consultation_kind);
+
 CREATE INDEX idx_oe_cnotice_sla        ON oe_consultation_notices(sla_deadline_at);
+
 CREATE INDEX idx_oe_cnotice_status     ON oe_consultation_notices(chain_status);
+
 CREATE INDEX idx_oe_cnotice_tier       ON oe_consultation_notices(consultation_tier);
+
 CREATE INDEX idx_oe_coc_drafted    ON oe_carbon_offset_claims(claim_drafted_at);
+
 CREATE INDEX idx_oe_coc_events_claim ON oe_carbon_offset_claims_events(claim_id);
+
 CREATE INDEX idx_oe_coc_events_type  ON oe_carbon_offset_claims_events(event_type);
+
 CREATE INDEX idx_oe_coc_sla        ON oe_carbon_offset_claims(sla_deadline_at);
+
 CREATE INDEX idx_oe_coc_status    ON oe_carbon_offset_claims(chain_status);
+
 CREATE INDEX idx_oe_coc_taxpayer   ON oe_carbon_offset_claims(taxpayer_party_id);
+
 CREATE INDEX idx_oe_coc_taxyear     ON oe_carbon_offset_claims(tax_year);
+
 CREATE INDEX idx_oe_coc_tier       ON oe_carbon_offset_claims(offset_tier);
+
 CREATE INDEX idx_oe_cod_chain     ON oe_cod_chain(chain_status);
+
 CREATE INDEX idx_oe_cod_events_cod  ON oe_cod_chain_events(cod_id, created_at);
+
 CREATE INDEX idx_oe_cod_events_type ON oe_cod_chain_events(event_type);
+
 CREATE INDEX idx_oe_cod_part      ON oe_cod_chain(participant_id);
+
 CREATE INDEX idx_oe_cod_project   ON oe_cod_chain(project_id);
+
 CREATE INDEX idx_oe_cod_sla       ON oe_cod_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_cod_tier      ON oe_cod_chain(capacity_tier);
+
 CREATE INDEX idx_oe_coll_call ON oe_collateral_postings(margin_call_id);
+
 CREATE INDEX idx_oe_coll_part ON oe_collateral_postings(participant_id, released_at);
+
 CREATE INDEX idx_oe_comments_app ON oe_public_comments(application_id, status);
+
 CREATE INDEX idx_oe_complaint_category   ON oe_regulator_complaints(complaint_category);
+
 CREATE INDEX idx_oe_complaint_events_complaint ON oe_regulator_complaints_events(complaint_id);
+
 CREATE INDEX idx_oe_complaint_events_type      ON oe_regulator_complaints_events(event_type);
+
 CREATE INDEX idx_oe_complaint_respondent ON oe_regulator_complaints(respondent_id);
+
 CREATE INDEX idx_oe_complaint_sla        ON oe_regulator_complaints(sla_deadline_at);
+
 CREATE INDEX idx_oe_complaint_status     ON oe_regulator_complaints(chain_status);
+
 CREATE INDEX idx_oe_complaint_tier       ON oe_regulator_complaints(complaint_tier);
+
 CREATE INDEX idx_oe_consent_part ON oe_consent_records(participant_id, consent_type);
+
 CREATE INDEX idx_oe_consent_sess ON oe_consent_records(session_id, consent_type);
+
 CREATE INDEX idx_oe_constr_zone ON oe_grid_constraints(zone, active_to);
+
 CREATE INDEX idx_oe_country_routing_track ON oe_country_routing(article_6_track);
+
 CREATE INDEX idx_oe_covcert_borrower  ON oe_covenant_certificates(borrower_party_id);
+
 CREATE INDEX idx_oe_covcert_due       ON oe_covenant_certificates(certificate_due_at);
+
 CREATE INDEX idx_oe_covcert_events_cert ON oe_covenant_certificate_events(certificate_id);
+
 CREATE INDEX idx_oe_covcert_events_type ON oe_covenant_certificate_events(event_type);
+
 CREATE INDEX idx_oe_covcert_period    ON oe_covenant_certificates(test_period);
+
 CREATE INDEX idx_oe_covcert_sla       ON oe_covenant_certificates(sla_deadline_at);
+
 CREATE INDEX idx_oe_covcert_status    ON oe_covenant_certificates(chain_status);
+
 CREATE INDEX idx_oe_covcert_tier      ON oe_covenant_certificates(facility_tier);
+
 CREATE INDEX idx_oe_cpr_due       ON oe_crediting_period_renewals(renewal_due_at);
+
 CREATE INDEX idx_oe_cpr_events_renewal ON oe_crediting_period_renewals_events(renewal_id);
+
 CREATE INDEX idx_oe_cpr_events_type    ON oe_crediting_period_renewals_events(event_type);
+
 CREATE INDEX idx_oe_cpr_project   ON oe_crediting_period_renewals(project_id);
+
 CREATE INDEX idx_oe_cpr_sla       ON oe_crediting_period_renewals(sla_deadline_at);
+
 CREATE INDEX idx_oe_cpr_standard  ON oe_crediting_period_renewals(registry_standard);
+
 CREATE INDEX idx_oe_cpr_status    ON oe_crediting_period_renewals(chain_status);
+
 CREATE INDEX idx_oe_cpr_tier      ON oe_crediting_period_renewals(issuance_tier);
+
 CREATE INDEX idx_oe_crev_events_rev  ON oe_carbon_reversals_events(reversal_id);
+
 CREATE INDEX idx_oe_crev_events_type ON oe_carbon_reversals_events(event_type);
+
 CREATE INDEX idx_oe_crev_party   ON oe_carbon_reversals(project_party_id);
+
 CREATE INDEX idx_oe_crev_project ON oe_carbon_reversals(project_name);
+
 CREATE INDEX idx_oe_crev_reported ON oe_carbon_reversals(reversal_reported_at);
+
 CREATE INDEX idx_oe_crev_sla     ON oe_carbon_reversals(sla_deadline_at);
+
 CREATE INDEX idx_oe_crev_status  ON oe_carbon_reversals(chain_status);
+
 CREATE INDEX idx_oe_crev_tier    ON oe_carbon_reversals(reversal_tier);
+
 CREATE INDEX idx_oe_crev_type    ON oe_carbon_reversals(reversal_type);
+
 CREATE INDEX idx_oe_curtail_part ON oe_curtailment_events(participant_id, started_at);
+
 CREATE INDEX idx_oe_cyber_incident_evt_case ON oe_cyber_incident_events(incident_id);
+
 CREATE INDEX idx_oe_cyber_incident_evt_time ON oe_cyber_incident_events(created_at);
+
 CREATE INDEX idx_oe_cyber_incidents_asset    ON oe_cyber_incidents(asset_scope);
+
 CREATE INDEX idx_oe_cyber_incidents_detected ON oe_cyber_incidents(detected_at);
+
 CREATE INDEX idx_oe_cyber_incidents_project  ON oe_cyber_incidents(project_id);
+
 CREATE INDEX idx_oe_cyber_incidents_sla      ON oe_cyber_incidents(sla_deadline_at);
+
 CREATE INDEX idx_oe_cyber_incidents_status   ON oe_cyber_incidents(chain_status);
+
 CREATE INDEX idx_oe_cyber_incidents_tier     ON oe_cyber_incidents(incident_tier);
+
 CREATE INDEX idx_oe_cycle_dates ON oe_settlement_cycles(trade_date, value_date);
+
 CREATE INDEX idx_oe_dd_events_dd   ON oe_drawdown_chain_events(drawdown_id, created_at);
+
 CREATE INDEX idx_oe_dd_events_type ON oe_drawdown_chain_events(event_type);
+
 CREATE INDEX idx_oe_dd_lender   ON oe_drawdown_chain(lender_id);
+
 CREATE INDEX idx_oe_dd_part     ON oe_drawdown_chain(participant_id);
+
 CREATE INDEX idx_oe_dd_project  ON oe_drawdown_chain(project_id);
+
 CREATE INDEX idx_oe_dd_sla      ON oe_drawdown_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_dd_status   ON oe_drawdown_chain(chain_status);
+
 CREATE INDEX idx_oe_dd_tier     ON oe_drawdown_chain(tranche_tier);
+
 CREATE INDEX idx_oe_decisions_app ON oe_regulator_decisions(application_id);
+
 CREATE INDEX idx_oe_default_part ON oe_default_events(participant_id, status);
+
 CREATE INDEX idx_oe_deletion_part ON oe_deletion_requests(participant_id, status);
+
 CREATE INDEX idx_oe_dfr_ball       ON oe_dfr(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_dfr_class      ON oe_dfr(workflow_class);
+
 CREATE INDEX idx_oe_dfr_drafted    ON oe_dfr(drafted_at);
+
 CREATE INDEX idx_oe_dfr_events_d    ON oe_dfr_events(dfr_id);
+
 CREATE INDEX idx_oe_dfr_events_type ON oe_dfr_events(event_type);
+
 CREATE INDEX idx_oe_dfr_facility   ON oe_dfr(facility_id);
+
 CREATE INDEX idx_oe_dfr_hse        ON oe_dfr(triggers_hse_incident);
+
 CREATE INDEX idx_oe_dfr_priority   ON oe_dfr(priority_class);
+
 CREATE INDEX idx_oe_dfr_project    ON oe_dfr(project_id);
+
 CREATE INDEX idx_oe_dfr_report_dt  ON oe_dfr(report_date);
+
 CREATE INDEX idx_oe_dfr_sla        ON oe_dfr(sla_deadline_at);
+
 CREATE INDEX idx_oe_dfr_status     ON oe_dfr(chain_status);
+
 CREATE INDEX idx_oe_dfr_tier       ON oe_dfr(current_tier);
+
 CREATE INDEX idx_oe_digest_deliveries_sub ON oe_digest_deliveries(subscription_id, created_at);
+
 CREATE INDEX idx_oe_digest_subs_send ON oe_digest_subscriptions(enabled, next_send_at);
+
 CREATE INDEX idx_oe_disp_interval ON oe_dispatch_runs(interval_start, status);
+
 CREATE INDEX idx_oe_disp_noms_evt_nom ON oe_dispatch_nomination_events(nomination_id, created_at DESC);
+
 CREATE INDEX idx_oe_disp_noms_evt_type ON oe_dispatch_nomination_events(event_type);
+
 CREATE INDEX idx_oe_disp_noms_part_day ON oe_dispatch_nominations(participant_id, trading_day);
+
 CREATE INDEX idx_oe_disp_noms_sla ON oe_dispatch_nominations(next_sla_due_at) WHERE next_sla_due_at IS NOT NULL;
+
 CREATE INDEX idx_oe_disp_noms_status ON oe_dispatch_nominations(nomination_status);
+
 CREATE INDEX idx_oe_doc_env_status ON oe_document_envelopes(status, raised_at);
+
 CREATE INDEX idx_oe_doc_env_template ON oe_document_envelopes(template_id);
+
 CREATE INDEX idx_oe_doc_tpl_category ON oe_document_templates(category, status);
+
 CREATE INDEX idx_oe_drawdown_cps_dd ON oe_ipp_drawdown_cps(drawdown_id, status);
+
 CREATE INDEX idx_oe_drawdown_project ON oe_ipp_drawdowns(project_id, status);
+
 CREATE INDEX idx_oe_dscr_events_m    ON oe_dscr_monitoring_events(monitoring_id);
+
 CREATE INDEX idx_oe_dscr_events_type ON oe_dscr_monitoring_events(event_type);
+
 CREATE INDEX idx_oe_dscr_monitoring_borrower   ON oe_dscr_monitoring(borrower_id);
+
 CREATE INDEX idx_oe_dscr_monitoring_facility   ON oe_dscr_monitoring(facility_id);
+
 CREATE INDEX idx_oe_dscr_monitoring_project    ON oe_dscr_monitoring(project_id);
+
 CREATE INDEX idx_oe_dscr_monitoring_reportable ON oe_dscr_monitoring(is_reportable);
+
 CREATE INDEX idx_oe_dscr_monitoring_sla        ON oe_dscr_monitoring(sla_deadline_at);
+
 CREATE INDEX idx_oe_dscr_monitoring_status     ON oe_dscr_monitoring(chain_status);
+
 CREATE INDEX idx_oe_dscr_monitoring_tier       ON oe_dscr_monitoring(dscr_tier);
+
 CREATE INDEX idx_oe_dunning_borrower ON oe_lender_dunning_notices(borrower_id, status);
+
 CREATE INDEX idx_oe_dunning_facility ON oe_lender_dunning_notices(facility_id);
+
 CREATE INDEX idx_oe_dunning_status   ON oe_lender_dunning_notices(status, cure_deadline_at);
+
 CREATE INDEX idx_oe_dunning_watch    ON oe_lender_dunning_notices(watchlist_id);
+
 CREATE INDEX idx_oe_ecl_facility ON oe_lender_ecl_staging(facility_id);
+
 CREATE INDEX idx_oe_ecl_stage    ON oe_lender_ecl_staging(stage, computed_at);
+
 CREATE INDEX idx_oe_ed_commitment_evt_case ON oe_ed_commitment_events(commitment_id);
+
 CREATE INDEX idx_oe_ed_commitment_evt_time ON oe_ed_commitment_events(created_at);
+
 CREATE INDEX idx_oe_ed_commitments_bw       ON oe_ed_commitments(bid_window);
+
 CREATE INDEX idx_oe_ed_commitments_period   ON oe_ed_commitments(reporting_period);
+
 CREATE INDEX idx_oe_ed_commitments_project  ON oe_ed_commitments(project_id);
+
 CREATE INDEX idx_oe_ed_commitments_sla      ON oe_ed_commitments(sla_deadline_at);
+
 CREATE INDEX idx_oe_ed_commitments_status   ON oe_ed_commitments(chain_status);
+
 CREATE INDEX idx_oe_ed_commitments_type     ON oe_ed_commitments(commitment_type);
+
 CREATE INDEX idx_oe_email_outbox_created ON oe_email_outbox(created_at);
+
 CREATE INDEX idx_oe_email_outbox_status  ON oe_email_outbox(status);
+
 CREATE INDEX idx_oe_enf_act_class       ON oe_enforcement_actions(allegation_class);
+
 CREATE INDEX idx_oe_enf_act_events_c    ON oe_enforcement_actions_events(case_id);
+
 CREATE INDEX idx_oe_enf_act_events_type ON oe_enforcement_actions_events(event_type);
+
 CREATE INDEX idx_oe_enf_act_opened      ON oe_enforcement_actions(case_opened_at);
+
 CREATE INDEX idx_oe_enf_act_persona     ON oe_enforcement_actions(respondent_persona);
+
 CREATE INDEX idx_oe_enf_act_respondent  ON oe_enforcement_actions(respondent_party_id);
+
 CREATE INDEX idx_oe_enf_act_sla         ON oe_enforcement_actions(sla_deadline_at);
+
 CREATE INDEX idx_oe_enf_act_status      ON oe_enforcement_actions(chain_status);
+
 CREATE INDEX idx_oe_enf_act_tier        ON oe_enforcement_actions(penalty_tier);
+
 CREATE INDEX idx_oe_enfact_appeal_close      ON oe_enforcement_action(appeal_window_close_at);
+
 CREATE INDEX idx_oe_enfact_breached          ON oe_enforcement_action(sla_breached);
+
 CREATE INDEX idx_oe_enfact_complaint_ref     ON oe_enforcement_action(triggering_complaint_id);
+
 CREATE INDEX idx_oe_enfact_events_action ON oe_enforcement_action_events(action_id);
+
 CREATE INDEX idx_oe_enfact_events_type   ON oe_enforcement_action_events(event_type);
+
 CREATE INDEX idx_oe_enfact_inspection_ref    ON oe_enforcement_action(triggering_inspection_id);
+
 CREATE INDEX idx_oe_enfact_reportable        ON oe_enforcement_action(is_reportable);
+
 CREATE INDEX idx_oe_enfact_tenant_respondent ON oe_enforcement_action(tenant_id, respondent_party_id, created_at);
+
 CREATE INDEX idx_oe_enfact_tenant_sla        ON oe_enforcement_action(tenant_id, sla_deadline_at);
+
 CREATE INDEX idx_oe_enfact_tenant_status     ON oe_enforcement_action(tenant_id, chain_status);
+
 CREATE INDEX idx_oe_enfact_tenant_tier       ON oe_enforcement_action(tenant_id, current_tier);
+
 CREATE INDEX idx_oe_enfact_tenant_trigger    ON oe_enforcement_action(tenant_id, triggering_event_type, created_at);
+
 CREATE INDEX idx_oe_erpa_events_erpa ON oe_carbon_erpas_events(erpa_id);
+
 CREATE INDEX idx_oe_erpa_events_type ON oe_carbon_erpas_events(event_type);
+
 CREATE INDEX idx_oe_erpa_project   ON oe_carbon_erpas(project_id);
+
 CREATE INDEX idx_oe_erpa_sla       ON oe_carbon_erpas(sla_deadline_at);
+
 CREATE INDEX idx_oe_erpa_status    ON oe_carbon_erpas(chain_status);
+
 CREATE INDEX idx_oe_erpa_tier      ON oe_carbon_erpas(volume_tier);
+
 CREATE INDEX idx_oe_erpa_transfer  ON oe_carbon_erpas(transfer_type);
+
 CREATE INDEX idx_oe_erpa_window    ON oe_carbon_erpas(delivery_window_end);
+
 CREATE INDEX idx_oe_esg_ball     ON oe_esg_disclosure(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_esg_entity   ON oe_esg_disclosure(reporting_entity_id);
+
 CREATE INDEX idx_oe_esg_events_d    ON oe_esg_disclosure_events(disclosure_id);
+
 CREATE INDEX idx_oe_esg_events_type ON oe_esg_disclosure_events(event_type);
+
 CREATE INDEX idx_oe_esg_fy       ON oe_esg_disclosure(financial_year_label);
+
 CREATE INDEX idx_oe_esg_jse      ON oe_esg_disclosure(jse_listed_strict);
+
 CREATE INDEX idx_oe_esg_listed   ON oe_esg_disclosure(year_had_listed_disclosure);
+
 CREATE INDEX idx_oe_esg_opinion  ON oe_esg_disclosure(assurance_opinion);
+
 CREATE INDEX idx_oe_esg_sla      ON oe_esg_disclosure(sla_deadline_at);
+
 CREATE INDEX idx_oe_esg_status   ON oe_esg_disclosure(chain_status);
+
 CREATE INDEX idx_oe_esg_tier     ON oe_esg_disclosure(current_tier);
+
 CREATE INDEX idx_oe_esg_urgency  ON oe_esg_disclosure(urgency_band);
+
 CREATE INDEX idx_oe_export_part ON oe_data_export_requests(participant_id, status);
+
 CREATE INDEX idx_oe_fco_class         ON oe_oem_field_change_orders(change_class);
+
 CREATE INDEX idx_oe_fco_events_c    ON oe_oem_field_change_order_events(campaign_id);
+
 CREATE INDEX idx_oe_fco_events_type ON oe_oem_field_change_order_events(event_type);
+
 CREATE INDEX idx_oe_fco_family        ON oe_oem_field_change_orders(product_family);
+
 CREATE INDEX idx_oe_fco_model         ON oe_oem_field_change_orders(product_model);
+
 CREATE INDEX idx_oe_fco_oem           ON oe_oem_field_change_orders(oem_id);
+
 CREATE INDEX idx_oe_fco_reportable    ON oe_oem_field_change_orders(is_reportable);
+
 CREATE INDEX idx_oe_fco_sla           ON oe_oem_field_change_orders(sla_deadline_at);
+
 CREATE INDEX idx_oe_fco_status        ON oe_oem_field_change_orders(chain_status);
+
 CREATE INDEX idx_oe_fco_tier          ON oe_oem_field_change_orders(campaign_tier);
+
 CREATE INDEX idx_oe_ffml_asset_class    ON oe_fault_fingerprint_ml(asset_class);
+
 CREATE INDEX idx_oe_ffml_breached       ON oe_fault_fingerprint_ml(sla_breached);
+
 CREATE INDEX idx_oe_ffml_created        ON oe_fault_fingerprint_ml(created_at);
+
 CREATE INDEX idx_oe_ffml_events_mdl  ON oe_fault_fingerprint_ml_events(model_id);
+
 CREATE INDEX idx_oe_ffml_events_type ON oe_fault_fingerprint_ml_events(event_type);
+
 CREATE INDEX idx_oe_ffml_family         ON oe_fault_fingerprint_ml(model_family);
+
 CREATE INDEX idx_oe_ffml_inbox_ref      ON oe_fault_fingerprint_ml(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_ffml_regulator_ref  ON oe_fault_fingerprint_ml(regulator_ref);
+
 CREATE INDEX idx_oe_ffml_status         ON oe_fault_fingerprint_ml(chain_status);
+
 CREATE INDEX idx_oe_ffml_tier           ON oe_fault_fingerprint_ml(current_tier);
+
 CREATE INDEX idx_oe_ffml_w118_block     ON oe_fault_fingerprint_ml(w118_block_ref);
+
 CREATE INDEX idx_oe_ffml_w71_ref        ON oe_fault_fingerprint_ml(w71_asset_prognostics_ref);
+
 CREATE INDEX idx_oe_findings_audit ON oe_audit_findings(audit_id, status);
+
 CREATE INDEX idx_oe_freq_detect ON oe_frequency_events(detected_at);
+
 CREATE INDEX idx_oe_gca_evt_case ON oe_gca_events(gca_id);
+
 CREATE INDEX idx_oe_gca_evt_time ON oe_gca_events(created_at);
+
 CREATE INDEX idx_oe_gca_network     ON oe_gca_connections(network_party);
+
 CREATE INDEX idx_oe_gca_project     ON oe_gca_connections(project_id);
+
 CREATE INDEX idx_oe_gca_sla         ON oe_gca_connections(sla_deadline_at);
+
 CREATE INDEX idx_oe_gca_status      ON oe_gca_connections(chain_status);
+
 CREATE INDEX idx_oe_gca_substation  ON oe_gca_connections(poc_substation);
+
 CREATE INDEX idx_oe_gca_tier        ON oe_gca_connections(connection_tier);
+
 CREATE INDEX idx_oe_gcap_applicant ON oe_grid_capacity_allocations(applicant_party_id);
+
 CREATE INDEX idx_oe_gcap_conn      ON oe_grid_capacity_allocations(connection_type);
+
 CREATE INDEX idx_oe_gcap_events_alloc ON oe_grid_capacity_allocations_events(allocation_id);
+
 CREATE INDEX idx_oe_gcap_events_type  ON oe_grid_capacity_allocations_events(event_type);
+
 CREATE INDEX idx_oe_gcap_received  ON oe_grid_capacity_allocations(application_received_at);
+
 CREATE INDEX idx_oe_gcap_sla       ON oe_grid_capacity_allocations(sla_deadline_at);
+
 CREATE INDEX idx_oe_gcap_status    ON oe_grid_capacity_allocations(chain_status);
+
 CREATE INDEX idx_oe_gcap_tier      ON oe_grid_capacity_allocations(capacity_tier);
+
 CREATE INDEX idx_oe_gcc_area     ON oe_grid_code_compliance(network_area);
+
 CREATE INDEX idx_oe_gcc_breach   ON oe_grid_code_compliance(breach_class);
+
 CREATE INDEX idx_oe_gcc_events_case ON oe_grid_code_compliance_events(compliance_id);
+
 CREATE INDEX idx_oe_gcc_events_type ON oe_grid_code_compliance_events(event_type);
+
 CREATE INDEX idx_oe_gcc_facility ON oe_grid_code_compliance(facility_id);
+
 CREATE INDEX idx_oe_gcc_sla      ON oe_grid_code_compliance(sla_deadline_at);
+
 CREATE INDEX idx_oe_gcc_status   ON oe_grid_code_compliance(chain_status);
+
 CREATE INDEX idx_oe_gcc_tier     ON oe_grid_code_compliance(severity_tier);
+
 CREATE INDEX idx_oe_gfc_authority     ON oe_government_filing_connector(filing_authority);
+
 CREATE INDEX idx_oe_gfc_breached      ON oe_government_filing_connector(sla_breached);
+
 CREATE INDEX idx_oe_gfc_created       ON oe_government_filing_connector(created_at);
+
 CREATE INDEX idx_oe_gfc_events_cnn  ON oe_government_filing_connector_events(connector_id);
+
 CREATE INDEX idx_oe_gfc_events_type ON oe_government_filing_connector_events(event_type);
+
 CREATE INDEX idx_oe_gfc_inbox_ref     ON oe_government_filing_connector(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_gfc_peer_id       ON oe_government_filing_connector(peer_id);
+
 CREATE INDEX idx_oe_gfc_regulator_ref ON oe_government_filing_connector(regulator_ref);
+
 CREATE INDEX idx_oe_gfc_status        ON oe_government_filing_connector(chain_status);
+
 CREATE INDEX idx_oe_gfc_tier          ON oe_government_filing_connector(current_tier);
+
 CREATE INDEX idx_oe_gfc_w118_block    ON oe_government_filing_connector(w118_block_ref);
+
 CREATE INDEX idx_oe_gfc_w125_erp      ON oe_government_filing_connector(w125_erp_connector_ref);
+
 CREATE INDEX idx_oe_gra_category ON oe_generation_revenue_assurance(leakage_category);
+
 CREATE INDEX idx_oe_gra_events_gra  ON oe_generation_revenue_assurance_events(assurance_id);
+
 CREATE INDEX idx_oe_gra_events_type ON oe_generation_revenue_assurance_events(event_type);
+
 CREATE INDEX idx_oe_gra_period   ON oe_generation_revenue_assurance(reconciliation_period);
+
 CREATE INDEX idx_oe_gra_site     ON oe_generation_revenue_assurance(site_id);
+
 CREATE INDEX idx_oe_gra_sla      ON oe_generation_revenue_assurance(sla_deadline_at);
+
 CREATE INDEX idx_oe_gra_status   ON oe_generation_revenue_assurance(chain_status);
+
 CREATE INDEX idx_oe_gra_tier     ON oe_generation_revenue_assurance(revenue_assurance_tier);
+
 CREATE INDEX idx_oe_hearings_app ON oe_hearings(application_id);
+
 CREATE INDEX idx_oe_hndvr_asbuilt    ON oe_handover_dossier(incomplete_as_built);
+
 CREATE INDEX idx_oe_hndvr_ball       ON oe_handover_dossier(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_hndvr_class      ON oe_handover_dossier(workflow_class);
+
 CREATE INDEX idx_oe_hndvr_compiled   ON oe_handover_dossier(compiled_at);
+
 CREATE INDEX idx_oe_hndvr_events_p    ON oe_handover_dossier_events(dossier_id);
+
 CREATE INDEX idx_oe_hndvr_events_type ON oe_handover_dossier_events(event_type);
+
 CREATE INDEX idx_oe_hndvr_facility   ON oe_handover_dossier(facility_id);
+
 CREATE INDEX idx_oe_hndvr_om         ON oe_handover_dossier(blocks_om_handover);
+
 CREATE INDEX idx_oe_hndvr_priority   ON oe_handover_dossier(priority_class);
+
 CREATE INDEX idx_oe_hndvr_project    ON oe_handover_dossier(project_id);
+
 CREATE INDEX idx_oe_hndvr_sla        ON oe_handover_dossier(sla_deadline_at);
+
 CREATE INDEX idx_oe_hndvr_status     ON oe_handover_dossier(chain_status);
+
 CREATE INDEX idx_oe_hndvr_tier       ON oe_handover_dossier(current_tier);
+
 CREATE INDEX idx_oe_hndvr_warranty   ON oe_handover_dossier(blocks_warranty_start);
+
 CREATE INDEX idx_oe_hse_incident_evt_case ON oe_hse_incident_events(incident_id);
+
 CREATE INDEX idx_oe_hse_incident_evt_time ON oe_hse_incident_events(created_at);
+
 CREATE INDEX idx_oe_hse_incidents_occurred ON oe_hse_incidents(occurred_at);
+
 CREATE INDEX idx_oe_hse_incidents_project  ON oe_hse_incidents(project_id);
+
 CREATE INDEX idx_oe_hse_incidents_site     ON oe_hse_incidents(site_id);
+
 CREATE INDEX idx_oe_hse_incidents_sla      ON oe_hse_incidents(sla_deadline_at);
+
 CREATE INDEX idx_oe_hse_incidents_status   ON oe_hse_incidents(chain_status);
+
 CREATE INDEX idx_oe_hse_incidents_tier     ON oe_hse_incidents(incident_tier);
+
 CREATE INDEX idx_oe_ico_breached    ON oe_ipp_change_order(sla_breached);
+
 CREATE INDEX idx_oe_ico_class       ON oe_ipp_change_order(change_class);
+
 CREATE INDEX idx_oe_ico_events_coid ON oe_ipp_change_order_events(change_order_id);
+
 CREATE INDEX idx_oe_ico_events_type ON oe_ipp_change_order_events(event_type);
+
 CREATE INDEX idx_oe_ico_health      ON oe_ipp_change_order(change_order_health_band);
+
 CREATE INDEX idx_oe_ico_project     ON oe_ipp_change_order(project_id);
+
 CREATE INDEX idx_oe_ico_reportable  ON oe_ipp_change_order(is_reportable);
+
 CREATE INDEX idx_oe_ico_rfi_ref     ON oe_ipp_change_order(rfi_ref);
+
 CREATE INDEX idx_oe_ico_sla         ON oe_ipp_change_order(sla_deadline_at);
+
 CREATE INDEX idx_oe_ico_status      ON oe_ipp_change_order(chain_status);
+
 CREATE INDEX idx_oe_ico_tenant      ON oe_ipp_change_order(tenant_id);
+
 CREATE INDEX idx_oe_ico_tier        ON oe_ipp_change_order(current_tier);
+
 CREATE INDEX idx_oe_imb_arrears       ON oe_imbalance_settlement(arrears_days);
+
 CREATE INDEX idx_oe_imb_breached      ON oe_imbalance_settlement(sla_breached);
+
 CREATE INDEX idx_oe_imb_brp           ON oe_imbalance_settlement(brp_id);
+
 CREATE INDEX idx_oe_imb_dispatch_ref  ON oe_imbalance_settlement(dispatch_nomination_ref);
+
 CREATE INDEX idx_oe_imb_events_set  ON oe_imbalance_settlement_events(settlement_id);
+
 CREATE INDEX idx_oe_imb_events_type ON oe_imbalance_settlement_events(event_type);
+
 CREATE INDEX idx_oe_imb_period_start  ON oe_imbalance_settlement(settlement_period_start_at);
+
 CREATE INDEX idx_oe_imb_reportable    ON oe_imbalance_settlement(is_reportable);
+
 CREATE INDEX idx_oe_imb_reserve_ref   ON oe_imbalance_settlement(reserve_activation_ref);
+
 CREATE INDEX idx_oe_imb_sla           ON oe_imbalance_settlement(sla_deadline_at);
+
 CREATE INDEX idx_oe_imb_status        ON oe_imbalance_settlement(chain_status);
+
 CREATE INDEX idx_oe_imb_tenant        ON oe_imbalance_settlement(tenant_id);
+
 CREATE INDEX idx_oe_imb_tier          ON oe_imbalance_settlement(current_tier);
+
 CREATE INDEX idx_oe_inbox_assignee ON oe_regulator_inbox(assigned_to);
+
 CREATE INDEX idx_oe_inbox_event    ON oe_regulator_inbox(source_event);
+
 CREATE INDEX idx_oe_inbox_sla      ON oe_regulator_inbox(sla_due_at);
+
 CREATE INDEX idx_oe_inbox_status   ON oe_regulator_inbox(ack_status);
+
 CREATE INDEX idx_oe_incident_updates_inc ON oe_status_incident_updates(incident_id, created_at);
+
 CREATE INDEX idx_oe_incidents_started ON oe_status_incidents(started_at);
+
 CREATE INDEX idx_oe_insclaim_evt_claim ON oe_insurance_claim_chain_events(claim_id);
+
 CREATE INDEX idx_oe_insclaim_evt_time  ON oe_insurance_claim_chain_events(created_at);
+
 CREATE INDEX idx_oe_insclaim_fac      ON oe_insurance_claim_chain(facility_id);
+
 CREATE INDEX idx_oe_insclaim_incident ON oe_insurance_claim_chain(incident_date);
+
 CREATE INDEX idx_oe_insclaim_part     ON oe_insurance_claim_chain(participant_id);
+
 CREATE INDEX idx_oe_insclaim_proj     ON oe_insurance_claim_chain(project_id);
+
 CREATE INDEX idx_oe_insclaim_sla      ON oe_insurance_claim_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_insclaim_status   ON oe_insurance_claim_chain(chain_status);
+
 CREATE INDEX idx_oe_insclaim_tier     ON oe_insurance_claim_chain(claim_value_tier);
+
 CREATE INDEX idx_oe_intercred_proj ON oe_lender_intercreditor(project_id);
+
 CREATE INDEX idx_oe_ipd_breached    ON oe_ipp_document_control(sla_breached);
+
 CREATE INDEX idx_oe_ipd_events_did  ON oe_ipp_document_control_events(document_id);
+
 CREATE INDEX idx_oe_ipd_events_type ON oe_ipp_document_control_events(event_type);
+
 CREATE INDEX idx_oe_ipd_health      ON oe_ipp_document_control(doc_health_band);
+
 CREATE INDEX idx_oe_ipd_idc         ON oe_ipp_document_control(idc_status);
+
 CREATE INDEX idx_oe_ipd_project     ON oe_ipp_document_control(project_id);
+
 CREATE INDEX idx_oe_ipd_reportable  ON oe_ipp_document_control(is_reportable);
+
 CREATE INDEX idx_oe_ipd_schedule    ON oe_ipp_document_control(schedule_ref);
+
 CREATE INDEX idx_oe_ipd_sla         ON oe_ipp_document_control(sla_deadline_at);
+
 CREATE INDEX idx_oe_ipd_status      ON oe_ipp_document_control(chain_status);
+
 CREATE INDEX idx_oe_ipd_tenant      ON oe_ipp_document_control(tenant_id);
+
 CREATE INDEX idx_oe_ipd_tier        ON oe_ipp_document_control(current_tier);
+
 CREATE INDEX idx_oe_ipe_breached    ON oe_ipp_evm(sla_breached);
+
 CREATE INDEX idx_oe_ipe_events_eid  ON oe_ipp_evm_events(evm_id);
+
 CREATE INDEX idx_oe_ipe_events_type ON oe_ipp_evm_events(event_type);
+
 CREATE INDEX idx_oe_ipe_health      ON oe_ipp_evm(evm_health_band);
+
 CREATE INDEX idx_oe_ipe_project     ON oe_ipp_evm(project_id);
+
 CREATE INDEX idx_oe_ipe_reportable  ON oe_ipp_evm(is_reportable);
+
 CREATE INDEX idx_oe_ipe_schedule    ON oe_ipp_evm(schedule_ref);
+
 CREATE INDEX idx_oe_ipe_sla         ON oe_ipp_evm(sla_deadline_at);
+
 CREATE INDEX idx_oe_ipe_status      ON oe_ipp_evm(chain_status);
+
 CREATE INDEX idx_oe_ipe_tenant      ON oe_ipp_evm(tenant_id);
+
 CREATE INDEX idx_oe_ipe_tier        ON oe_ipp_evm(current_tier);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_category ON oe_ipp_env_monitoring(monitoring_category);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_chain_status ON oe_ipp_env_monitoring(chain_status);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_eia_breach ON oe_ipp_env_monitoring(floor_eia_condition_breach);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_is_reportable ON oe_ipp_env_monitoring(is_reportable);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_near_receptor ON oe_ipp_env_monitoring(is_near_sensitive_receptor);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_project_id ON oe_ipp_env_monitoring(project_id);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_sla_breached ON oe_ipp_env_monitoring(sla_breached);
+
 CREATE INDEX idx_oe_ipp_env_monitoring_tier ON oe_ipp_env_monitoring(monitoring_tier);
+
 CREATE INDEX idx_oe_ipp_lesson_events_lesson_id ON oe_ipp_lesson_events (lesson_id);
+
 CREATE INDEX idx_oe_ipp_lessons_chain_status ON oe_ipp_lessons_learned (chain_status);
+
 CREATE INDEX idx_oe_ipp_lessons_floor_portfolio ON oe_ipp_lessons_learned (floor_portfolio_impact);
+
 CREATE INDEX idx_oe_ipp_lessons_floor_safety ON oe_ipp_lessons_learned (floor_safety_critical);
+
 CREATE INDEX idx_oe_ipp_lessons_impact_tier ON oe_ipp_lessons_learned (impact_tier);
+
 CREATE INDEX idx_oe_ipp_lessons_is_reportable ON oe_ipp_lessons_learned (is_reportable);
+
 CREATE INDEX idx_oe_ipp_lessons_lesson_category ON oe_ipp_lessons_learned (lesson_category);
+
 CREATE INDEX idx_oe_ipp_lessons_lesson_phase ON oe_ipp_lessons_learned (lesson_phase);
+
 CREATE INDEX idx_oe_ipp_lessons_lesson_type ON oe_ipp_lessons_learned (lesson_type);
+
 CREATE INDEX idx_oe_ipp_lessons_project_id ON oe_ipp_lessons_learned (project_id);
+
 CREATE INDEX idx_oe_ipp_lessons_sla_breached ON oe_ipp_lessons_learned (sla_breached);
+
 CREATE INDEX idx_oe_ipp_ms_chain_status     ON oe_ipp_method_statements(chain_status);
+
 CREATE INDEX idx_oe_ipp_ms_confined_space    ON oe_ipp_method_statements(is_confined_space);
+
 CREATE INDEX idx_oe_ipp_ms_critical_lift     ON oe_ipp_method_statements(is_critical_lift);
+
 CREATE INDEX idx_oe_ipp_ms_events_ms_id      ON oe_ipp_ms_events(ms_id);
+
 CREATE INDEX idx_oe_ipp_ms_is_reportable     ON oe_ipp_method_statements(is_reportable);
+
 CREATE INDEX idx_oe_ipp_ms_live_electrical   ON oe_ipp_method_statements(is_live_electrical);
+
 CREATE INDEX idx_oe_ipp_ms_project_id        ON oe_ipp_method_statements(project_id);
+
 CREATE INDEX idx_oe_ipp_ms_risk_tier         ON oe_ipp_method_statements(risk_tier);
+
 CREATE INDEX idx_oe_ipp_ms_sla_breached      ON oe_ipp_method_statements(sla_breached);
+
 CREATE INDEX idx_oe_ipp_ms_work_type         ON oe_ipp_method_statements(work_type);
+
 CREATE INDEX idx_oe_ipp_ncr_events_ncr_id        ON oe_ipp_ncr_events (ncr_id);
+
 CREATE INDEX idx_oe_ipp_ncrs_chain_status       ON oe_ipp_ncrs (chain_status);
+
 CREATE INDEX idx_oe_ipp_ncrs_hold_point          ON oe_ipp_ncrs (floor_hold_point_triggered);
+
 CREATE INDEX idx_oe_ipp_ncrs_is_reportable       ON oe_ipp_ncrs (is_reportable);
+
 CREATE INDEX idx_oe_ipp_ncrs_ncr_category        ON oe_ipp_ncrs (ncr_category);
+
 CREATE INDEX idx_oe_ipp_ncrs_ncr_severity        ON oe_ipp_ncrs (ncr_severity);
+
 CREATE INDEX idx_oe_ipp_ncrs_project_id          ON oe_ipp_ncrs (project_id);
+
 CREATE INDEX idx_oe_ipp_ncrs_safety_stop_work    ON oe_ipp_ncrs (floor_safety_stop_work);
+
 CREATE INDEX idx_oe_ipp_ncrs_sla_breached        ON oe_ipp_ncrs (sla_breached);
+
 CREATE INDEX idx_oe_ipr_breached    ON oe_ipp_rfi(sla_breached);
+
 CREATE INDEX idx_oe_ipr_class       ON oe_ipp_rfi(rfi_class);
+
 CREATE INDEX idx_oe_ipr_doc_ref     ON oe_ipp_rfi(document_control_ref);
+
 CREATE INDEX idx_oe_ipr_events_rid  ON oe_ipp_rfi_events(rfi_id);
+
 CREATE INDEX idx_oe_ipr_events_type ON oe_ipp_rfi_events(event_type);
+
 CREATE INDEX idx_oe_ipr_health      ON oe_ipp_rfi(rfi_health_band);
+
 CREATE INDEX idx_oe_ipr_project     ON oe_ipp_rfi(project_id);
+
 CREATE INDEX idx_oe_ipr_reportable  ON oe_ipp_rfi(is_reportable);
+
 CREATE INDEX idx_oe_ipr_sla         ON oe_ipp_rfi(sla_deadline_at);
+
 CREATE INDEX idx_oe_ipr_status      ON oe_ipp_rfi(chain_status);
+
 CREATE INDEX idx_oe_ipr_tenant      ON oe_ipp_rfi(tenant_id);
+
 CREATE INDEX idx_oe_ipr_tier        ON oe_ipp_rfi(current_tier);
+
 CREATE INDEX idx_oe_ips_breached    ON oe_ipp_schedule(sla_breached);
+
 CREATE INDEX idx_oe_ips_doc_ref     ON oe_ipp_submittal(document_control_ref);
+
 CREATE INDEX idx_oe_ips_events_sid  ON oe_ipp_schedule_events(schedule_id);
+
 CREATE INDEX idx_oe_ips_events_type ON oe_ipp_schedule_events(event_type);
+
 CREATE INDEX idx_oe_ips_finish      ON oe_ipp_schedule(current_planned_finish);
+
 CREATE INDEX idx_oe_ips_health      ON oe_ipp_schedule(schedule_health_band);
+
 CREATE INDEX idx_oe_ips_project     ON oe_ipp_schedule(project_id);
+
 CREATE INDEX idx_oe_ips_reportable  ON oe_ipp_schedule(is_reportable);
+
 CREATE INDEX idx_oe_ips_sla         ON oe_ipp_schedule(sla_deadline_at);
+
 CREATE INDEX idx_oe_ips_stamp       ON oe_ipp_submittal(stamp_code);
+
 CREATE INDEX idx_oe_ips_status      ON oe_ipp_schedule(chain_status);
+
 CREATE INDEX idx_oe_ips_tenant      ON oe_ipp_schedule(tenant_id);
+
 CREATE INDEX idx_oe_ips_tier        ON oe_ipp_schedule(current_tier);
+
 CREATE INDEX idx_oe_itp_ball       ON oe_itp_inspection(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_itp_class      ON oe_itp_inspection(workflow_class);
+
 CREATE INDEX idx_oe_itp_cod        ON oe_itp_inspection(blocks_commercial_operation);
+
 CREATE INDEX idx_oe_itp_events_p    ON oe_itp_inspection_events(itp_id);
+
 CREATE INDEX idx_oe_itp_events_type ON oe_itp_inspection_events(event_type);
+
 CREATE INDEX idx_oe_itp_facility   ON oe_itp_inspection(facility_id);
+
 CREATE INDEX idx_oe_itp_hold       ON oe_itp_inspection(regulator_hold_point);
+
 CREATE INDEX idx_oe_itp_ident      ON oe_itp_inspection(identified_at);
+
 CREATE INDEX idx_oe_itp_priority   ON oe_itp_inspection(priority_class);
+
 CREATE INDEX idx_oe_itp_project    ON oe_itp_inspection(project_id);
+
 CREATE INDEX idx_oe_itp_safety     ON oe_itp_inspection(safety_critical_test);
+
 CREATE INDEX idx_oe_itp_sla        ON oe_itp_inspection(sla_deadline_at);
+
 CREATE INDEX idx_oe_itp_status     ON oe_itp_inspection(chain_status);
+
 CREATE INDEX idx_oe_itp_tier       ON oe_itp_inspection(current_tier);
+
 CREATE INDEX idx_oe_kyc_bo_part ON oe_kyc_beneficial_owners(participant_id);
+
 CREATE INDEX idx_oe_kyc_screen_part ON oe_kyc_screenings(participant_id, status);
+
 CREATE INDEX idx_oe_kyc_subs_part   ON oe_kyc_submissions(participant_id, status);
+
 CREATE INDEX idx_oe_kyc_subs_status ON oe_kyc_submissions(status, submitted_at);
+
 CREATE INDEX idx_oe_lapp_applicant ON oe_licence_applications(applicant_party_id);
+
 CREATE INDEX idx_oe_lapp_class     ON oe_licence_applications(licence_class);
+
 CREATE INDEX idx_oe_lapp_events_app  ON oe_licence_applications_events(application_id);
+
 CREATE INDEX idx_oe_lapp_events_type ON oe_licence_applications_events(event_type);
+
 CREATE INDEX idx_oe_lapp_received  ON oe_licence_applications(application_received_at);
+
 CREATE INDEX idx_oe_lapp_sla       ON oe_licence_applications(sla_deadline_at);
+
 CREATE INDEX idx_oe_lapp_status    ON oe_licence_applications(chain_status);
+
 CREATE INDEX idx_oe_lapp_type      ON oe_licence_applications(licence_type);
+
 CREATE INDEX idx_oe_late_fees_invoice  ON oe_late_payment_fees(invoice_id);
+
 CREATE INDEX idx_oe_late_fees_party    ON oe_late_payment_fees(participant_id, status);
+
 CREATE INDEX idx_oe_ld_project ON oe_ipp_ld_events(project_id, status);
+
 CREATE INDEX idx_oe_ldef_borrower  ON oe_loan_defaults(borrower_party_id);
+
 CREATE INDEX idx_oe_ldef_events_def  ON oe_loan_defaults_events(default_id);
+
 CREATE INDEX idx_oe_ldef_events_type ON oe_loan_defaults_events(event_type);
+
 CREATE INDEX idx_oe_ldef_flagged   ON oe_loan_defaults(default_flagged_at);
+
 CREATE INDEX idx_oe_ldef_sla       ON oe_loan_defaults(sla_deadline_at);
+
 CREATE INDEX idx_oe_ldef_status    ON oe_loan_defaults(chain_status);
+
 CREATE INDEX idx_oe_ldef_tier      ON oe_loan_defaults(facility_tier);
+
 CREATE INDEX idx_oe_ldef_type      ON oe_loan_defaults(default_type);
+
 CREATE INDEX idx_oe_levy_events_levy ON oe_regulator_levies_events(levy_id);
+
 CREATE INDEX idx_oe_levy_events_type ON oe_regulator_levies_events(event_type);
+
 CREATE INDEX idx_oe_levy_licensee  ON oe_regulator_levies(licensee_id);
+
 CREATE INDEX idx_oe_levy_sector    ON oe_regulator_levies(sector);
+
 CREATE INDEX idx_oe_levy_sla       ON oe_regulator_levies(sla_deadline_at);
+
 CREATE INDEX idx_oe_levy_status   ON oe_regulator_levies(chain_status);
+
 CREATE INDEX idx_oe_levy_tier      ON oe_regulator_levies(levy_tier);
+
 CREATE INDEX idx_oe_load_curtailment_customer   ON oe_load_curtailment(customer_party_id);
+
 CREATE INDEX idx_oe_load_curtailment_events_case ON oe_load_curtailment_events(curtailment_id);
+
 CREATE INDEX idx_oe_load_curtailment_events_type ON oe_load_curtailment_events(event_type);
+
 CREATE INDEX idx_oe_load_curtailment_issued     ON oe_load_curtailment(instruction_issued_at);
+
 CREATE INDEX idx_oe_load_curtailment_sla        ON oe_load_curtailment(sla_deadline_at);
+
 CREATE INDEX idx_oe_load_curtailment_so         ON oe_load_curtailment(so_party_id);
+
 CREATE INDEX idx_oe_load_curtailment_stage      ON oe_load_curtailment(load_shed_stage);
+
 CREATE INDEX idx_oe_load_curtailment_status     ON oe_load_curtailment(chain_status);
+
 CREATE INDEX idx_oe_lrs_borrower      ON oe_loan_restructure(borrower_id);
+
 CREATE INDEX idx_oe_lrs_breached      ON oe_loan_restructure(sla_breached);
+
 CREATE INDEX idx_oe_lrs_consent       ON oe_loan_restructure(consent_deadline_at);
+
 CREATE INDEX idx_oe_lrs_covenant_ref  ON oe_loan_restructure(covenant_breach_ref);
+
 CREATE INDEX idx_oe_lrs_events_rid    ON oe_loan_restructure_events(restructure_id);
+
 CREATE INDEX idx_oe_lrs_events_type   ON oe_loan_restructure_events(event_type);
+
 CREATE INDEX idx_oe_lrs_facility      ON oe_loan_restructure(facility_id);
+
 CREATE INDEX idx_oe_lrs_lender        ON oe_loan_restructure(lender_agent_id);
+
 CREATE INDEX idx_oe_lrs_reportable    ON oe_loan_restructure(is_reportable);
+
 CREATE INDEX idx_oe_lrs_sla           ON oe_loan_restructure(sla_deadline_at);
+
 CREATE INDEX idx_oe_lrs_status        ON oe_loan_restructure(chain_status);
+
 CREATE INDEX idx_oe_lrs_tenant        ON oe_loan_restructure(tenant_id);
+
 CREATE INDEX idx_oe_lrs_tier          ON oe_loan_restructure(current_tier);
+
 CREATE INDEX idx_oe_ltr_events_t    ON oe_loan_transfers_events(transfer_id);
+
 CREATE INDEX idx_oe_ltr_events_type ON oe_loan_transfers_events(event_type);
+
 CREATE INDEX idx_oe_ltr_facility   ON oe_loan_transfers(facility_code);
+
 CREATE INDEX idx_oe_ltr_requested  ON oe_loan_transfers(transfer_requested_at);
+
 CREATE INDEX idx_oe_ltr_residency  ON oe_loan_transfers(transferee_residency);
+
 CREATE INDEX idx_oe_ltr_sla        ON oe_loan_transfers(sla_deadline_at);
+
 CREATE INDEX idx_oe_ltr_status     ON oe_loan_transfers(chain_status);
+
 CREATE INDEX idx_oe_ltr_tier       ON oe_loan_transfers(transfer_tier);
+
 CREATE INDEX idx_oe_ltr_transferor ON oe_loan_transfers(transferor_party_id);
+
 CREATE INDEX idx_oe_mac_events_case ON oe_market_abuse_cases_events(case_id);
+
 CREATE INDEX idx_oe_mac_events_type ON oe_market_abuse_cases_events(event_type);
+
 CREATE INDEX idx_oe_mac_raised   ON oe_market_abuse_cases(alert_raised_at);
+
 CREATE INDEX idx_oe_mac_sla      ON oe_market_abuse_cases(sla_deadline_at);
+
 CREATE INDEX idx_oe_mac_status   ON oe_market_abuse_cases(chain_status);
+
 CREATE INDEX idx_oe_mac_subject  ON oe_market_abuse_cases(subject_party_id);
+
 CREATE INDEX idx_oe_mac_tier     ON oe_market_abuse_cases(abuse_tier);
+
 CREATE INDEX idx_oe_maintenance_starts ON oe_status_maintenance_windows(starts_at, status);
+
 CREATE INDEX idx_oe_margin_part ON oe_margin_calls(participant_id, status);
+
 CREATE INDEX idx_oe_merkle_day ON oe_audit_merkle_roots(day, entity_type);
+
 CREATE INDEX idx_oe_mfa_attempts_part ON oe_mfa_attempts(participant_id, created_at);
+
 CREATE INDEX idx_oe_mfa_recovery_part ON oe_mfa_recovery_codes(participant_id, used_at);
+
 CREATE INDEX idx_oe_mm_obl_breach ON oe_mm_obligations(breach_status);
+
 CREATE INDEX idx_oe_mm_part ON oe_mm_obligations(participant_id, status);
+
 CREATE INDEX idx_oe_mm_perf_ob ON oe_mm_performance(obligation_id, day);
+
 CREATE INDEX idx_oe_mm_perf_status ON oe_mm_performance(compliance_status);
+
 CREATE INDEX idx_oe_moc_breached      ON oe_mqtt_opcua_connector(sla_breached);
+
 CREATE INDEX idx_oe_moc_created       ON oe_mqtt_opcua_connector(created_at);
+
 CREATE INDEX idx_oe_moc_events_cnn  ON oe_mqtt_opcua_connector_events(connector_id);
+
 CREATE INDEX idx_oe_moc_events_type ON oe_mqtt_opcua_connector_events(event_type);
+
 CREATE INDEX idx_oe_moc_inbox_ref     ON oe_mqtt_opcua_connector(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_moc_peer_id       ON oe_mqtt_opcua_connector(peer_id);
+
 CREATE INDEX idx_oe_moc_protocol      ON oe_mqtt_opcua_connector(protocol);
+
 CREATE INDEX idx_oe_moc_regulator_ref ON oe_mqtt_opcua_connector(regulator_ref);
+
 CREATE INDEX idx_oe_moc_status        ON oe_mqtt_opcua_connector(chain_status);
+
 CREATE INDEX idx_oe_moc_tier          ON oe_mqtt_opcua_connector(current_tier);
+
 CREATE INDEX idx_oe_moc_w118_block    ON oe_mqtt_opcua_connector(w118_block_ref);
+
 CREATE INDEX idx_oe_moc_w122_scada    ON oe_mqtt_opcua_connector(w122_scada_connector_ref);
+
 CREATE INDEX idx_oe_mon_pdd ON oe_carbon_monitoring(pdd_id, status);
+
 CREATE INDEX idx_oe_mypd_app ON oe_mypd_methodology(application_id);
+
 CREATE INDEX idx_oe_ncb_asset_class    ON oe_ntt_comparison_battery(asset_class);
+
 CREATE INDEX idx_oe_ncb_breached       ON oe_ntt_comparison_battery(sla_breached);
+
 CREATE INDEX idx_oe_ncb_created        ON oe_ntt_comparison_battery(created_at);
+
 CREATE INDEX idx_oe_ncb_events_cyc  ON oe_ntt_comparison_battery_events(cycle_id);
+
 CREATE INDEX idx_oe_ncb_events_type ON oe_ntt_comparison_battery_events(event_type);
+
 CREATE INDEX idx_oe_ncb_inbox_ref      ON oe_ntt_comparison_battery(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_ncb_kind           ON oe_ntt_comparison_battery(cycle_kind);
+
 CREATE INDEX idx_oe_ncb_regulator_ref  ON oe_ntt_comparison_battery(regulator_ref);
+
 CREATE INDEX idx_oe_ncb_status         ON oe_ntt_comparison_battery(chain_status);
+
 CREATE INDEX idx_oe_ncb_tier           ON oe_ntt_comparison_battery(current_tier);
+
 CREATE INDEX idx_oe_ncb_w118_block     ON oe_ntt_comparison_battery(w118_block_ref);
+
 CREATE INDEX idx_oe_ncb_w127_ref       ON oe_ntt_comparison_battery(w127_anomaly_detection_ref);
+
 CREATE INDEX idx_oe_ncb_w128_ref       ON oe_ntt_comparison_battery(w128_rul_survival_ref);
+
 CREATE INDEX idx_oe_ncb_w129_ref       ON oe_ntt_comparison_battery(w129_fault_fingerprint_ref);
+
 CREATE INDEX idx_oe_ncb_w71_ref        ON oe_ntt_comparison_battery(w71_asset_prognostics_ref);
+
 CREATE INDEX idx_oe_neg_rfq ON oe_negotiation_rounds(rfq_id, round_number);
+
 CREATE INDEX idx_oe_nersa_status ON oe_nersa_reports(status, year DESC, quarter DESC);
+
 CREATE INDEX idx_oe_netlegs_cycle ON oe_settlement_net_legs(cycle_id, status);
+
 CREATE INDEX idx_oe_notice_deadline  ON oe_compliance_notices(remedy_deadline_at);
+
 CREATE INDEX idx_oe_notice_licensee  ON oe_compliance_notices(licensee_user_id);
+
 CREATE INDEX idx_oe_notice_status    ON oe_compliance_notices(status);
+
 CREATE INDEX idx_oe_offers_run ON oe_dispatch_offers(run_id, status);
+
 CREATE INDEX idx_oe_outage_events_ret  ON oe_planned_outage_events(outage_id, created_at);
+
 CREATE INDEX idx_oe_outage_events_type ON oe_planned_outage_events(event_type);
+
 CREATE INDEX idx_oe_outages_chain     ON oe_planned_outages(chain_status);
+
 CREATE INDEX idx_oe_outages_part      ON oe_planned_outages(participant_id);
+
 CREATE INDEX idx_oe_outages_severity  ON oe_planned_outages(severity);
+
 CREATE INDEX idx_oe_outages_sla       ON oe_planned_outages(sla_deadline_at);
+
 CREATE INDEX idx_oe_outages_start     ON oe_planned_outages(start_at);
+
 CREATE INDEX idx_oe_par_ball      ON oe_ppa_annual_recon(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_par_buyer     ON oe_ppa_annual_recon(buyer_party_id);
+
 CREATE INDEX idx_oe_par_cpi_flag  ON oe_ppa_annual_recon(cpi_true_up_over_r50m);
+
 CREATE INDEX idx_oe_par_events_r    ON oe_ppa_annual_recon_events(recon_id);
+
 CREATE INDEX idx_oe_par_events_type ON oe_ppa_annual_recon_events(event_type);
+
 CREATE INDEX idx_oe_par_facility  ON oe_ppa_annual_recon(facility_id);
+
 CREATE INDEX idx_oe_par_ppa       ON oe_ppa_annual_recon(ppa_id);
+
 CREATE INDEX idx_oe_par_seller    ON oe_ppa_annual_recon(seller_party_id);
+
 CREATE INDEX idx_oe_par_sla       ON oe_ppa_annual_recon(sla_deadline_at);
+
 CREATE INDEX idx_oe_par_status    ON oe_ppa_annual_recon(chain_status);
+
 CREATE INDEX idx_oe_par_tier      ON oe_ppa_annual_recon(current_tier);
+
 CREATE INDEX idx_oe_par_top_flag  ON oe_ppa_annual_recon(top_residual_over_r100m);
+
 CREATE INDEX idx_oe_par_year      ON oe_ppa_annual_recon(contract_year);
+
 CREATE INDEX idx_oe_par_yend_flag ON oe_ppa_annual_recon(contract_year_end_strict);
+
 CREATE INDEX idx_oe_pco_events_co   ON oe_project_change_order_events(co_id);
+
 CREATE INDEX idx_oe_pco_events_type ON oe_project_change_order_events(event_type);
+
 CREATE INDEX idx_oe_pco_participant ON oe_project_change_orders(participant_id);
+
 CREATE INDEX idx_oe_pco_project     ON oe_project_change_orders(project_id);
+
 CREATE INDEX idx_oe_pco_sla         ON oe_project_change_orders(sla_deadline_at);
+
 CREATE INDEX idx_oe_pco_status      ON oe_project_change_orders(chain_status);
+
 CREATE INDEX idx_oe_pco_tier        ON oe_project_change_orders(variation_tier);
+
 CREATE INDEX idx_oe_pco_type        ON oe_project_change_orders(change_type);
+
 CREATE INDEX idx_oe_pdd_project ON oe_carbon_pdd(project_id, pdd_status);
+
 CREATE INDEX idx_oe_pmc_contractor ON oe_pm_compliance(contractor_party_id);
+
 CREATE INDEX idx_oe_pmc_events_p    ON oe_pm_compliance_events(pm_id);
+
 CREATE INDEX idx_oe_pmc_events_type ON oe_pm_compliance_events(event_type);
+
 CREATE INDEX idx_oe_pmc_scheduled  ON oe_pm_compliance(pm_scheduled_at);
+
 CREATE INDEX idx_oe_pmc_site       ON oe_pm_compliance(site_id);
+
 CREATE INDEX idx_oe_pmc_sla        ON oe_pm_compliance(sla_deadline_at);
+
 CREATE INDEX idx_oe_pmc_status     ON oe_pm_compliance(chain_status);
+
 CREATE INDEX idx_oe_pmc_tier       ON oe_pm_compliance(criticality_tier);
+
 CREATE INDEX idx_oe_pna_book        ON oe_pnl_attribution(book_id);
+
 CREATE INDEX idx_oe_pna_breached    ON oe_pnl_attribution(sla_breached);
+
 CREATE INDEX idx_oe_pna_date        ON oe_pnl_attribution(business_date);
+
 CREATE INDEX idx_oe_pna_desk        ON oe_pnl_attribution(desk_id);
+
 CREATE INDEX idx_oe_pna_events_pid  ON oe_pnl_attribution_events(pnl_id);
+
 CREATE INDEX idx_oe_pna_events_type ON oe_pnl_attribution_events(event_type);
+
 CREATE INDEX idx_oe_pna_ifrs9       ON oe_pnl_attribution(ifrs9_stage);
+
 CREATE INDEX idx_oe_pna_reportable  ON oe_pnl_attribution(is_reportable);
+
 CREATE INDEX idx_oe_pna_sla         ON oe_pnl_attribution(sla_deadline_at);
+
 CREATE INDEX idx_oe_pna_status      ON oe_pnl_attribution(chain_status);
+
 CREATE INDEX idx_oe_pna_tenant      ON oe_pnl_attribution(tenant_id);
+
 CREATE INDEX idx_oe_pna_tier        ON oe_pnl_attribution(current_tier);
+
 CREATE INDEX idx_oe_poa_events_i    ON oe_poa_cpa_inclusions_events(inclusion_id);
+
 CREATE INDEX idx_oe_poa_events_type ON oe_poa_cpa_inclusions_events(event_type);
+
 CREATE INDEX idx_oe_poa_geo         ON oe_poa_cpa_inclusions(geo_key);
+
 CREATE INDEX idx_oe_poa_programme   ON oe_poa_cpa_inclusions(programme_id);
+
 CREATE INDEX idx_oe_poa_proposed    ON oe_poa_cpa_inclusions(cpa_proposed_at);
+
 CREATE INDEX idx_oe_poa_sla         ON oe_poa_cpa_inclusions(sla_deadline_at);
+
 CREATE INDEX idx_oe_poa_status      ON oe_poa_cpa_inclusions(chain_status);
+
 CREATE INDEX idx_oe_poa_tier        ON oe_poa_cpa_inclusions(cpa_tier);
+
 CREATE INDEX idx_oe_poa_transfer    ON oe_poa_cpa_inclusions(transfer_type);
+
 CREATE INDEX idx_oe_poslimit_evt_case ON oe_poslimit_events(poslimit_id);
+
 CREATE INDEX idx_oe_poslimit_evt_time ON oe_poslimit_events(created_at);
+
 CREATE INDEX idx_oe_poslimit_instrument   ON oe_poslimit_cases(instrument);
+
 CREATE INDEX idx_oe_poslimit_sla          ON oe_poslimit_cases(sla_deadline_at);
+
 CREATE INDEX idx_oe_poslimit_status       ON oe_poslimit_cases(chain_status);
+
 CREATE INDEX idx_oe_poslimit_tier         ON oe_poslimit_cases(trader_tier);
+
 CREATE INDEX idx_oe_poslimit_trader       ON oe_poslimit_cases(trader_party);
+
 CREATE INDEX idx_oe_poslimit_user         ON oe_poslimit_cases(trader_user_id);
+
 CREATE INDEX idx_oe_ppa_events_ppa  ON oe_ppa_contract_chain_events(ppa_id, created_at);
+
 CREATE INDEX idx_oe_ppa_events_type ON oe_ppa_contract_chain_events(event_type);
+
 CREATE INDEX idx_oe_ppa_expiry   ON oe_ppa_contract_chain(expiry_date);
+
 CREATE INDEX idx_oe_ppa_nom_events_n    ON oe_ppa_nomination_events(nomination_id);
+
 CREATE INDEX idx_oe_ppa_nom_events_type ON oe_ppa_nomination_events(event_type);
+
 CREATE INDEX idx_oe_ppa_nominations_facility    ON oe_ppa_nominations(facility_id);
+
 CREATE INDEX idx_oe_ppa_nominations_offtaker    ON oe_ppa_nominations(offtaker_id);
+
 CREATE INDEX idx_oe_ppa_nominations_ppa         ON oe_ppa_nominations(ppa_id);
+
 CREATE INDEX idx_oe_ppa_nominations_reportable  ON oe_ppa_nominations(is_reportable);
+
 CREATE INDEX idx_oe_ppa_nominations_seller      ON oe_ppa_nominations(seller_id);
+
 CREATE INDEX idx_oe_ppa_nominations_sla         ON oe_ppa_nominations(sla_deadline_at);
+
 CREATE INDEX idx_oe_ppa_nominations_status      ON oe_ppa_nominations(chain_status);
+
 CREATE INDEX idx_oe_ppa_nominations_tier        ON oe_ppa_nominations(deviation_tier);
+
 CREATE INDEX idx_oe_ppa_off      ON oe_ppa_contract_chain(offtaker_id);
+
 CREATE INDEX idx_oe_ppa_part     ON oe_ppa_contract_chain(participant_id);
+
 CREATE INDEX idx_oe_ppa_project  ON oe_ppa_contract_chain(project_id);
+
 CREATE INDEX idx_oe_ppa_sla      ON oe_ppa_contract_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_ppa_status   ON oe_ppa_contract_chain(chain_status);
+
 CREATE INDEX idx_oe_ppa_tier     ON oe_ppa_contract_chain(capacity_tier);
+
 CREATE INDEX idx_oe_pps_events_sec  ON oe_ppa_payment_securities_events(security_id);
+
 CREATE INDEX idx_oe_pps_events_type ON oe_ppa_payment_securities_events(event_type);
+
 CREATE INDEX idx_oe_pps_offtaker ON oe_ppa_payment_securities(offtaker_party_id);
+
 CREATE INDEX idx_oe_pps_required ON oe_ppa_payment_securities(security_required_at);
+
 CREATE INDEX idx_oe_pps_sla      ON oe_ppa_payment_securities(sla_deadline_at);
+
 CREATE INDEX idx_oe_pps_status   ON oe_ppa_payment_securities(chain_status);
+
 CREATE INDEX idx_oe_pps_tier     ON oe_ppa_payment_securities(security_tier);
+
 CREATE INDEX idx_oe_pr_chain_detected ON oe_pr_chain(detected_at);
+
 CREATE INDEX idx_oe_pr_chain_evt_case ON oe_pr_chain_events(case_id);
+
 CREATE INDEX idx_oe_pr_chain_evt_time ON oe_pr_chain_events(created_at);
+
 CREATE INDEX idx_oe_pr_chain_site     ON oe_pr_chain(site_id);
+
 CREATE INDEX idx_oe_pr_chain_sla      ON oe_pr_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_pr_chain_status   ON oe_pr_chain(chain_status);
+
 CREATE INDEX idx_oe_pr_chain_tier     ON oe_pr_chain(capacity_tier);
+
 CREATE INDEX idx_oe_prj_risk_class      ON oe_project_risks(risk_class);
+
 CREATE INDEX idx_oe_prj_risk_events_r    ON oe_project_risks_events(risk_id);
+
 CREATE INDEX idx_oe_prj_risk_events_type ON oe_project_risks_events(event_type);
+
 CREATE INDEX idx_oe_prj_risk_identified ON oe_project_risks(identified_at);
+
 CREATE INDEX idx_oe_prj_risk_owner      ON oe_project_risks(risk_owner_party_id);
+
 CREATE INDEX idx_oe_prj_risk_project    ON oe_project_risks(project_id);
+
 CREATE INDEX idx_oe_prj_risk_sla        ON oe_project_risks(sla_deadline_at);
+
 CREATE INDEX idx_oe_prj_risk_status     ON oe_project_risks(chain_status);
+
 CREATE INDEX idx_oe_prj_risk_tier       ON oe_project_risks(risk_tier);
+
 CREATE INDEX idx_oe_prob_events_prob ON oe_problem_records_events(problem_id);
+
 CREATE INDEX idx_oe_prob_events_type ON oe_problem_records_events(event_type);
+
 CREATE INDEX idx_oe_prob_logged   ON oe_problem_records(problem_logged_at);
+
 CREATE INDEX idx_oe_prob_owner    ON oe_problem_records(owner_party_id);
+
 CREATE INDEX idx_oe_prob_priority ON oe_problem_records(problem_priority);
+
 CREATE INDEX idx_oe_prob_service  ON oe_problem_records(service_name);
+
 CREATE INDEX idx_oe_prob_sla      ON oe_problem_records(sla_deadline_at);
+
 CREATE INDEX idx_oe_prob_status   ON oe_problem_records(chain_status);
+
 CREATE INDEX idx_oe_proc_chain   ON oe_procurement_rfps(chain_status);
+
 CREATE INDEX idx_oe_proc_events_rfp  ON oe_procurement_chain_events(rfp_id, created_at);
+
 CREATE INDEX idx_oe_proc_events_type ON oe_procurement_chain_events(event_type);
+
 CREATE INDEX idx_oe_proc_part    ON oe_procurement_rfps(participant_id);
+
 CREATE INDEX idx_oe_proc_project ON oe_procurement_rfps(project_id);
+
 CREATE INDEX idx_oe_proc_sla     ON oe_procurement_rfps(sla_deadline_at);
+
 CREATE INDEX idx_oe_proc_tier    ON oe_procurement_rfps(capex_tier);
+
 CREATE INDEX idx_oe_proof_event ON oe_audit_proof_requests(event_id);
+
 CREATE INDEX idx_oe_ptc_breached      ON oe_pretrade_credit_check(sla_breached);
+
 CREATE INDEX idx_oe_ptc_ccm_ref       ON oe_pretrade_credit_check(counterparty_margin_ref);
+
 CREATE INDEX idx_oe_ptc_counterparty  ON oe_pretrade_credit_check(counterparty_id);
+
 CREATE INDEX idx_oe_ptc_events_check ON oe_pretrade_credit_events(check_id);
+
 CREATE INDEX idx_oe_ptc_events_type  ON oe_pretrade_credit_events(event_type);
+
 CREATE INDEX idx_oe_ptc_order_ref     ON oe_pretrade_credit_check(order_ref);
+
 CREATE INDEX idx_oe_ptc_reportable    ON oe_pretrade_credit_check(is_reportable);
+
 CREATE INDEX idx_oe_ptc_sla           ON oe_pretrade_credit_check(sla_deadline_at);
+
 CREATE INDEX idx_oe_ptc_status        ON oe_pretrade_credit_check(chain_status);
+
 CREATE INDEX idx_oe_ptc_submitted     ON oe_pretrade_credit_check(order_submitted_at);
+
 CREATE INDEX idx_oe_ptc_tenant        ON oe_pretrade_credit_check(tenant_id);
+
 CREATE INDEX idx_oe_ptc_tier          ON oe_pretrade_credit_check(current_tier);
+
 CREATE INDEX idx_oe_ptc_trader        ON oe_pretrade_credit_check(trader_party_id);
+
 CREATE INDEX idx_oe_pter_cause     ON oe_ppa_terminations(termination_cause);
+
 CREATE INDEX idx_oe_pter_events_t    ON oe_ppa_terminations_events(termination_id);
+
 CREATE INDEX idx_oe_pter_events_type ON oe_ppa_terminations_events(event_type);
+
 CREATE INDEX idx_oe_pter_offtaker  ON oe_ppa_terminations(offtaker_party_id);
+
 CREATE INDEX idx_oe_pter_ppa       ON oe_ppa_terminations(ppa_code);
+
 CREATE INDEX idx_oe_pter_sla       ON oe_ppa_terminations(sla_deadline_at);
+
 CREATE INDEX idx_oe_pter_status    ON oe_ppa_terminations(chain_status);
+
 CREATE INDEX idx_oe_pter_tier      ON oe_ppa_terminations(termination_tier);
+
 CREATE INDEX idx_oe_pter_triggered ON oe_ppa_terminations(termination_triggered_at);
+
 CREATE INDEX idx_oe_ptw_authority ON oe_permit_to_work(authority_party_id);
+
 CREATE INDEX idx_oe_ptw_class     ON oe_permit_to_work(work_class);
+
 CREATE INDEX idx_oe_ptw_events_p    ON oe_permit_to_work_events(permit_id);
+
 CREATE INDEX idx_oe_ptw_events_type ON oe_permit_to_work_events(event_type);
+
 CREATE INDEX idx_oe_ptw_holder    ON oe_permit_to_work(holder_party_id);
+
 CREATE INDEX idx_oe_ptw_requested ON oe_permit_to_work(permit_requested_at);
+
 CREATE INDEX idx_oe_ptw_sla       ON oe_permit_to_work(sla_deadline_at);
+
 CREATE INDEX idx_oe_ptw_status    ON oe_permit_to_work(chain_status);
+
 CREATE INDEX idx_oe_ptw_tier      ON oe_permit_to_work(hazard_tier);
+
 CREATE INDEX idx_oe_punch_ball       ON oe_punch_list(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_punch_class      ON oe_punch_list(workflow_class);
+
 CREATE INDEX idx_oe_punch_cod        ON oe_punch_list(blocks_commercial_operation);
+
 CREATE INDEX idx_oe_punch_events_p    ON oe_punch_list_events(punch_id);
+
 CREATE INDEX idx_oe_punch_events_type ON oe_punch_list_events(event_type);
+
 CREATE INDEX idx_oe_punch_facility   ON oe_punch_list(facility_id);
+
 CREATE INDEX idx_oe_punch_ident      ON oe_punch_list(identified_at);
+
 CREATE INDEX idx_oe_punch_life       ON oe_punch_list(life_safety_critical);
+
 CREATE INDEX idx_oe_punch_priority   ON oe_punch_list(priority_class);
+
 CREATE INDEX idx_oe_punch_project    ON oe_punch_list(project_id);
+
 CREATE INDEX idx_oe_punch_sla        ON oe_punch_list(sla_deadline_at);
+
 CREATE INDEX idx_oe_punch_status     ON oe_punch_list(chain_status);
+
 CREATE INDEX idx_oe_punch_tier       ON oe_punch_list(current_tier);
+
 CREATE INDEX idx_oe_quotes_rfq ON oe_rfq_quotes(rfq_id, status);
+
 CREATE INDEX idx_oe_rac_events_res  ON oe_reserve_account_chain_events(reserve_account_id);
+
 CREATE INDEX idx_oe_rac_events_type ON oe_reserve_account_chain_events(event_type);
+
 CREATE INDEX idx_oe_rac_lender   ON oe_reserve_account_chain(lender_name);
+
 CREATE INDEX idx_oe_rac_sla      ON oe_reserve_account_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_rac_status   ON oe_reserve_account_chain(chain_status);
+
 CREATE INDEX idx_oe_rac_tier     ON oe_reserve_account_chain(reserve_tier);
+
 CREATE INDEX idx_oe_rac_type     ON oe_reserve_account_chain(reserve_type);
+
 CREATE INDEX idx_oe_ratt_breached      ON oe_reconciliation_attestation(sla_breached);
+
 CREATE INDEX idx_oe_ratt_cadence       ON oe_reconciliation_attestation(cadence);
+
 CREATE INDEX idx_oe_ratt_created       ON oe_reconciliation_attestation(created_at);
+
 CREATE INDEX idx_oe_ratt_events_att  ON oe_reconciliation_attestation_events(attestation_id);
+
 CREATE INDEX idx_oe_ratt_events_type ON oe_reconciliation_attestation_events(event_type);
+
 CREATE INDEX idx_oe_ratt_inbox_ref     ON oe_reconciliation_attestation(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_ratt_parent        ON oe_reconciliation_attestation(parent_attestation_id);
+
 CREATE INDEX idx_oe_ratt_regulator_ref ON oe_reconciliation_attestation(regulator_ref);
+
 CREATE INDEX idx_oe_ratt_status        ON oe_reconciliation_attestation(chain_status);
+
 CREATE INDEX idx_oe_ratt_tier          ON oe_reconciliation_attestation(current_tier);
+
 CREATE INDEX idx_oe_ratt_w118_low      ON oe_reconciliation_attestation(w118_block_height_range_low);
+
 CREATE INDEX idx_oe_ratt_w119_pack     ON oe_reconciliation_attestation(w119_export_pack_ref);
+
 CREATE INDEX idx_oe_rec_events_case ON oe_rec_lifecycle_events(rec_id);
+
 CREATE INDEX idx_oe_rec_events_type ON oe_rec_lifecycle_events(event_type);
+
 CREATE INDEX idx_oe_rec_offtaker ON oe_rec_lifecycle(offtaker_id);
+
 CREATE INDEX idx_oe_rec_sla      ON oe_rec_lifecycle(sla_deadline_at);
+
 CREATE INDEX idx_oe_rec_standard ON oe_rec_lifecycle(certificate_standard);
+
 CREATE INDEX idx_oe_rec_status   ON oe_rec_lifecycle(chain_status);
+
 CREATE INDEX idx_oe_rec_tier     ON oe_rec_lifecycle(severity_tier);
+
 CREATE INDEX idx_oe_rep_audit_link    ON oe_regulator_export_pack(w118_block_height_range_high);
+
 CREATE INDEX idx_oe_rep_breached      ON oe_regulator_export_pack(sla_breached);
+
 CREATE INDEX idx_oe_rep_created       ON oe_regulator_export_pack(created_at);
+
 CREATE INDEX idx_oe_rep_events_pack ON oe_regulator_export_pack_events(pack_id);
+
 CREATE INDEX idx_oe_rep_events_type ON oe_regulator_export_pack_events(event_type);
+
 CREATE INDEX idx_oe_rep_inbox_ref     ON oe_regulator_export_pack(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_rep_parent        ON oe_regulator_export_pack(parent_pack_id);
+
 CREATE INDEX idx_oe_rep_regulator_ref ON oe_regulator_export_pack(regulator_ref);
+
 CREATE INDEX idx_oe_rep_status        ON oe_regulator_export_pack(chain_status);
+
 CREATE INDEX idx_oe_rep_target        ON oe_regulator_export_pack(regulator_target);
+
 CREATE INDEX idx_oe_rep_tier          ON oe_regulator_export_pack(current_tier);
+
 CREATE INDEX idx_oe_rep_w118_low      ON oe_regulator_export_pack(w118_block_height_range_low);
+
 CREATE INDEX idx_oe_report_subs_kind ON oe_report_submissions(report_kind, status);
+
 CREATE INDEX idx_oe_resact_events_act  ON oe_reserve_activations_events(activation_id);
+
 CREATE INDEX idx_oe_resact_events_type ON oe_reserve_activations_events(event_type);
+
 CREATE INDEX idx_oe_resact_issued   ON oe_reserve_activations(activation_issued_at);
+
 CREATE INDEX idx_oe_resact_provider ON oe_reserve_activations(provider_party_id);
+
 CREATE INDEX idx_oe_resact_sla      ON oe_reserve_activations(sla_deadline_at);
+
 CREATE INDEX idx_oe_resact_status   ON oe_reserve_activations(chain_status);
+
 CREATE INDEX idx_oe_resact_tier     ON oe_reserve_activations(reserve_tier);
+
 CREATE INDEX idx_oe_rez_applicant  ON oe_rez_capacity_allocations(applicant_party_id);
+
 CREATE INDEX idx_oe_rez_class      ON oe_rez_capacity_allocations(allocation_class);
+
 CREATE INDEX idx_oe_rez_events_a    ON oe_rez_capacity_events(allocation_id);
+
 CREATE INDEX idx_oe_rez_events_type ON oe_rez_capacity_events(event_type);
+
 CREATE INDEX idx_oe_rez_opened     ON oe_rez_capacity_allocations(announcement_published_at);
+
 CREATE INDEX idx_oe_rez_persona    ON oe_rez_capacity_allocations(applicant_persona);
+
 CREATE INDEX idx_oe_rez_sla        ON oe_rez_capacity_allocations(sla_deadline_at);
+
 CREATE INDEX idx_oe_rez_status     ON oe_rez_capacity_allocations(chain_status);
+
 CREATE INDEX idx_oe_rez_tech       ON oe_rez_capacity_allocations(technology);
+
 CREATE INDEX idx_oe_rez_tier       ON oe_rez_capacity_allocations(capacity_tier);
+
 CREATE INDEX idx_oe_rez_zone       ON oe_rez_capacity_allocations(zone_code);
+
 CREATE INDEX idx_oe_rfqs_buyer ON oe_rfqs(buyer_id, status);
+
 CREATE INDEX idx_oe_rpm_asset_class    ON oe_rul_prediction_ml(asset_class);
+
 CREATE INDEX idx_oe_rpm_breached       ON oe_rul_prediction_ml(sla_breached);
+
 CREATE INDEX idx_oe_rpm_created        ON oe_rul_prediction_ml(created_at);
+
 CREATE INDEX idx_oe_rpm_events_mdl  ON oe_rul_prediction_ml_events(model_id);
+
 CREATE INDEX idx_oe_rpm_events_type ON oe_rul_prediction_ml_events(event_type);
+
 CREATE INDEX idx_oe_rpm_family         ON oe_rul_prediction_ml(model_family);
+
 CREATE INDEX idx_oe_rpm_inbox_ref      ON oe_rul_prediction_ml(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_rpm_regulator_ref  ON oe_rul_prediction_ml(regulator_ref);
+
 CREATE INDEX idx_oe_rpm_status         ON oe_rul_prediction_ml(chain_status);
+
 CREATE INDEX idx_oe_rpm_tier           ON oe_rul_prediction_ml(current_tier);
+
 CREATE INDEX idx_oe_rpm_w118_block     ON oe_rul_prediction_ml(w118_block_ref);
+
 CREATE INDEX idx_oe_rpm_w71_ref        ON oe_rul_prediction_ml(w71_asset_prognostics_ref);
+
 CREATE INDEX idx_oe_rum_metric_ts ON oe_rum_events(metric, recorded_at);
+
 CREATE INDEX idx_oe_rum_path ON oe_rum_events(page_path, recorded_at);
+
 CREATE INDEX idx_oe_sar_status_due ON oe_popia_sar_requests(status, due_at);
+
 CREATE INDEX idx_oe_sars_status ON oe_sars_reports(status, period_label DESC);
+
 CREATE INDEX idx_oe_saved_filters_part_surf ON oe_saved_filters(participant_id, surface);
+
 CREATE INDEX idx_oe_saved_filters_shared
   ON oe_saved_filters(shared, shared_role, surface);
+
 CREATE INDEX idx_oe_scc_breached      ON oe_scada_connector(sla_breached);
+
 CREATE INDEX idx_oe_scc_created       ON oe_scada_connector(created_at);
+
 CREATE INDEX idx_oe_scc_events_cnn  ON oe_scada_connector_events(connector_id);
+
 CREATE INDEX idx_oe_scc_events_type ON oe_scada_connector_events(event_type);
+
 CREATE INDEX idx_oe_scc_inbox_ref     ON oe_scada_connector(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_scc_peer_id       ON oe_scada_connector(peer_id);
+
 CREATE INDEX idx_oe_scc_protocol      ON oe_scada_connector(protocol);
+
 CREATE INDEX idx_oe_scc_regulator_ref ON oe_scada_connector(regulator_ref);
+
 CREATE INDEX idx_oe_scc_status        ON oe_scada_connector(chain_status);
+
 CREATE INDEX idx_oe_scc_tier          ON oe_scada_connector(current_tier);
+
 CREATE INDEX idx_oe_scc_w110_outage   ON oe_scada_connector(w110_transmission_outage_ref);
+
 CREATE INDEX idx_oe_scc_w118_block    ON oe_scada_connector(w118_block_ref);
+
 CREATE INDEX idx_oe_setinst_part ON oe_settlement_instructions(participant_id, status);
+
 CREATE INDEX idx_oe_settlement_fails_counterparty   ON oe_settlement_fails(counterparty_id);
+
 CREATE INDEX idx_oe_settlement_fails_isin           ON oe_settlement_fails(isin);
+
 CREATE INDEX idx_oe_settlement_fails_reportable     ON oe_settlement_fails(is_reportable);
+
 CREATE INDEX idx_oe_settlement_fails_sla_deadline   ON oe_settlement_fails(sla_deadline_at);
+
 CREATE INDEX idx_oe_settlement_fails_status         ON oe_settlement_fails(chain_status);
+
 CREATE INDEX idx_oe_settlement_fails_tier           ON oe_settlement_fails(fail_tier);
+
 CREATE INDEX idx_oe_sf_events_f    ON oe_settlement_fails_events(fail_id);
+
 CREATE INDEX idx_oe_sf_events_type ON oe_settlement_fails_events(event_type);
+
 CREATE INDEX idx_oe_sg_breached      ON oe_stage_gates(sla_breached);
+
 CREATE INDEX idx_oe_sg_created       ON oe_stage_gates(created_at);
+
 CREATE INDEX idx_oe_sg_gate_index    ON oe_stage_gates(gate_index);
+
 CREATE INDEX idx_oe_sg_inbox_ref     ON oe_stage_gates(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_sg_project       ON oe_stage_gates(project_id);
+
 CREATE INDEX idx_oe_sg_regulator_ref ON oe_stage_gates(regulator_ref);
+
 CREATE INDEX idx_oe_sg_status        ON oe_stage_gates(chain_status);
+
 CREATE INDEX idx_oe_sg_tier          ON oe_stage_gates(current_tier);
+
 CREATE INDEX idx_oe_sg_w113_ref      ON oe_stage_gates(w113_evm_ref);
+
 CREATE INDEX idx_oe_sg_w118_block    ON oe_stage_gates(w118_block_ref);
+
 CREATE INDEX idx_oe_sg_w19_ref       ON oe_stage_gates(w19_procurement_ref);
+
 CREATE INDEX idx_oe_sg_w20_ref       ON oe_stage_gates(w20_cod_ref);
+
 CREATE INDEX idx_oe_sg_w21_ref       ON oe_stage_gates(w21_drawdown_ref);
+
 CREATE INDEX idx_oe_sge_created   ON oe_stage_gate_events(created_at);
+
 CREATE INDEX idx_oe_sge_evt_type  ON oe_stage_gate_events(event_type);
+
 CREATE INDEX idx_oe_sge_gate_id   ON oe_stage_gate_events(gate_id);
+
 CREATE INDEX idx_oe_sig_doc ON oe_signatures(document_kind, document_ref);
+
 CREATE INDEX idx_oe_sig_signer ON oe_signatures(signer_id);
+
 CREATE INDEX idx_oe_sll_borrower  ON oe_sll_kpi_compliance(borrower_party_id);
+
 CREATE INDEX idx_oe_sll_class     ON oe_sll_kpi_compliance(materiality_class);
+
 CREATE INDEX idx_oe_sll_events_c    ON oe_sll_kpi_events(compliance_id);
+
 CREATE INDEX idx_oe_sll_events_type ON oe_sll_kpi_events(event_type);
+
 CREATE INDEX idx_oe_sll_facility  ON oe_sll_kpi_compliance(facility_id);
+
 CREATE INDEX idx_oe_sll_kpi       ON oe_sll_kpi_compliance(kpi_code);
+
 CREATE INDEX idx_oe_sll_opened    ON oe_sll_kpi_compliance(kpi_period_open_at);
+
 CREATE INDEX idx_oe_sll_persona   ON oe_sll_kpi_compliance(borrower_persona);
+
 CREATE INDEX idx_oe_sll_sla       ON oe_sll_kpi_compliance(sla_deadline_at);
+
 CREATE INDEX idx_oe_sll_status    ON oe_sll_kpi_compliance(chain_status);
+
 CREATE INDEX idx_oe_sll_tier      ON oe_sll_kpi_compliance(compliance_tier);
+
 CREATE INDEX idx_oe_soec_breached      ON oe_sap_oracle_erp_connector(sla_breached);
+
 CREATE INDEX idx_oe_soec_created       ON oe_sap_oracle_erp_connector(created_at);
+
 CREATE INDEX idx_oe_soec_erp_system    ON oe_sap_oracle_erp_connector(erp_system);
+
 CREATE INDEX idx_oe_soec_events_cnn  ON oe_sap_oracle_erp_connector_events(connector_id);
+
 CREATE INDEX idx_oe_soec_events_type ON oe_sap_oracle_erp_connector_events(event_type);
+
 CREATE INDEX idx_oe_soec_inbox_ref     ON oe_sap_oracle_erp_connector(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_soec_peer_id       ON oe_sap_oracle_erp_connector(peer_id);
+
 CREATE INDEX idx_oe_soec_regulator_ref ON oe_sap_oracle_erp_connector(regulator_ref);
+
 CREATE INDEX idx_oe_soec_status        ON oe_sap_oracle_erp_connector(chain_status);
+
 CREATE INDEX idx_oe_soec_tier          ON oe_sap_oracle_erp_connector(current_tier);
+
 CREATE INDEX idx_oe_soec_w118_block    ON oe_sap_oracle_erp_connector(w118_block_ref);
+
 CREATE INDEX idx_oe_soec_w124_ssc      ON oe_sap_oracle_erp_connector(w124_settlement_connector_ref);
+
 CREATE INDEX idx_oe_soil_ball      ON oe_soiling_audit(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_soil_dust      ON oe_soiling_audit(post_dust_storm_event);
+
 CREATE INDEX idx_oe_soil_events_a    ON oe_soiling_audit_events(audit_id);
+
 CREATE INDEX idx_oe_soil_events_type ON oe_soiling_audit_events(event_type);
+
 CREATE INDEX idx_oe_soil_facility  ON oe_soiling_audit(facility_id);
+
 CREATE INDEX idx_oe_soil_neighbour ON oe_soiling_audit(neighbour_complaint_filed);
+
 CREATE INDEX idx_oe_soil_owner     ON oe_soiling_audit(plant_owner_party_id);
+
 CREATE INDEX idx_oe_soil_rain      ON oe_soiling_audit(rainy_season_window_strict);
+
 CREATE INDEX idx_oe_soil_sla       ON oe_soiling_audit(sla_deadline_at);
+
 CREATE INDEX idx_oe_soil_status    ON oe_soiling_audit(chain_status);
+
 CREATE INDEX idx_oe_soil_tier      ON oe_soiling_audit(current_tier);
+
 CREATE INDEX idx_oe_soil_water     ON oe_soiling_audit(water_restriction_active);
+
 CREATE INDEX idx_oe_spf_borrower ON oe_security_perfection(borrower_id);
+
 CREATE INDEX idx_oe_spf_events_case ON oe_security_perfection_events(perfection_id);
+
 CREATE INDEX idx_oe_spf_events_type ON oe_security_perfection_events(event_type);
+
 CREATE INDEX idx_oe_spf_sla      ON oe_security_perfection(sla_deadline_at);
+
 CREATE INDEX idx_oe_spf_status   ON oe_security_perfection(chain_status);
+
 CREATE INDEX idx_oe_spf_tier     ON oe_security_perfection(severity_tier);
+
 CREATE INDEX idx_oe_spf_type     ON oe_security_perfection(security_type);
+
 CREATE INDEX idx_oe_spp_criticality ON oe_spare_parts_provisioning(criticality);
+
 CREATE INDEX idx_oe_spp_demand      ON oe_spare_parts_provisioning(demand_identified_at);
+
 CREATE INDEX idx_oe_spp_events_p    ON oe_spare_parts_provisioning_events(provisioning_id);
+
 CREATE INDEX idx_oe_spp_events_type ON oe_spare_parts_provisioning_events(event_type);
+
 CREATE INDEX idx_oe_spp_part        ON oe_spare_parts_provisioning(part_number);
+
 CREATE INDEX idx_oe_spp_sla         ON oe_spare_parts_provisioning(sla_deadline_at);
+
 CREATE INDEX idx_oe_spp_source      ON oe_spare_parts_provisioning(demand_source);
+
 CREATE INDEX idx_oe_spp_status      ON oe_spare_parts_provisioning(chain_status);
+
 CREATE INDEX idx_oe_spp_tier        ON oe_spare_parts_provisioning(provisioning_tier);
+
 CREATE INDEX idx_oe_sr_breached   ON oe_service_request_chain(sla_breached);
+
 CREATE INDEX idx_oe_sr_cab        ON oe_service_request_chain(cab_change_id);
+
 CREATE INDEX idx_oe_sr_category   ON oe_service_request_chain(catalog_category);
+
 CREATE INDEX idx_oe_sr_contract   ON oe_service_request_chain(entitlement_contract_id);
+
 CREATE INDEX idx_oe_sr_events_req  ON oe_service_request_chain_events(request_id);
+
 CREATE INDEX idx_oe_sr_events_type ON oe_service_request_chain_events(event_type);
+
 CREATE INDEX idx_oe_sr_for        ON oe_service_request_chain(requested_for_party_id);
+
 CREATE INDEX idx_oe_sr_reg        ON oe_service_request_chain(regulator_relevant);
+
 CREATE INDEX idx_oe_sr_requester  ON oe_service_request_chain(requested_by_actor_id);
+
 CREATE INDEX idx_oe_sr_sla        ON oe_service_request_chain(sla_deadline_at);
+
 CREATE INDEX idx_oe_sr_status     ON oe_service_request_chain(chain_status);
+
 CREATE INDEX idx_oe_sr_tenant     ON oe_service_request_chain(tenant_id);
+
 CREATE INDEX idx_oe_sr_tier       ON oe_service_request_chain(current_tier);
+
 CREATE INDEX idx_oe_srm_cve      ON oe_security_remediations(cve_id);
+
 CREATE INDEX idx_oe_srm_events_rem  ON oe_security_remediations_events(remediation_id);
+
 CREATE INDEX idx_oe_srm_events_type ON oe_security_remediations_events(event_type);
+
 CREATE INDEX idx_oe_srm_received ON oe_security_remediations(advisory_received_at);
+
 CREATE INDEX idx_oe_srm_sla      ON oe_security_remediations(sla_deadline_at);
+
 CREATE INDEX idx_oe_srm_status   ON oe_security_remediations(chain_status);
+
 CREATE INDEX idx_oe_srm_tier     ON oe_security_remediations(severity_tier);
+
 CREATE INDEX idx_oe_ssc_breached      ON oe_strate_swift_connector(sla_breached);
+
 CREATE INDEX idx_oe_ssc_created       ON oe_strate_swift_connector(created_at);
+
 CREATE INDEX idx_oe_ssc_events_cnn  ON oe_strate_swift_connector_events(connector_id);
+
 CREATE INDEX idx_oe_ssc_events_type ON oe_strate_swift_connector_events(event_type);
+
 CREATE INDEX idx_oe_ssc_inbox_ref     ON oe_strate_swift_connector(regulator_inbox_ref);
+
 CREATE INDEX idx_oe_ssc_peer_id       ON oe_strate_swift_connector(peer_id);
+
 CREATE INDEX idx_oe_ssc_protocol      ON oe_strate_swift_connector(protocol);
+
 CREATE INDEX idx_oe_ssc_regulator_ref ON oe_strate_swift_connector(regulator_ref);
+
 CREATE INDEX idx_oe_ssc_status        ON oe_strate_swift_connector(chain_status);
+
 CREATE INDEX idx_oe_ssc_tier          ON oe_strate_swift_connector(current_tier);
+
 CREATE INDEX idx_oe_ssc_w118_block    ON oe_strate_swift_connector(w118_block_ref);
+
 CREATE INDEX idx_oe_ssc_w120_ratt     ON oe_strate_swift_connector(w120_reconciliation_attestation_ref);
+
 CREATE INDEX idx_oe_sseg_applicant ON oe_sseg_registrations(applicant_party_id);
+
 CREATE INDEX idx_oe_sseg_events_reg  ON oe_sseg_registrations_events(registration_id);
+
 CREATE INDEX idx_oe_sseg_events_type ON oe_sseg_registrations_events(event_type);
+
 CREATE INDEX idx_oe_sseg_purpose   ON oe_sseg_registrations(generation_purpose);
+
 CREATE INDEX idx_oe_sseg_received  ON oe_sseg_registrations(registration_received_at);
+
 CREATE INDEX idx_oe_sseg_sla       ON oe_sseg_registrations(sla_deadline_at);
+
 CREATE INDEX idx_oe_sseg_status    ON oe_sseg_registrations(chain_status);
+
 CREATE INDEX idx_oe_sseg_tier      ON oe_sseg_registrations(capacity_tier);
+
 CREATE INDEX idx_oe_status_metric_ts ON oe_status_metrics(metric, ts);
+
 CREATE INDEX idx_oe_status_subs_chan ON oe_status_subscribers(channel, unsubscribed_at);
+
 CREATE INDEX idx_oe_stepup_part_op ON oe_step_up_sessions(participant_id, op_type);
+
 CREATE INDEX idx_oe_submittal_ball       ON oe_submittal_rfi(current_ball_in_court_party);
+
 CREATE INDEX idx_oe_submittal_class      ON oe_submittal_rfi(workflow_class);
+
 CREATE INDEX idx_oe_submittal_drafted    ON oe_submittal_rfi(drafted_at);
+
 CREATE INDEX idx_oe_submittal_events_c    ON oe_submittal_rfi_events(submittal_rfi_id);
+
 CREATE INDEX idx_oe_submittal_events_type ON oe_submittal_rfi_events(event_type);
+
 CREATE INDEX idx_oe_submittal_facility   ON oe_submittal_rfi(facility_id);
+
 CREATE INDEX idx_oe_submittal_parent     ON oe_submittal_rfi(parent_submittal_id);
+
 CREATE INDEX idx_oe_submittal_priority   ON oe_submittal_rfi(priority_class);
+
 CREATE INDEX idx_oe_submittal_project    ON oe_submittal_rfi(project_id);
+
 CREATE INDEX idx_oe_submittal_resp_due   ON oe_submittal_rfi(response_due_at);
+
 CREATE INDEX idx_oe_submittal_section    ON oe_submittal_rfi(csi_section_code);
+
 CREATE INDEX idx_oe_submittal_sla        ON oe_submittal_rfi(sla_deadline_at);
+
 CREATE INDEX idx_oe_submittal_status     ON oe_submittal_rfi(chain_status);
+
 CREATE INDEX idx_oe_submittal_tier       ON oe_submittal_rfi(current_tier);
+
 CREATE INDEX idx_oe_surv_status ON oe_surveillance_alerts(status, detected_at);
+
 CREATE INDEX idx_oe_svc_customer ON oe_service_contracts(customer_party_id);
+
 CREATE INDEX idx_oe_svc_events_contract ON oe_service_contract_events(contract_id);
+
 CREATE INDEX idx_oe_svc_events_type     ON oe_service_contract_events(event_type);
+
 CREATE INDEX idx_oe_svc_site     ON oe_service_contracts(site_id);
+
 CREATE INDEX idx_oe_svc_sla      ON oe_service_contracts(sla_deadline_at);
+
 CREATE INDEX idx_oe_svc_status   ON oe_service_contracts(chain_status);
+
 CREATE INDEX idx_oe_svc_tier     ON oe_service_contracts(coverage_tier);
+
 CREATE INDEX idx_oe_svc_type     ON oe_service_contracts(contract_type);
+
 CREATE INDEX idx_oe_tdet_applicant ON oe_tariff_determinations(applicant_party_id);
+
 CREATE INDEX idx_oe_tdet_class     ON oe_tariff_determinations(determination_class);
+
 CREATE INDEX idx_oe_tdet_entity    ON oe_tariff_determinations(tariff_entity);
+
 CREATE INDEX idx_oe_tdet_events_det  ON oe_tariff_determinations_events(determination_id);
+
 CREATE INDEX idx_oe_tdet_events_type ON oe_tariff_determinations_events(event_type);
+
 CREATE INDEX idx_oe_tdet_received  ON oe_tariff_determinations(application_received_at);
+
 CREATE INDEX idx_oe_tdet_segment   ON oe_tariff_determinations(tariff_segment);
+
 CREATE INDEX idx_oe_tdet_sla       ON oe_tariff_determinations(sla_deadline_at);
+
 CREATE INDEX idx_oe_tdet_status    ON oe_tariff_determinations(chain_status);
+
 CREATE INDEX idx_oe_tenant_usage_day ON oe_tenant_usage(day);
+
 CREATE INDEX idx_oe_tidx_due      ON oe_tariff_indexation(indexation_due_at);
+
 CREATE INDEX idx_oe_tidx_events_idx  ON oe_tariff_indexation_events(indexation_id);
+
 CREATE INDEX idx_oe_tidx_events_type ON oe_tariff_indexation_events(event_type);
+
 CREATE INDEX idx_oe_tidx_offtaker ON oe_tariff_indexation(offtaker_party_id);
+
 CREATE INDEX idx_oe_tidx_seller   ON oe_tariff_indexation(seller_party_id);
+
 CREATE INDEX idx_oe_tidx_sla      ON oe_tariff_indexation(sla_deadline_at);
+
 CREATE INDEX idx_oe_tidx_status   ON oe_tariff_indexation(chain_status);
+
 CREATE INDEX idx_oe_tidx_tier     ON oe_tariff_indexation(contract_tier);
+
 CREATE INDEX idx_oe_trpt_class    ON oe_trade_reports(report_class);
+
 CREATE INDEX idx_oe_trpt_desk     ON oe_trade_reports(desk_party_id);
+
 CREATE INDEX idx_oe_trpt_due      ON oe_trade_reports(report_due_at);
+
 CREATE INDEX idx_oe_trpt_events_rep  ON oe_trade_reports_events(report_id);
+
 CREATE INDEX idx_oe_trpt_events_type ON oe_trade_reports_events(event_type);
+
 CREATE INDEX idx_oe_trpt_product  ON oe_trade_reports(product);
+
 CREATE INDEX idx_oe_trpt_sla      ON oe_trade_reports(sla_deadline_at);
+
 CREATE INDEX idx_oe_trpt_status   ON oe_trade_reports(chain_status);
+
 CREATE INDEX idx_oe_trpt_uti      ON oe_trade_reports(uti);
+
 CREATE INDEX idx_oe_trusted_part ON oe_trusted_devices(participant_id, revoked);
+
 CREATE INDEX idx_oe_txo_asset         ON oe_transmission_outage(asset_id);
+
 CREATE INDEX idx_oe_txo_breached      ON oe_transmission_outage(sla_breached);
+
 CREATE INDEX idx_oe_txo_corridor      ON oe_transmission_outage(corridor_name);
+
 CREATE INDEX idx_oe_txo_events_oid    ON oe_transmission_outage_events(outage_id);
+
 CREATE INDEX idx_oe_txo_events_type   ON oe_transmission_outage_events(event_type);
+
 CREATE INDEX idx_oe_txo_reportable    ON oe_transmission_outage(is_reportable);
+
 CREATE INDEX idx_oe_txo_sla           ON oe_transmission_outage(sla_deadline_at);
+
 CREATE INDEX idx_oe_txo_status        ON oe_transmission_outage(chain_status);
+
 CREATE INDEX idx_oe_txo_tenant        ON oe_transmission_outage(tenant_id);
+
 CREATE INDEX idx_oe_txo_tier          ON oe_transmission_outage(current_tier);
+
 CREATE INDEX idx_oe_txo_voltage       ON oe_transmission_outage(transmission_voltage_kv);
+
 CREATE INDEX idx_oe_txo_window        ON oe_transmission_outage(scheduled_start_at);
+
 CREATE INDEX idx_oe_uptime_comp ON oe_status_uptime_daily(component, day);
+
 CREATE INDEX idx_oe_uri_cert    ON oe_serial_registry_uri(certificate_id);
+
 CREATE INDEX idx_oe_uri_serial  ON oe_serial_registry_uri(serial_range);
+
 CREATE INDEX idx_oe_vendor_escalation_class     ON oe_vendor_escalation(defect_class);
+
 CREATE INDEX idx_oe_vendor_escalation_events_case ON oe_vendor_escalation_events(escalation_id);
+
 CREATE INDEX idx_oe_vendor_escalation_events_type ON oe_vendor_escalation_events(event_type);
+
 CREATE INDEX idx_oe_vendor_escalation_filed     ON oe_vendor_escalation(filed_at);
+
 CREATE INDEX idx_oe_vendor_escalation_operator  ON oe_vendor_escalation(operator_party_id);
+
 CREATE INDEX idx_oe_vendor_escalation_sla       ON oe_vendor_escalation(sla_deadline_at);
+
 CREATE INDEX idx_oe_vendor_escalation_status    ON oe_vendor_escalation(chain_status);
+
 CREATE INDEX idx_oe_vendor_escalation_vendor    ON oe_vendor_escalation(vendor_party_id);
+
 CREATE INDEX idx_oe_verif_mon ON oe_carbon_verifications(monitoring_id);
+
 CREATE INDEX idx_oe_vo_project ON oe_variation_orders(project_id, status);
+
 CREATE INDEX idx_oe_vo_status  ON oe_variation_orders(status, raised_at);
+
 CREATE INDEX idx_oe_watch_events_wl ON oe_lender_watchlist_events(watchlist_id, occurred_at);
+
 CREATE INDEX idx_oe_watchlist_part ON oe_lender_watchlist(participant_id, cleared_at);
+
 CREATE INDEX idx_oe_webauthn_part ON oe_webauthn_credentials(participant_id);
+
 CREATE INDEX idx_oe_webhook_deliveries_sub ON oe_webhook_deliveries(subscription_id, created_at);
+
 CREATE INDEX idx_oe_webhook_subs_part ON oe_webhook_subscriptions(participant_id, enabled);
+
 CREATE INDEX idx_oe_wheel_gen ON oe_wheeling_agreements(generator_id, status);
+
 CREATE INDEX idx_oe_wheel_off ON oe_wheeling_agreements(offtaker_id, status);
+
 CREATE INDEX idx_oe_wrec_claimant ON oe_warranty_recoveries(claimant_party_id);
+
 CREATE INDEX idx_oe_wrec_defect   ON oe_warranty_recoveries(defect_class);
+
 CREATE INDEX idx_oe_wrec_drafted  ON oe_warranty_recoveries(claim_drafted_at);
+
 CREATE INDEX idx_oe_wrec_events_r    ON oe_warranty_recoveries_events(recovery_id);
+
 CREATE INDEX idx_oe_wrec_events_type ON oe_warranty_recoveries_events(event_type);
+
 CREATE INDEX idx_oe_wrec_oem      ON oe_warranty_recoveries(oem_party_id);
+
 CREATE INDEX idx_oe_wrec_sla      ON oe_warranty_recoveries(sla_deadline_at);
+
 CREATE INDEX idx_oe_wrec_status   ON oe_warranty_recoveries(chain_status);
+
 CREATE INDEX idx_oe_wrec_tier     ON oe_warranty_recoveries(recovery_tier);
+
 CREATE INDEX idx_offereng_entity   ON oe_offer_engagements (entity_type, entity_id);
+
 CREATE INDEX idx_offereng_initiator ON oe_offer_engagements (initiator_id, status);
+
 CREATE INDEX idx_offereng_offeror  ON oe_offer_engagements (offeror_id, status);
+
 CREATE INDEX idx_offtaker_dv_obligation
   ON oe_offtaker_delivery_verification(obligation_id);
+
 CREATE INDEX idx_offtaker_dv_status
   ON oe_offtaker_delivery_verification(status);
+
 CREATE INDEX idx_offtaker_obl_participant
   ON oe_offtaker_ppa_obligations(participant_id);
+
 CREATE INDEX idx_offtaker_obl_ppa_month
   ON oe_offtaker_ppa_obligations(ppa_id, period_month);
+
 CREATE INDEX idx_offtaker_obl_status
   ON oe_offtaker_ppa_obligations(status);
+
 CREATE INDEX idx_ofs_day ON ona_forecast_summary(forecast_day DESC);
+
 CREATE INDEX idx_om_alerts_created ON om_alerts(created_at);
+
 CREATE INDEX idx_om_conn_enabled ON om_connections(enabled, last_poll_at);
+
 CREATE INDEX idx_om_connector_runs_site_started ON om_connector_runs(site_id, started_at DESC);
+
 CREATE INDEX idx_om_connector_runs_status      ON om_connector_runs(status);
+
 CREATE INDEX idx_om_devices_parent ON om_devices(parent_device_id);
+
 CREATE INDEX idx_om_devices_site   ON om_devices(site_id);
+
 CREATE INDEX idx_om_devices_status ON om_devices(status);
+
 CREATE INDEX idx_om_faults_detected    ON om_faults(detected_at);
+
 CREATE INDEX idx_om_faults_severity    ON om_faults(severity);
+
 CREATE INDEX idx_om_faults_site_status ON om_faults(site_id, status);
+
 CREATE INDEX idx_om_forecast_site_ts ON om_forecasts(site_id, forecast_for_ts);
+
 CREATE INDEX idx_om_ingest_keys_hash ON om_ingest_keys(token_hash);
+
 CREATE INDEX idx_om_ingest_keys_site ON om_ingest_keys(site_id);
+
 CREATE INDEX idx_om_maint_due ON om_maintenance(next_due_at, status);
+
 CREATE INDEX idx_om_maint_site ON om_maintenance(site_id);
+
 CREATE INDEX idx_om_part_mov_part ON om_part_movements(part_id, occurred_at);
+
 CREATE INDEX idx_om_portal_token_aud ON om_portal_tokens(audience, expires_at);
+
 CREATE INDEX idx_om_pred_site_status ON om_predictions(site_id, status);
+
 CREATE INDEX idx_om_sites_commissioning ON om_sites(commissioning_status);
+
 CREATE INDEX idx_om_sites_participant ON om_sites(participant_id);
+
 CREATE INDEX idx_om_sites_project ON om_sites(project_id);
+
 CREATE INDEX idx_om_sites_status      ON om_sites(status);
+
 CREATE INDEX idx_om_techs_status ON om_technicians(status, active);
+
 CREATE INDEX idx_om_telemetry_daily_site_day ON om_telemetry_daily(site_id, day);
+
 CREATE INDEX idx_om_telemetry_device_ts ON om_telemetry(device_id, ts);
+
 CREATE INDEX idx_om_telemetry_site_ts   ON om_telemetry(site_id, ts);
+
 CREATE INDEX idx_om_wo_assigned ON om_work_orders(assigned_to);
+
 CREATE INDEX idx_om_wo_chain_events_type ON om_wo_chain_events(event_type);
+
 CREATE INDEX idx_om_wo_chain_events_wo   ON om_wo_chain_events(wo_id, created_at);
+
 CREATE INDEX idx_om_wo_chain_sla    ON om_work_orders(sla_deadline);
+
 CREATE INDEX idx_om_wo_chain_status ON om_work_orders(chain_status);
+
 CREATE INDEX idx_om_wo_events_wo ON om_wo_events(wo_id, occurred_at);
+
 CREATE INDEX idx_om_wo_site     ON om_work_orders(site_id);
+
 CREATE INDEX idx_om_wo_sla      ON om_work_orders(sla_deadline);
+
 CREATE INDEX idx_om_wo_status   ON om_work_orders(status);
+
 CREATE INDEX idx_ona_faults_site ON ona_faults(site_id);
+
 CREATE INDEX idx_ona_nominations_site ON ona_nominations(site_id);
+
 CREATE INDEX idx_ona_sites_project ON ona_sites(project_id);
+
 CREATE UNIQUE INDEX idx_oprov_once ON oe_onboarding_provisioning_log(participant_id, kind);
+
 CREATE INDEX idx_oprov_participant ON oe_onboarding_provisioning_log(participant_id);
+
 CREATE INDEX idx_origin_part ON loan_originations(participant_id, stage);
+
 CREATE INDEX idx_osg_participant ON offtaker_site_groups(participant_id);
+
 CREATE INDEX idx_osgm_group ON offtaker_site_group_members(group_id);
+
 CREATE INDEX idx_participants_role   ON participants(role);
+
 CREATE INDEX idx_participants_status ON participants(status);
+
 CREATE INDEX idx_pc_participant
   ON oe_public_consultations(participant_id);
+
 CREATE INDEX idx_pc_status
   ON oe_public_consultations(chain_status);
+
 CREATE INDEX idx_pc_type
   ON oe_public_consultations(consultation_type);
+
 CREATE INDEX idx_pcaf_ins_part_year ON pcaf_insurance_emissions(participant_id, reporting_year, line_of_business);
+
 CREATE INDEX idx_pcaf_part_year ON pcaf_financed_emissions(participant_id, reporting_year, asset_class);
+
 CREATE INDEX idx_permit_to_work_events_thread ON oe_permit_to_work_events(permit_id, created_at);
+
 CREATE INDEX idx_permit_to_work_horizon ON oe_permit_to_work(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_permits_part ON ipp_permits(participant_id, outcome);
+
 CREATE INDEX idx_pipe_part_stage ON lender_deal_pipeline(participant_id, stage);
+
 CREATE INDEX idx_pipeline_deals_client ON pipeline_deals(client_participant_id);
+
 CREATE INDEX idx_planned_outage_events_thread ON oe_planned_outage_events(outage_id, created_at);
+
 CREATE INDEX idx_planned_outages_horizon ON oe_planned_outages(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_plat_ai_logs_domain ON platform_ai_logs(participant_id, domain, created_at);
+
 CREATE INDEX idx_plat_anom_part_dom ON platform_anomaly_flags(participant_id, domain, status);
+
 CREATE INDEX idx_plat_scen_runs ON platform_scenario_runs(participant_id, domain, computed_at);
+
 CREATE INDEX idx_platform_events_chain
   ON oe_platform_events(chain_key, occurred_at);
+
 CREATE INDEX idx_platform_events_entity
   ON oe_platform_events(entity_type, entity_id);
+
 CREATE INDEX idx_platform_events_event
   ON oe_platform_events(event, occurred_at);
+
 CREATE INDEX idx_platform_modules_participant ON platform_modules(participant_id);
+
 CREATE INDEX idx_platform_revenue_event
   ON oe_platform_revenue(trigger_event, recorded_at);
+
 CREATE INDEX idx_platform_revenue_participant
   ON oe_platform_revenue(participant_id, status);
+
 CREATE INDEX idx_platform_revenue_period
   ON oe_platform_revenue(billing_period, status);
+
 CREATE INDEX idx_pm_compliance_events_thread ON oe_pm_compliance_events(pm_id, created_at);
+
 CREATE INDEX idx_pm_compliance_horizon ON oe_pm_compliance(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_pnl_part_date ON trader_pnl_attribution(participant_id, as_of_date);
+
 CREATE INDEX idx_poa_cpa_inclusions_events_thread ON oe_poa_cpa_inclusions_events(inclusion_id, created_at);
+
 CREATE INDEX idx_poa_cpa_inclusions_horizon ON oe_poa_cpa_inclusions(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_popia_breach_discovered ON popia_breaches(discovered_at);
+
 CREATE INDEX idx_popia_breach_severity ON popia_breaches(severity);
+
 CREATE INDEX idx_popia_breach_status ON popia_breaches(status);
+
 CREATE INDEX idx_popia_correction_participant ON popia_corrections(participant_id);
+
 CREATE INDEX idx_popia_correction_status ON popia_corrections(status);
+
 CREATE INDEX idx_popia_dsar_status ON popia_dsar_requests(status);
+
 CREATE INDEX idx_popia_erasure_status ON popia_erasure_requests(status);
+
 CREATE INDEX idx_popia_objection_participant ON popia_objections(participant_id);
+
 CREATE INDEX idx_popia_objection_status ON popia_objections(status);
+
 CREATE INDEX idx_popia_pii_actor ON popia_pii_access_log(actor_id);
+
 CREATE INDEX idx_popia_pii_created ON popia_pii_access_log(created_at);
+
 CREATE INDEX idx_popia_pii_subject ON popia_pii_access_log(subject_id);
+
 CREATE INDEX idx_popia_requests_participant ON popia_data_requests(participant_id);
+
 CREATE INDEX idx_poslimit_cases_horizon ON oe_poslimit_cases(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_poslimit_events_thread ON oe_poslimit_events(poslimit_id, created_at);
+
 CREATE INDEX idx_ppa_contract_chain_events_thread ON oe_ppa_contract_chain_events(ppa_id, created_at);
+
 CREATE INDEX idx_ppa_contract_chain_horizon ON oe_ppa_contract_chain(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ppa_market ON ppa_marketplace_listings(status, technology, capacity_mw);
+
 CREATE INDEX idx_ppa_payment_securities_events_thread ON oe_ppa_payment_securities_events(security_id, created_at);
+
 CREATE INDEX idx_ppa_payment_securities_horizon ON oe_ppa_payment_securities(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_ppa_terminations_events_thread ON oe_ppa_terminations_events(termination_id, created_at);
+
 CREATE INDEX idx_ppa_terminations_horizon ON oe_ppa_terminations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_pr_chain_events_thread ON oe_pr_chain_events(case_id, created_at);
+
 CREATE INDEX idx_pr_chain_horizon ON oe_pr_chain(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_problem_records_events_thread ON oe_problem_records_events(problem_id, created_at);
+
 CREATE INDEX idx_problem_records_horizon ON oe_problem_records(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_procurement_bids_rfp ON procurement_bids(rfp_id);
+
 CREATE INDEX idx_procurement_chain_events_thread ON oe_procurement_chain_events(rfp_id, created_at);
+
 CREATE INDEX idx_procurement_rfps_horizon ON oe_procurement_rfps(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_project_cp_readiness_project ON project_cp_readiness(project_id);
+
 CREATE INDEX idx_project_disbursements_project ON project_disbursements(project_id);
+
 CREATE INDEX idx_project_milestones_project ON project_milestones(project_id);
+
 CREATE INDEX idx_prt_device          ON oe_protection_relay_tests(device_sn);
+
 CREATE INDEX idx_prt_expires ON password_reset_tokens(expires_at);
+
 CREATE INDEX idx_prt_participant ON password_reset_tokens(participant_id);
+
 CREATE INDEX idx_prt_protection_class ON oe_protection_relay_tests(protection_class);
+
 CREATE INDEX idx_prt_site            ON oe_protection_relay_tests(site_id);
+
 CREATE INDEX idx_prt_sla             ON oe_protection_relay_tests(sla_deadline, sla_breached);
+
 CREATE INDEX idx_prt_status          ON oe_protection_relay_tests(chain_status);
+
 CREATE INDEX idx_punch_list_events_thread ON oe_punch_list_events(punch_id, created_at);
+
 CREATE INDEX idx_punch_list_horizon ON oe_punch_list(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_rbac_inv_by     ON rbac_invitations(invited_by);
+
 CREATE INDEX idx_rbac_inv_email  ON rbac_invitations(email);
+
 CREATE INDEX idx_rbac_inv_token  ON rbac_invitations(token);
+
 CREATE INDEX idx_rbac_reg_role   ON rbac_registrations(requested_role);
+
 CREATE INDEX idx_rbac_reg_status ON rbac_registrations(status);
+
 CREATE INDEX idx_rec_devices_participant
   ON oe_rec_devices(participant_id, chain_status);
+
 CREATE INDEX idx_rec_holdings_participant
   ON oe_rec_holdings(participant_id, status);
+
 CREATE INDEX idx_rec_issuance_participant
   ON oe_rec_issuance_requests(participant_id, chain_status);
+
 CREATE INDEX idx_rec_lifecycle_events_thread ON oe_rec_lifecycle_events(rec_id, created_at);
+
 CREATE INDEX idx_rec_lifecycle_horizon ON oe_rec_lifecycle(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_rec_listing_hour ON rec_hourly_listings(grid_zone, hour_utc, status);
+
 CREATE INDEX idx_rec_owner ON rec_certificates(owner_participant_id);
+
 CREATE INDEX idx_rec_ret_cert ON rec_retirements(rec_certificate_id);
+
 CREATE INDEX idx_rec_ret_participant ON rec_retirements(retiring_participant_id);
+
 CREATE INDEX idx_rec_status ON rec_certificates(status);
+
 CREATE INDEX idx_rec_trades_buyer ON rec_hourly_trades(buyer_id, hour_utc);
+
 CREATE INDEX idx_reg_app ON reg_licence_applications(outcome, filed_at);
+
 CREATE INDEX idx_reg_assign_assignee ON regulator_case_assignments(assignee_id);
+
 CREATE INDEX idx_reg_assign_subject ON regulator_case_assignments(subject_type, subject_id);
+
 CREATE INDEX idx_reg_det_category ON regulator_determinations(category, publication_date DESC);
+
 CREATE INDEX idx_reg_enf_events_case
   ON regulator_enforcement_case_events (case_id, occurred_at);
+
 CREATE INDEX idx_reg_enf_evt_case ON regulator_enforcement_events(case_id, event_date DESC);
+
 CREATE INDEX idx_reg_enf_respondent ON regulator_enforcement_cases(respondent_participant_id);
+
 CREATE INDEX idx_reg_enf_severity ON regulator_enforcement_cases(severity);
+
 CREATE INDEX idx_reg_enf_status ON regulator_enforcement_cases(status);
+
 CREATE INDEX idx_reg_filings_body ON regulatory_filings(body_code, reporting_period);
+
 CREATE INDEX idx_reg_filings_filed_status
   ON regulator_filings(filed_by, status, created_at DESC);
+
 CREATE INDEX idx_reg_filings_part ON regulatory_filings(participant_id, status, reporting_period);
+
 CREATE INDEX idx_reg_lic_cond_licence ON regulator_licence_conditions(licence_id);
+
 CREATE INDEX idx_reg_lic_cond_status ON regulator_licence_conditions(compliance_status);
+
 CREATE INDEX idx_reg_lic_evt_licence ON regulator_licence_events(licence_id, event_date DESC);
+
 CREATE INDEX idx_reg_lic_licensee ON regulator_licences(licensee_participant_id);
+
 CREATE INDEX idx_reg_lic_status ON regulator_licences(status, expiry_date);
+
 CREATE INDEX idx_reg_lic_type ON regulator_licences(licence_type);
+
 CREATE INDEX idx_reg_licence_action_app
   ON regulator_licence_action_workflow (application_id);
+
 CREATE INDEX idx_reg_licence_action_licence
   ON regulator_licence_action_workflow (licence_id, status);
+
 CREATE INDEX idx_reg_surv_participant ON regulator_surveillance_alerts(participant_id);
+
 CREATE INDEX idx_reg_surv_rule ON regulator_surveillance_alerts(rule_code);
+
 CREATE INDEX idx_reg_surv_status ON regulator_surveillance_alerts(status, raised_at DESC);
+
 CREATE INDEX idx_reg_surv_triage_alert
   ON regulator_surveillance_triage (alert_id);
+
 CREATE INDEX idx_reg_tariff_dec_sub ON regulator_tariff_decisions(submission_id);
+
 CREATE INDEX idx_reg_tariff_sub_licensee ON regulator_tariff_submissions(licensee_participant_id);
+
 CREATE INDEX idx_reg_tariff_sub_status ON regulator_tariff_submissions(status);
+
 CREATE INDEX idx_regulator_complaints_events_thread ON oe_regulator_complaints_events(complaint_id, created_at);
+
 CREATE INDEX idx_regulator_complaints_horizon ON oe_regulator_complaints(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_regulator_levies_events_thread ON oe_regulator_levies_events(levy_id, created_at);
+
 CREATE INDEX idx_regulator_levies_horizon ON oe_regulator_levies(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_repay_loan ON lender_repayment_schedules(loan_id, due_date);
+
 CREATE INDEX idx_reports_code_period ON reports_registry(report_code, reporting_period_end DESC);
+
 CREATE INDEX idx_reports_part_module ON reports_registry(participant_id, module, generated_at DESC);
+
 CREATE UNIQUE INDEX idx_request_stats_bucket
   ON request_stats(bucket_start, route, method, status_class);
+
 CREATE INDEX idx_request_stats_bucket_start
   ON request_stats(bucket_start);
+
 CREATE INDEX idx_reserve_activations_events_thread ON oe_reserve_activations_events(activation_id, created_at);
+
 CREATE INDEX idx_reserve_activations_horizon ON oe_reserve_activations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_reserve_mvt_reserve ON reserve_movements(reserve_id, created_at DESC);
+
 CREATE INDEX idx_reserve_project ON reserve_accounts(project_id);
+
 CREATE INDEX idx_resources_project ON project_resources(project_id);
+
 CREATE INDEX idx_retire_events_ret  ON oe_retirement_chain_events(retirement_id, created_at);
+
 CREATE INDEX idx_retire_events_type ON oe_retirement_chain_events(event_type);
+
 CREATE INDEX idx_revenue_splits_revenue
   ON oe_revenue_splits(revenue_id);
+
 CREATE INDEX idx_risk_factors_type ON risk_factors(factor_type);
+
 CREATE INDEX idx_risk_fh_date ON risk_factor_history(as_of_date);
+
 CREATE INDEX idx_risk_portfolios_owner ON risk_portfolios(owner_id);
+
 CREATE INDEX idx_risk_scenarios_owner ON risk_scenarios(owner_id);
+
 CREATE INDEX idx_risk_sr_p_d ON risk_scenario_results(portfolio_id, as_of_date);
+
 CREATE INDEX idx_risk_sr_sp ON risk_scenario_results(scenario_id, portfolio_id, as_of_date);
+
 CREATE INDEX idx_risk_var_d ON risk_var_results(as_of_date);
+
 CREATE INDEX idx_risk_var_p_d ON risk_var_results(portfolio_id, as_of_date);
+
 CREATE INDEX idx_role_queue_participant_status
   ON oe_role_action_queue(target_participant_id, status);
+
 CREATE INDEX idx_role_queue_role_status
   ON oe_role_action_queue(target_role, status);
+
 CREATE INDEX idx_role_queue_role_status_sla
   ON oe_role_action_queue(target_role, status, sla_due_at, created_at DESC);
+
 CREATE INDEX idx_role_queue_source
   ON oe_role_action_queue(source_entity_type, source_entity_id);
+
 CREATE INDEX idx_role_queue_tenant_role_status
   ON oe_role_action_queue(tenant_id, target_role, status);
+
 CREATE INDEX idx_sas_participant
   ON oe_substation_assets(participant_id);
+
 CREATE INDEX idx_sas_status
   ON oe_substation_assets(chain_status);
+
 CREATE INDEX idx_sas_tier
   ON oe_substation_assets(asset_tier);
+
 CREATE INDEX idx_scada_sub_time ON grid_scada_snapshots(substation_code, observed_at);
+
 CREATE INDEX idx_scenario_runs_part ON scenario_runs(participant_id, scenario_code, computed_at);
+
 CREATE INDEX idx_scope2_participant ON scope2_disclosures(participant_id, reporting_year);
+
 CREATE INDEX idx_scope3_participant
   ON oe_carbon_scope3_disclosures(participant_id);
+
 CREATE INDEX idx_scope3_status
   ON oe_carbon_scope3_disclosures(chain_status);
+
 CREATE INDEX idx_scope3_year
   ON oe_carbon_scope3_disclosures(reporting_year);
+
 CREATE INDEX idx_sdlq_status ON settlement_dlq(status);
+
 CREATE INDEX idx_security_perfection_events_thread ON oe_security_perfection_events(perfection_id, created_at);
+
 CREATE INDEX idx_security_perfection_horizon ON oe_security_perfection(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_security_remediations_events_thread ON oe_security_remediations_events(remediation_id, created_at);
+
 CREATE INDEX idx_security_remediations_horizon ON oe_security_remediations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_sensitive_rate_expires
        ON sensitive_rate_counters(expires_at);
+
 CREATE INDEX idx_serials_owner ON credit_serials(owner_participant_id, status);
+
 CREATE INDEX idx_serials_vintage ON credit_serials(vintage_id);
+
 CREATE INDEX idx_servitudes_project ON servitudes(project_id);
+
 CREATE INDEX idx_sessions_access_jti ON sessions(access_jti);
+
 CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+
 CREATE INDEX idx_sessions_participant ON sessions(participant_id);
+
 CREATE INDEX idx_settlement_breaks_invoice
   ON settlement_breaks (invoice_id, status);
+
 CREATE INDEX idx_settlement_breaks_reporter
   ON settlement_breaks (reported_by, status, reported_at);
+
 CREATE INDEX idx_settlement_breaks_status_severity
   ON settlement_breaks (status, severity);
+
 CREATE INDEX idx_settlement_calendar_day
   ON settlement_calendar (trading_day);
+
 CREATE INDEX idx_settlement_calendar_status_invoice_run
   ON settlement_calendar (status, invoice_run_at);
+
 CREATE INDEX idx_settlement_fees_invoice
   ON settlement_fees (invoice_id);
+
 CREATE INDEX idx_settlement_fees_type
   ON settlement_fees (fee_type, calculated_at);
+
 CREATE INDEX idx_sfe_instr ON settlement_fail_escalations(instruction_id);
+
 CREATE INDEX idx_sfe_status ON settlement_fail_escalations(resolution_status);
+
 CREATE INDEX idx_siem_delivery_forwarder ON siem_delivery_log(forwarder_id, attempted_at DESC);
+
 CREATE INDEX idx_siem_enabled ON siem_forwarders(enabled);
+
 CREATE INDEX idx_site_accruals_participant
   ON site_accruals(participant_id);
+
 CREATE INDEX idx_site_accruals_period
   ON site_accruals(period_hour DESC);
+
 CREATE INDEX idx_site_accruals_site
   ON site_accruals(site_id);
+
 CREATE UNIQUE INDEX idx_site_accruals_station_hour
   ON site_accruals(station_id, period_hour);
+
 CREATE INDEX idx_site_comm_evt_site ON oe_site_commissioning_events(site_id, created_at DESC);
+
 CREATE INDEX idx_site_comm_evt_type ON oe_site_commissioning_events(event_type);
+
 CREATE INDEX idx_site_part ON ipp_site_assessments(participant_id, technology);
+
 CREATE INDEX idx_slb_kpi_participant
   ON oe_slb_kpi_ratchets(participant_id);
+
 CREATE INDEX idx_slb_kpi_status
   ON oe_slb_kpi_ratchets(chain_status);
+
 CREATE INDEX idx_sma_class   ON oe_smart_meter_assets(meter_class);
+
 CREATE INDEX idx_sma_owner   ON oe_smart_meter_assets(owner_id);
+
 CREATE INDEX idx_sma_site    ON oe_smart_meter_assets(site_id);
+
 CREATE INDEX idx_sma_status  ON oe_smart_meter_assets(chain_status);
+
 CREATE INDEX idx_solax_stations_carbon
   ON solax_stations(carbon_participant_id);
+
 CREATE INDEX idx_solax_stations_lender
   ON solax_stations(lender_participant_id);
+
 CREATE INDEX idx_solax_stations_manufacturer ON solax_stations(participant_id, manufacturer);
+
 CREATE INDEX idx_solax_stations_offtaker
   ON solax_stations(offtaker_participant_id);
+
 CREATE INDEX idx_solax_stations_plant
   ON solax_stations(plant_id);
+
 CREATE INDEX idx_solax_stations_site
   ON solax_stations(site_id);
+
 CREATE UNIQUE INDEX idx_solax_stations_sn
   ON solax_stations(participant_id, device_sn);
+
 CREATE INDEX idx_spare_parts_provisioning_events_thread ON oe_spare_parts_provisioning_events(provisioning_id, created_at);
+
 CREATE INDEX idx_spare_parts_provisioning_horizon ON oe_spare_parts_provisioning(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_spr_participant
   ON oe_sla_performance_reports(participant_id);
+
 CREATE INDEX idx_spr_status
   ON oe_sla_performance_reports(chain_status);
+
 CREATE INDEX idx_sr_period ON settlement_runs(period_start DESC, run_type);
+
 CREATE INDEX idx_sr_status ON settlement_runs(status);
+
 CREATE INDEX idx_sre_run ON settlement_run_events(run_id, created_at);
+
 CREATE INDEX idx_sseg_registrations_events_thread ON oe_sseg_registrations_events(registration_id, created_at);
+
 CREATE INDEX idx_sseg_registrations_horizon ON oe_sseg_registrations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_station_links_accepting  ON oe_station_participant_links(accepting_participant_id);
+
 CREATE INDEX idx_station_links_initiating ON oe_station_participant_links(initiating_participant_id);
+
 CREATE INDEX idx_station_links_sla        ON oe_station_participant_links(sla_deadline, sla_breached);
+
 CREATE INDEX idx_station_links_station    ON oe_station_participant_links(station_id);
+
 CREATE INDEX idx_station_links_status     ON oe_station_participant_links(chain_status);
+
 CREATE INDEX idx_station_links_type       ON oe_station_participant_links(link_type);
+
 CREATE INDEX idx_stress_results_project ON stress_results(project_id, run_at DESC);
+
 CREATE INDEX idx_stress_results_scenario ON stress_results(scenario_id);
+
 CREATE INDEX idx_sub_invoice_participant
   ON oe_subscription_invoices(participant_id, chain_status);
+
 CREATE INDEX idx_sub_invoice_period
   ON oe_subscription_invoices(billing_period, subscription_tier);
+
 CREATE INDEX idx_sub_invoice_status
   ON oe_subscription_invoices(chain_status, sla_deadline);
+
 CREATE INDEX idx_support_comments_ticket
   ON support_ticket_comments (ticket_id, created_at);
+
 CREATE INDEX idx_support_escalations_ticket
   ON support_escalations (ticket_id);
+
 CREATE INDEX idx_support_ticket_evt_ticket
   ON oe_support_ticket_events (ticket_id, created_at DESC);
+
 CREATE INDEX idx_support_ticket_evt_type
   ON oe_support_ticket_events (event_type);
+
 CREATE INDEX idx_support_tickets_assignee
   ON support_tickets (assignee_id, status);
+
 CREATE INDEX idx_support_tickets_chain
   ON support_tickets (chain_status, priority, created_at);
+
 CREATE INDEX idx_support_tickets_reporter
   ON support_tickets (reporter_id, created_at);
+
 CREATE INDEX idx_support_tickets_sla
   ON support_tickets (next_sla_due_at) WHERE next_sla_due_at IS NOT NULL;
+
 CREATE INDEX idx_support_tickets_status
   ON support_tickets (status, priority, created_at);
+
 CREATE INDEX idx_support_xtenant_agent
   ON support_cross_tenant_access (agent_id, accessed_at);
+
 CREATE INDEX idx_support_xtenant_tenant
   ON support_cross_tenant_access (tenant_accessed, accessed_at);
+
 CREATE INDEX idx_tariff_determinations_events_thread ON oe_tariff_determinations_events(determination_id, created_at);
+
 CREATE INDEX idx_tariff_determinations_horizon ON oe_tariff_determinations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_tariff_indexation_events_thread ON oe_tariff_indexation_events(indexation_id, created_at);
+
 CREATE INDEX idx_tariff_indexation_horizon ON oe_tariff_indexation(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_tariff_products_utility ON tariff_products(utility, effective_from DESC);
+
 CREATE INDEX idx_tenants_slug ON tenants(slug);
+
 CREATE INDEX idx_tenants_status ON tenants(status);
+
 CREATE INDEX idx_threads_entity ON threads(entity_type, entity_id);
+
 CREATE INDEX idx_tinv_status ON tenant_invoices(status);
+
 CREATE INDEX idx_tinv_tenant ON tenant_invoices(tenant_id, issued_at DESC);
+
 CREATE INDEX idx_top_cases_horizon ON oe_top_cases(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_top_cases_ipp         ON oe_top_cases(ipp_party_id);
+
 CREATE INDEX idx_top_cases_offtaker    ON oe_top_cases(offtaker_party_id);
+
 CREATE INDEX idx_top_cases_ppa         ON oe_top_cases(ppa_contract_id);
+
 CREATE INDEX idx_top_cases_sla         ON oe_top_cases(sla_deadline_at);
+
 CREATE INDEX idx_top_cases_status      ON oe_top_cases(chain_status);
+
 CREATE INDEX idx_top_cases_tier        ON oe_top_cases(severity_tier);
+
 CREATE INDEX idx_top_cases_year        ON oe_top_cases(reconciliation_year);
+
 CREATE INDEX idx_top_events_created ON oe_top_events(created_at);
+
 CREATE INDEX idx_top_events_thread ON oe_top_events(top_id, created_at);
+
 CREATE INDEX idx_top_events_top     ON oe_top_events(top_id);
+
 CREATE INDEX idx_tpr_status ON tenant_provisioning_requests(status);
+
 CREATE INDEX idx_trade_allocation_events_thread ON oe_trade_allocation_events(allocation_id, created_at);
+
 CREATE INDEX idx_trade_allocations_horizon ON oe_trade_allocations(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_trade_allocations_match
   ON trade_allocations (match_id);
+
 CREATE INDEX idx_trade_allocations_order
   ON trade_allocations (order_id, status);
+
 CREATE INDEX idx_trade_allocations_participant
   ON trade_allocations (participant_id, created_at);
+
 CREATE INDEX idx_trade_conf_part ON trade_confirmations(participant_id, affirmation_status);
+
 CREATE INDEX idx_trade_exceptions_match
   ON trade_exceptions (match_id, status);
+
 CREATE INDEX idx_trade_exceptions_reporter
   ON trade_exceptions (reported_by, status);
+
 CREATE INDEX idx_trade_fees_match
   ON trade_fees (match_id);
+
 CREATE INDEX idx_trade_fees_participant
   ON trade_fees (participant_id, calculated_at);
+
 CREATE INDEX idx_trade_fills_match ON trade_fills(match_id);
+
 CREATE INDEX idx_trade_fills_part_exec ON trade_fills(participant_id, executed_at DESC);
+
 CREATE INDEX idx_trade_matches_status ON trade_matches(status);
+
 CREATE INDEX idx_trade_order_amendments_order ON trade_order_amendments (order_id, amended_at DESC);
+
 CREATE INDEX idx_trade_order_rejections_participant
   ON trade_order_rejections (participant_id, attempted_at DESC);
+
 CREATE INDEX idx_trade_order_rejections_reason
   ON trade_order_rejections (reason_code, attempted_at DESC);
+
 CREATE INDEX idx_trade_orders_participant ON trade_orders(participant_id);
+
 CREATE INDEX idx_trade_orders_status ON trade_orders(status);
+
 CREATE INDEX idx_trade_orders_status_goodtill ON trade_orders (status, good_till);
+
 CREATE INDEX idx_trade_reports_events_thread ON oe_trade_reports_events(report_id, created_at);
+
 CREATE INDEX idx_trade_reports_horizon ON oe_trade_reports(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_trader_positions_part ON trader_positions(participant_id);
+
 CREATE INDEX idx_trading_party_link_participant
   ON oe_trading_party_link (participant_id);
+
 CREATE INDEX idx_trading_party_link_party
   ON oe_trading_party_link (party_id);
+
 CREATE INDEX idx_trle_tenant ON tenant_rate_limit_events(tenant_id, window_start DESC);
+
 CREATE INDEX idx_tsso_tenant ON tenant_sso_providers(tenant_id);
+
 CREATE INDEX idx_tsub_status ON tenant_subscriptions(status);
+
 CREATE INDEX idx_tsub_tenant ON tenant_subscriptions(tenant_id, period_end DESC);
+
 CREATE INDEX idx_tus_tenant ON tenant_usage_snapshots(tenant_id, snapshot_date DESC);
+
 CREATE INDEX idx_uec_category       ON oe_unserved_energy_claims(customer_category);
+
 CREATE INDEX idx_uec_event_date     ON oe_unserved_energy_claims(event_date);
+
 CREATE INDEX idx_uec_grid_operator  ON oe_unserved_energy_claims(grid_operator_id);
+
 CREATE INDEX idx_uec_offtaker       ON oe_unserved_energy_claims(offtaker_id);
+
 CREATE INDEX idx_uec_sla            ON oe_unserved_energy_claims(sla_deadline, sla_breached);
+
 CREATE INDEX idx_uec_status         ON oe_unserved_energy_claims(chain_status);
+
 CREATE INDEX idx_universal_pathways_dom ON universal_pathways(domain, pathway_code, year);
+
 CREATE INDEX idx_user_view_prefs_owner ON user_view_prefs(participant_id);
+
 CREATE INDEX idx_vault_files_entity ON vault_files(entity_type, entity_id);
+
 CREATE INDEX idx_vcm_orders_open
   ON oe_vcm_orders(status, methodology, registry_standard, vintage_year);
+
 CREATE INDEX idx_vcm_projects_participant
   ON oe_vcm_projects(participant_id, chain_status);
+
 CREATE INDEX idx_vendor_escalation_events_thread ON oe_vendor_escalation_events(escalation_id, created_at);
+
 CREATE INDEX idx_vendor_escalation_horizon ON oe_vendor_escalation(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_vintages_project ON credit_vintages(project_id, vintage_year DESC);
+
 CREATE INDEX idx_vppa_settlement_contract
   ON oe_virtual_ppa_settlements(contract_ref, chain_status);
+
 CREATE INDEX idx_vppa_settlement_parties
   ON oe_virtual_ppa_settlements(generator_id, offtaker_id);
+
 CREATE INDEX idx_vppa_settlement_status
   ON oe_virtual_ppa_settlements(chain_status, sla_deadline);
+
 CREATE INDEX idx_wa_ipp
   ON oe_wheeling_access(ipp_ref);
+
 CREATE INDEX idx_wa_participant
   ON oe_wheeling_access(participant_id);
+
 CREATE INDEX idx_wa_status
   ON oe_wheeling_access(chain_status);
+
 CREATE INDEX idx_warranty_claim_evt_claim
   ON oe_warranty_claim_events (claim_id, created_at DESC);
+
 CREATE INDEX idx_warranty_claim_evt_type
   ON oe_warranty_claim_events (event_type);
+
 CREATE INDEX idx_warranty_claims_chain
   ON oe_warranty_claims (chain_status, severity, created_at);
+
 CREATE INDEX idx_warranty_claims_oem
   ON oe_warranty_claims (oem_id);
+
 CREATE INDEX idx_warranty_claims_site
   ON oe_warranty_claims (site_id);
+
 CREATE INDEX idx_warranty_claims_sla
   ON oe_warranty_claims (next_sla_due_at) WHERE next_sla_due_at IS NOT NULL;
+
 CREATE INDEX idx_warranty_recoveries_events_thread ON oe_warranty_recoveries_events(recovery_id, created_at);
+
 CREATE INDEX idx_warranty_recoveries_horizon ON oe_warranty_recoveries(chain_status, sla_deadline_at);
+
 CREATE INDEX idx_waterfall_project ON waterfall_structures(project_id);
+
 CREATE INDEX idx_wf_alloc_run ON waterfall_allocations(run_id);
+
 CREATE INDEX idx_wf_run_project ON waterfall_runs(project_id, period_start DESC);
+
 CREATE INDEX idx_wf_tranche_waterfall ON waterfall_tranches(waterfall_id, priority);
+
 CREATE INDEX idx_wo_part_status ON ipp_work_orders(participant_id, status, scheduled_start);
+
 CREATE INDEX idx_zone_loss_lookup ON zone_loss_factors(zone_code, effective_month);
+
 CREATE UNIQUE INDEX uidx_cap_adequacy_period
   ON oe_capital_adequacy_reports(participant_id, report_period);
+
 CREATE UNIQUE INDEX uidx_mvs_period
   ON oe_milestone_variance_reports(participant_id, report_period);
+
 CREATE UNIQUE INDEX uidx_slb_kpi_period
   ON oe_slb_kpi_ratchets(participant_id, kpi_period)
   WHERE ppa_ref IS NULL;
+
 CREATE UNIQUE INDEX uq_oe_saved_filters_pid_surf_name
   ON oe_saved_filters(participant_id, surface, name);
+
 CREATE UNIQUE INDEX uq_oe_vo_project_number ON oe_variation_orders(project_id, vo_number);
+

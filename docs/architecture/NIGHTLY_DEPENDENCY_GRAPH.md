@@ -7,6 +7,9 @@
 > §4 Time): the nightly minute-offsets in `wrangler.toml` ARE the undocumented dependency graph. The rebuild's
 > timer sweeper subsumes 27 of these 33 schedules; the 7 genuine crons that survive are marked **KEEP**.
 > (No date stamp — this tree bans `Date.now()`; provenance is the git sha above.)
+> Re-verified against HEAD `96a020b4`: dispatch table unchanged; §3 edges re-checked against handler SQL —
+> one previously-listed edge (metering rollup → settlement) removed as not present in code, and §3.10
+> (comment-claimed non-edges), §3bis (independent jobs), and the per-row Survivors table (§4) added.
 
 ## 1. Cross-cutting findings (read these first)
 
@@ -80,41 +83,45 @@ file is where each is defined (imports at `src/index.ts:16-74`). Each handler is
 `safe()` — one failing job logs `cron_job_failed` and the case continues. §2 gives the
 table-level R/W/FX for each.
 
-| Cron pattern | Handlers in dispatch order | Source file(s) |
-|---|---|---|
-| `*/15 * * * *` | `runSurveillanceScan` → `runTradingSurveillanceScan` → `dispatchAllForwarders` → `runAllSweeps` → `runDealSweep` → `snapshotAllOrderBooks` | regulator-suite.ts; trading-clearing-l5.ts; siem.ts; utils/sweep-runner.ts; deals.ts; utils/cron-sweeps.ts |
-| `0 * * * *` | `solax_hourly_ingest` (loop `backfillStationHistory`) → `inverter_hourly_record` (loop `recordStationHourly`) → `publishVwapMarks` | esums-accruals.ts (×2); utils/cron-sweeps.ts |
-| `5 0 * * *` | `esums_accruals` (loop `computeStationAccruals`; then per-owner `materializeFinancials` + `fireCascade('esums_financials_materialized')`) → `runFaultEngine` → `computeLatePaymentFees` → `rollupMetrics(yesterday)` → `auditChainDailyReconcileSweep` → `regulatorExportDailyRefreshSweep` → `reconciliationAttestationMonthlyAuditCommitteePackSweep` → `controlEnvironmentAuditNightlyEvidenceCoverageSweep` → `nttComparisonBatteryNightlyCycleRunner` → `runTelemetryRollupAndPurge` → `buildDailyMerkleRoots(yesterday)` → `publishChainHeadToR2` → cascade DLQ purge (inline DELETE) | esums-accruals.ts + utils/cascade.ts; utils/esums-fault-engine.ts; business-depth.ts; utils/metrics-rollup.ts; audit-chain.ts; regulator-export.ts; reconciliation-attestation.ts; control-environment-audit.ts; ntt-comparison-battery.ts; utils/telemetry-retention.ts; audit-l5.ts; utils/audit-chain.ts |
-| `10 0 * * *` | `executeSettlementRun(runId,'ppa_energy',yesterday,yesterday)` | settlement-automation.ts |
-| `15 0 * * *` | `ippScheduleHealthRecompute` (W112) | ipp-schedule-chain.ts |
-| `20 0 * * *` | `ippEvmHealthRecompute` (W113) | ipp-evm-chain.ts |
-| `25 0 * * *` | `ippDocControlIdcMatrixRecompute` (W114) | ipp-document-control-chain.ts |
-| `30 0 * * *` | `executeImbalanceRun(imbRunId,yesterday,today)` → `verifyChain` → `buildDailyMerkleRoots(yesterday)` → `runMarginCallCycle` | imbalance.ts; utils/audit-chain.ts; audit-l5.ts; utils/cron-sweeps.ts |
-| `35 0 * * *` | `ippRfiAgingRefresh` (W116) | ipp-rfi.ts |
-| `40 0 * * *` | `ippChangeOrderCumPctRefresh` (W117) | ipp-change-order.ts |
-| `45 0 * * *` | `runWatershedAnomalyScan` → `runMaturityRefresh` → `auditChainDailyReconcileSweep` → `verifyChain` | utils/cron-sweeps.ts (×2); audit-chain.ts; utils/audit-chain.ts |
-| `50 0 * * *` | `regulatorExportDailyRefreshSweep` (W119) | regulator-export.ts |
-| `55 0 * * *` | `reconciliationAttestationVarianceRecomputeSweep` (W120) | reconciliation-attestation.ts |
-| `58 0 * * *` | `controlEnvironmentAuditNightlyEvidenceCoverageSweep` (W121) | control-environment-audit.ts |
-| `5 * * * *` | `auditChainHourlyProposeSweep` (W118) | audit-chain.ts |
-| `0 3 1 1,4,7,10 *` | `auditChainQuarterlyExportSweep` (W118) | audit-chain.ts |
-| `0 2 1 * *` | `runMonthlySubscriptionBilling` → `regulatorExportMonthlyRollupSweep` → `controlEnvironmentAuditAnnualAuditCycleOpenerSweep` → `nttComparisonBatteryMonthlyLedgerReconciliation` → `auditChainQuarterlyExportSweep` | subscription-billing-chain.ts; regulator-export.ts; control-environment-audit.ts; ntt-comparison-battery.ts; audit-chain.ts |
-| `0 4 1 * *` | `regulatorExportMonthlyRollupSweep` (W119) | regulator-export.ts |
-| `0 5 1 * *` | `reconciliationAttestationMonthlyAuditCommitteePackSweep` (W120) | reconciliation-attestation.ts |
-| `0 6 1 1 *` | `controlEnvironmentAuditAnnualAuditCycleOpenerSweep` (W121) | control-environment-audit.ts |
-| `0 6 * * 1` | `stageGateConditionsAgingSweep` (W131) | stage-gate.ts |
-| `0 7 * * 1` | `scadaConnectorCertExpirySweep` (W122) | scada-connector.ts |
-| `30 1 * * *` | `strateSwiftConnectorReconciliationSweep` (W124) | strate-swift-connector.ts |
-| `45 1 * * *` | `sapOracleErpConnectorReconciliationSweep` (W125) | sap-oracle-erp-connector.ts |
-| `0 2 * * *` | `governmentFilingConnectorFilingDeadlineSweep` (W126) | government-filing-connector.ts |
-| `30 2 * * *` | `anomalyDetectionMlDriftScan` (W127) | anomaly-detection-ml.ts |
-| `0 3 * * *` | `rulPredictionMlConcordanceMonitor` (W128) | rul-prediction-ml.ts |
-| `30 3 * * *` | `faultFingerprintMlClassDriftScan` (W129) | fault-fingerprint-ml.ts |
-| `15 4 * * *` | `nttComparisonBatteryNightlyCycleRunner` (W130) | ntt-comparison-battery.ts |
-| `0 1 1 * *` | `nttComparisonBatteryMonthlyLedgerReconciliation` (W130) | ntt-comparison-battery.ts |
-| `0 15 * * 5` | `runTradingRiskMtdDigest` (**STUB**, §1.3) | utils/cron-sweeps.ts |
-| `0 6 1 * *` | `runPfmiDisclosureSweep` (**STUB**, §1.3) | utils/cron-sweeps.ts |
-| `0 18 * * *` | `pnlAttributionT1EodOpener` (W111) | pnl-attribution-chain.ts |
+"Tables read from earlier jobs" lists only inputs that another cron slot (or an earlier handler in the
+same slot, marked *intra-slot*) writes; inputs written solely by API request paths are noted as such,
+because they impose **no cron-ordering constraint**. Source-file locations are in §2.
+
+| Cron pattern | Handlers in dispatch order | Tables written | Tables read from earlier jobs |
+|---|---|---|---|
+| `*/15 * * * *` | `runSurveillanceScan` → `runTradingSurveillanceScan` → `dispatchAllForwarders` → `runAllSweeps` → `runDealSweep` → `snapshotAllOrderBooks` | regulator_surveillance_alerts; oe_surveillance_alerts; siem_forwarder_cursors, siem_forwarders; ~145 domain chain tables + `oe_<domain>_events` + regulator_inbox; oe_deal_offers, oe_deal_requests, advisory_locks; OrderBook DO storage | surveillance reads own rules/alerts + trade_matches⋈trade_orders (request-path); sweeps read own domain tables (written by request paths + prior sweep runs); no cross-slot cron input |
+| `0 * * * *` | `backfillStationHistory` (per SolaX station) → `recordStationHourly` (per non-SolaX station) → `publishVwapMarks` | station_telemetry_snapshot, site_accruals, om_sites, om_devices, om_telemetry, esums_carbon_credits, esums_settlement_invoices; mark_prices | trade_fills⋈trade_orders (request-path) — no cron input |
+| `5 * * * *` | `auditChainHourlyProposeSweep` (W118) | oe_audit_chain_block, oe_audit_chain_block_events | own table only |
+| `5 0 * * *` | `computeStationAccruals` (loop) → `materializeFinancials` (per owner, + cascade) → `runFaultEngine` → `computeLatePaymentFees` → `rollupMetrics(yesterday)` → `auditChainDailyReconcileSweep` → `regulatorExportDailyRefreshSweep` → `reconciliationAttestationMonthlyAuditCommitteePackSweep` → `controlEnvironmentAuditNightlyEvidenceCoverageSweep` → `nttComparisonBatteryNightlyCycleRunner` → `runTelemetryRollupAndPurge` → `buildDailyMerkleRoots(yesterday)` → `publishChainHeadToR2` → cascade-DLQ purge | site_accruals, station_telemetry_snapshot, esums_settlement_invoices, esums_carbon_credits, carbon_projects, carbon_holdings; om_faults; invoices (→overdue), oe_late_payment_fees; oe_metrics_daily, oe_chain_metrics; oe_audit_chain_block; oe_regulator_export_pack; oe_reconciliation_attestation; oe_control_environment_audit; oe_ntt_comparison_battery; om_telemetry_daily, om_telemetry_weekly (+ DELETE om_telemetry); oe_audit_merkle_roots; audit_chain_anchors + R2 object; DELETE cascade_dlq | station_telemetry_snapshot + om_telemetry ← `0 * * * *` ingest (accruals, fault engine, telemetry rollup); site_accruals ← same-slot accruals (*intra-slot*: materializeFinancials); invoices ← previous night's `10 0` settlement (late fees); oe_platform_events ← all-day cascades (rollupMetrics); audit_events + audit_chain_state ← request-path appends (Merkle, anchor); om_telemetry_daily ← same-slot daily rollup (*intra-slot*: weekly rollup) |
+| `10 0 * * *` | `executeSettlementRun('ppa_energy', yesterday)` | invoices, settlement_run_events, settlement_dlq, settlement_runs | metering_readings, contract_documents, ipp_projects — **all request-path-written; no cron writes metering_readings** (see §3.10) |
+| `15 0 * * *` | `ippScheduleHealthRecompute` (W112) | oe_ipp_schedule | own table only |
+| `20 0 * * *` | `ippEvmHealthRecompute` (W113) | oe_ipp_evm | own table only |
+| `25 0 * * *` | `ippDocControlIdcMatrixRecompute` (W114) | oe_ipp_document_control | own table only |
+| `30 0 * * *` | `executeImbalanceRun(yesterday, today)` → `verifyChain` → `buildDailyMerkleRoots(yesterday)` → `runMarginCallCycle` | imbalance_settlements, imbalance_monthly_totals; audit_chain_state (verify markers); oe_audit_merkle_roots; oe_margin_calls (→escalated) | brp_period_nominations + imbalance_prices (request-path); audit_events (request-path); Merkle build duplicates `5 0` (idempotent) |
+| `35 0 * * *` | `ippRfiAgingRefresh` (W116) | oe_ipp_rfi | own table only |
+| `40 0 * * *` | `ippChangeOrderCumPctRefresh` (W117) | oe_ipp_change_order | own table only |
+| `45 0 * * *` | `runWatershedAnomalyScan` → `runMaturityRefresh` → `auditChainDailyReconcileSweep` → `verifyChain` | esg_anomaly_flags; climate_maturity_assessments; oe_audit_chain_block; audit_chain_state | esg_activity_transactions (request-path); oe_audit_chain_block ← `5 * * * *` hourly propose |
+| `50 0 * * *` | `regulatorExportDailyRefreshSweep` (W119) | oe_regulator_export_pack | oe_regulator_export_pack ← `*/15` `regulatorExportSlaSweep` (in runAllSweeps) — **duplicate of `5 0` run** |
+| `55 0 * * *` | `reconciliationAttestationVarianceRecomputeSweep` (W120) | oe_reconciliation_attestation | oe_reconciliation_attestation ← `*/15` `reconciliationAttestationSlaSweep` |
+| `58 0 * * *` | `controlEnvironmentAuditNightlyEvidenceCoverageSweep` (W121) | oe_control_environment_audit | oe_control_environment_audit ← `*/15` `controlEnvironmentAuditSlaSweep` — **duplicate of `5 0` run** |
+| `30 1 * * *` | `strateSwiftConnectorReconciliationSweep` (W124) | oe_strate_swift_connector | own table only |
+| `45 1 * * *` | `sapOracleErpConnectorReconciliationSweep` (W125) | oe_sap_oracle_erp_connector | own table only — comment-claimed W124 dependency **not in code** (§3.10) |
+| `0 2 * * *` | `governmentFilingConnectorFilingDeadlineSweep` (W126) | oe_government_filing_connector | own table only |
+| `30 2 * * *` | `anomalyDetectionMlDriftScan` (W127) | oe_anomaly_detection_ml | own table only |
+| `0 3 * * *` | `rulPredictionMlConcordanceMonitor` (W128) | oe_rul_prediction_ml | own table only — W127 offset is CPU airtime, not data (§3.10) |
+| `30 3 * * *` | `faultFingerprintMlClassDriftScan` (W129) | oe_fault_fingerprint_ml | own table only — same |
+| `15 4 * * *` | `nttComparisonBatteryNightlyCycleRunner` (W130) | oe_ntt_comparison_battery | own table only — **duplicate of `5 0` run** |
+| `0 18 * * *` | `pnlAttributionT1EodOpener` (W111) | oe_pnl_attribution, oe_pnl_attribution_events | own tables only |
+| `0 6 * * 1` | `stageGateConditionsAgingSweep` (W131) | oe_stage_gates | own table only |
+| `0 7 * * 1` | `scadaConnectorCertExpirySweep` (W122) | oe_scada_connector | own table only |
+| `0 15 * * 5` | `runTradingRiskMtdDigest` (**STUB**, §1.3) | none | none |
+| `0 1 1 * *` | `nttComparisonBatteryMonthlyLedgerReconciliation` (W130) | oe_ntt_comparison_battery, oe_ntt_comparison_battery_events | own table only — "W71 ledger" input is the row's own precomputed column (§3.10) |
+| `0 2 1 * *` | `runMonthlySubscriptionBilling` → `regulatorExportMonthlyRollupSweep` → `controlEnvironmentAuditAnnualAuditCycleOpenerSweep` → `nttComparisonBatteryMonthlyLedgerReconciliation` → `auditChainQuarterlyExportSweep` | oe_subscription_invoices; oe_regulator_export_pack; oe_control_environment_audit (+events); oe_ntt_comparison_battery; oe_audit_chain_block | participants (request-path); each sweep own-table; runs the *annual* CEA opener and *quarterly* chain export monthly (duplicates `0 6 1 1 *` and `0 3 1 1,4,7,10 *`) |
+| `0 3 1 1,4,7,10 *` | `auditChainQuarterlyExportSweep` (W118) | oe_audit_chain_block | oe_audit_chain_block ← `5 * * * *` propose + `45 0` reconcile |
+| `0 4 1 * *` | `regulatorExportMonthlyRollupSweep` (W119) | oe_regulator_export_pack | own table only — **duplicate of `0 2 1 * *` run** |
+| `0 5 1 * *` | `reconciliationAttestationMonthlyAuditCommitteePackSweep` (W120) | oe_reconciliation_attestation | own table only — this "monthly" sweep also runs **nightly** at `5 0` |
+| `0 6 1 * *` | `runPfmiDisclosureSweep` (**STUB**, §1.3) | none | none |
+| `0 6 1 1 *` | `controlEnvironmentAuditAnnualAuditCycleOpenerSweep` (W121) | oe_control_environment_audit (+events) | own table only — **duplicate of `0 2 1 * *` run** |
 
 ### 1.7 Regression guard: `cron-contract` test
 
@@ -241,30 +248,92 @@ Edges derived from the table footprints above — this is the graph the rebuild'
    hourly, rolled up and **purged** nightly; the fault engine reads the raw window, so it must run before
    the purge deletes its input (both at `5 0`; ordering inside the tick is code order, not cron order — fragile).
 2. **`0 * hourly ingest` (site_accruals) → `materializeFinancials`** (backfill path) → carbon/settlement tables.
-3. **`5 0 metering rollups` (metering_readings) → `10 0 executeSettlementRun`** — settlement reads
-   metering_readings; the 5-minute gap is the only thing sequencing them.
+3. ~~`5 0 metering rollups` → `10 0 executeSettlementRun`~~ — **no dependency found in code.** Settlement
+   reads `metering_readings` (validated=1), but that table is written ONLY by API routes
+   (`src/routes/metering.ts:84` INSERT, `:122` validation UPDATE); no cron handler writes it
+   (`data-tier.ts` writes only `metering_readings_daily`/`metering_readings_archives`, and index.ts imports
+   no metering cron). The `5 0` vs `10 0` gap sequences nothing; `10 0` can move freely.
 4. **`10 0 settlement` (invoices) → next night's `5 0 computeLatePaymentFees`** — late fees run BEFORE the
    same night's settlement, so a new invoice's first overdue check happens ~19h later. Intentional-looking
    but undocumented anywhere except the offsets.
 5. **all-day `fireCascade` (oe_platform_events) → `5 0 rollupMetrics`** — metrics are a projection of the
    platform-event stream; the cron asymmetry in §1.2 means cron-path work is invisible to metrics.
 6. **`5 * hourly block propose` (oe_audit_chain_block) → `45 0 daily reconcile` → `0 3 quarterly export`**.
-7. **all-day `appendAudit` (audit_events) → `5 0 buildDailyMerkleRoots` → `5 0/30 0 verifyChain`
-   (audit_chain_state) → `5 0 publishChainHeadToR2`** — the integrity ladder. In the rebuild this is L1's
-   seal → root → anchor pipeline with a monotonic seal counter instead of wall-clock offsets.
+7. **all-day `appendAudit` (audit_events, audit_chain_state) → `5 0 buildDailyMerkleRoots` and
+   `5 0 publishChainHeadToR2`** — the integrity ladder, with one correction: `publishChainHeadToR2`
+   (utils/audit-chain.ts:398) reads `audit_chain_state` heads (maintained by request-path appends) plus
+   `audit_chain_anchors` for idempotency — it does **not** read `oe_audit_merkle_roots`. Merkle-before-anchor
+   is call order in the `5 0` case, not a data dependency. And `verifyChain` at `30 0` runs 25 min AFTER
+   the anchor, so any verification result can only influence the NEXT night's anchor. In the rebuild this
+   is L1's seal → root → anchor pipeline with a monotonic seal counter instead of wall-clock offsets.
 8. **`fireCascade` failures (cascade_dlq) → `*/15 dispatchAllForwarders` (SIEM) and → `5 0 DLQ purge`** —
    the purge and the forwarder cursor race: rows purged before a slow forwarder's cursor reaches them are
    never delivered. No guard exists.
 9. **`*/15 runAllSweeps` (regulator_inbox, oe_<domain>_events) → `50 0/55 0/58 0` W119–W121 recomputes** —
-   the compliance indexes recompute over what the day's sweeps flagged.
+   the compliance indexes recompute over what the day's sweeps flagged. Verified for W119:
+   `regulatorExportSlaSweep` (imported by utils/sweep-runner.ts:119–121) UPDATEs `oe_regulator_export_pack`,
+   which `regulatorExportDailyRefreshSweep` reads; W120/W121 analogous.
 
-## 4. Rebuild mapping
+### 3.10 Comment-claimed edges with NO code behind them
 
-- **27 of 33 schedules → `timer` table rows** fired by one `*/5` sweeper (`applyTransition`,
-  `actor: system:timer`): every SLA sweep, recompute, opener, escalation, reconciliation above whose trace
-  is "read own table, update own table, maybe cascade."
-- **7 KEEP crons:** SolaX/Sungrow hourly ingest, VWAP publish, nightly rollup+Merkle+R2 anchor (one job),
-  `*/15` surveillance (both scans — FMA §80–84), 3 ML drift monitors.
+wrangler.toml comments assert orderings the handlers don't implement. Each verified against handler SQL:
+
+- **W124 `30 1` → W125 `45 1`** — comment: "15 min after W124 so GL sees fresh settlement totals."
+  Code: `sapOracleErpConnectorReconciliationSweep` (sap-oracle-erp-connector.ts:1205) reads/writes ONLY
+  `oe_sap_oracle_erp_connector`; `strateSwiftConnectorReconciliationSweep` (strate-swift-connector.ts:1156)
+  ONLY `oe_strate_swift_connector`. No shared table. **No dependency found in code.**
+- **W127 `30 2` → W128 `0 3` → W129 `30 3`** — comments say the offsets exist so the ML scans "don't share
+  airtime" (CPU isolation). Each scan reads/writes only its own `oe_*_ml` table. Resource spacing, not data.
+- **NTT monthly reconciliation `0 1 1 * *` vs "W71 savings ledger"** — the handler
+  (ntt-comparison-battery.ts:1495) reads only its own row's precomputed
+  `reconciliation_with_w71_savings_ledger_pct` column. No cross-table W71 read. **No dependency found in code.**
+- **`10 0` PPA settlement → `30 0` imbalance run** — imbalance reads `brp_period_nominations` and
+  `imbalance_prices`, both request-path-written; it reads nothing settlement writes. **No dependency found
+  in code.**
+- **`5 0` "metering rollups" → `10 0` settlement** — see edge 3 above (struck through). The most quoted
+  offset rationale in the codebase is false.
+
+## 3bis. Independent (no inbound edges) — safe to reschedule freely
+
+Jobs whose inputs are request-path-written or own-table-only; moving their minute/hour changes nothing:
+
+- All IPP recomputes: `15 0` W112, `20 0` W113, `25 0` W114, `35 0` W116, `40 0` W117
+- `10 0` PPA settlement run (no inbound edge; one OUTBOUND edge — invoices → next night's late fees)
+- `30 0` imbalance run + margin-call cycle
+- `45 0` watershed anomaly scan + maturity refresh (the audit-chain reconcile piggybacked there does read
+  `5 *` blocks, but is duplicated at `5 0` anyway)
+- Connector sweeps: `30 1` W124, `45 1` W125, `0 2` W126, weekly `0 7` W122
+- ML monitors: `30 2` W127, `0 3` W128, `30 3` W129
+- `15 4` NTT nightly (duplicate of the `5 0` run), `0 1 1 * *` NTT monthly recon
+- `0 18` W111 P&L opener, `0 6 * * 1` W131 stage-gate aging
+- All monthly/quarterly/annual slots (`0 2 1`, `0 4 1`, `0 5 1`, `0 6 1 1 *`, `0 3 1 1,4,7,10 *`) — each
+  duplicates a nightly or is own-table
+- Both stubs (`0 15 * * 5`, `0 6 1 * *`) — write nothing
+
+**NOT freely movable:** `0 * * * *` (must precede the nightly `5 0` chain — accruals gate on
+station_telemetry_snapshot freshness ≤70 min) and `5 0 * * *` itself (intra-slot order carries the real
+edges: accruals → materializeFinancials; telemetry daily-rollup → weekly-rollup → purge; fault engine
+before purge). The `50 0/55 0/58 0` trio reads */15 sweep output but any time-of-day works — the sweeps
+run every 15 min.
+
+## 4. Rebuild mapping — per-schedule verdict
+
+Per REBUILD_PLAN §4, 7 crons survive; the rest become `timer` rows fired by one `*/5` sweeper
+(`applyTransition`, `actor: system:timer`).
+
+| Schedule | Verdict |
+|---|---|
+| `0 * * * *` ingest + VWAP | **KEEP** (2 survivors: SolaX/Sungrow ingest; VWAP publish) |
+| `*/15 * * * *` | **KEEP** surveillance scans + SIEM dispatch; `runAllSweeps`/`runDealSweep` → timers; DO snapshots ride along |
+| `5 0 * * *` | **KEEP** the core: telemetry rollup+purge → Merkle roots → R2 anchor (one job, survivor #3); the 10 piggybacked handlers (accruals/financials, fault engine, late fees, metrics rollup, W118–W121 sweeps, NTT, DLQ purge) → timers |
+| `30 2`, `0 3`, `30 3` ML scans | **KEEP** (survivors 5–7: 3 ML drift monitors) |
+| `10 0` settlement, `30 0` imbalance+margin | replace-with-timer (or event-driven on nomination/reading finalisation) |
+| `15 0`/`20 0`/`25 0`/`35 0`/`40 0` IPP recomputes | replace-with-timer |
+| `45 0` watershed+maturity, `50 0`/`55 0`/`58 0` W119–W121, `5 *` W118 propose | replace-with-timer |
+| `30 1`/`45 1`/`0 2` connectors, `0 7 * * 1` W122, `0 6 * * 1` W131 | replace-with-timer |
+| `15 4` NTT, `0 18` W111, all monthlies/quarterly/annual | replace-with-timer (and drop the duplicates — `15 4`, `0 4 1`, `0 5 1`, `0 6 1 1 *` re-run what `5 0`/`0 2 1` already run) |
+| `0 15 * * 5`, `0 6 1 * *` stubs | **delete** — they write nothing today |
+
 - **Deleted by design:** the §1.2 asymmetry class (effects declared on transitions), the §3.1 in-tick
   ordering fragility (purge becomes a retention policy on the telemetry store, never on the event log),
   the §3.8 DLQ/SIEM race (outbox with per-consumer cursors, purge gated on all cursors past the row).
