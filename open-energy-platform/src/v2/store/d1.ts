@@ -174,10 +174,15 @@ export class D1Store implements Store {
       .prepare(`SELECT * FROM v2_parties WHERE txn_id = ?`)
       .bind(id)
       .all<PartyDbRow>();
+    const timers = await this.db
+      .prepare(`SELECT id, txn_id, fire, due_at, key, class FROM v2_timers WHERE txn_id = ?`)
+      .bind(id)
+      .all<TimerRow>();
     return {
       txn: toTxnRow(txnRow),
       parties: (parties.results ?? []).map(toPartyRow),
       events: (events.results ?? []).map(toEventRow),
+      timers: timers.results ?? [],
     };
   }
 

@@ -96,6 +96,7 @@ export default function Transaction() {
   if (bundle === 'missing') return <Shell><div className="v2-card v2-empty">Transaction not found, or you’re not a party to it.</div></Shell>;
 
   const { txn, parties, events } = bundle;
+  const timers = bundle.timers ?? [];
   const live = parties.filter((p) => p.until_event_id === null);
   const kind = chain ? stateKind(chain, txn.state) : 'open';
   const stateLabel = chain?.states[txn.state]?.label ?? txn.state;
@@ -150,6 +151,20 @@ export default function Transaction() {
               : holderParty?.participant_id === user?.id
                 ? `Waiting on you (${holderRole}).`
                 : `Waiting on ${holderRole}${holderParty ? ` · ${holderParty.participant_id.slice(0, 8)}` : ''}.`}
+          </div>
+        )}
+        {/* armed SLA / time-bar deadlines — static at render; reload refreshes */}
+        {!txn.closed_at && timers.length > 0 && (
+          <div className="v2-txn-meta" role="status" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {timers.map((t) => {
+              const ms = new Date(t.due_at).getTime() - Date.now();
+              const overdue = ms < 0;
+              return (
+                <span key={t.id} className={`v2-pill ${overdue ? 'is-dead' : 'is-open'}`}>
+                  {t.class === 'sla' ? 'SLA' : 'Time bar'} · {humanize(t.fire)} · {overdue ? `overdue ${untilLabel(-ms)}` : `due in ${untilLabel(ms)}`}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -219,6 +234,14 @@ export default function Transaction() {
       </div>
     </Shell>
   );
+}
+
+// "3d" / "5h 12m" / "42m" from a positive millisecond gap.
+function untilLabel(ms: number): string {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins >= 2880) return `${Math.round(mins / 1440)}d`;
+  if (mins >= 60) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  return `${mins}m`;
 }
 
 const CommandBar = forwardRef<HTMLInputElement, { candidates: Candidate[]; onPick: (c: Candidate) => void }>(

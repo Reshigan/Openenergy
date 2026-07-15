@@ -105,10 +105,21 @@ export interface EventRow {
   payload: Json;
 }
 
+export interface TimerRow {
+  id: string;
+  txn_id: string;
+  fire: string;
+  due_at: string;
+  key: string;
+  class: 'sla' | 'time_bar';
+}
+
 export interface TxnBundle {
   txn: TxnRow;
   parties: PartyRow[];
   events: EventRow[];
+  /** pending timers — optional so older cached responses still parse */
+  timers?: TimerRow[];
 }
 
 // ── the custody notice (R-S5-3) ─────────────────────────────────────────────

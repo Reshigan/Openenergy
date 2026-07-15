@@ -45,7 +45,8 @@ export class MemoryStore implements Store {
     const txn = this.txns.get(id);
     if (!txn) return null;
     const events = this.events.filter((e) => e.txn_id === id).sort((a, b) => a.seq - b.seq);
-    return { txn, parties: this.parties.get(id) ?? [], events };
+    const timers = this.timers.filter((t) => t.txn_id === id);
+    return { txn, parties: this.parties.get(id) ?? [], events, timers };
   }
 
   async findEventByIdempotencyKey(key: string): Promise<EventRow | null> {

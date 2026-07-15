@@ -228,6 +228,9 @@ export interface TxnBundle {
   txn: TxnRow;
   parties: PartyRow[];
   events: EventRow[];
+  /** pending (not-yet-fired) timers — the Transaction surface renders SLA /
+   *  time-bar countdowns from due_at. */
+  timers: TimerRow[];
 }
 
 export interface OutboxRow {
