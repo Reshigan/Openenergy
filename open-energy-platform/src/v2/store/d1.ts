@@ -25,6 +25,17 @@ import type {
 import { ConstraintViolation } from '../domain/types';
 import type { D1Database } from '@cloudflare/workers-types';
 
+// D1 rejects statements with more than 100 bound parameters, so every dynamic
+// IN (...) list must be chunked. 90 leaves headroom for the fixed binds that
+// share the statement (from/to/participant filters).
+const D1_BIND_CHUNK = 90;
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 // Row shapes as they come back from SQLite (JSON columns are TEXT).
 interface EventDbRow {
   txn_id: string;
@@ -486,42 +497,52 @@ export class D1Store implements Store {
   }
 
   async partiesForTxns(txnIds: string[]): Promise<PartyRow[]> {
-    if (txnIds.length === 0) return [];
-    const placeholders = txnIds.map(() => '?').join(',');
-    const rows = await this.db
-      .prepare(`SELECT * FROM v2_parties WHERE txn_id IN (${placeholders})`)
-      .bind(...txnIds)
-      .all<PartyDbRow>();
-    return (rows.results ?? []).map(toPartyRow);
+    const out: PartyRow[] = [];
+    for (const ids of chunk(txnIds, D1_BIND_CHUNK)) {
+      const placeholders = ids.map(() => '?').join(',');
+      const rows = await this.db
+        .prepare(`SELECT * FROM v2_parties WHERE txn_id IN (${placeholders})`)
+        .bind(...ids)
+        .all<PartyDbRow>();
+      out.push(...(rows.results ?? []).map(toPartyRow));
+    }
+    return out;
   }
 
   async eventsForExport(q: ExportQuery): Promise<EventRow[]> {
     if (q.chain_keys.length === 0) return [];
-    const clauses: string[] = [];
-    const binds: unknown[] = [];
+    // Chain chunks partition the events disjointly, so per-chunk queries concat
+    // cleanly; the final sort restores the single global_seq order the
+    // verifier's merkle-window folding depends on.
+    const out: EventRow[] = [];
+    for (const keys of chunk(q.chain_keys, D1_BIND_CHUNK)) {
+      const clauses: string[] = [];
+      const binds: unknown[] = [];
 
-    clauses.push(`chain_key IN (${q.chain_keys.map(() => '?').join(',')})`);
-    binds.push(...q.chain_keys);
+      clauses.push(`chain_key IN (${keys.map(() => '?').join(',')})`);
+      binds.push(...keys);
 
-    if (q.from) {
-      clauses.push(`occurred_at >= ?`);
-      binds.push(q.from);
-    }
-    if (q.to) {
-      clauses.push(`occurred_at <= ?`);
-      binds.push(q.to);
-    }
-    if (q.participant_ids?.length) {
-      const ph = q.participant_ids.map(() => '?').join(',');
-      clauses.push(`txn_id IN (SELECT txn_id FROM v2_parties WHERE participant_id IN (${ph}))`);
-      binds.push(...q.participant_ids);
-    }
+      if (q.from) {
+        clauses.push(`occurred_at >= ?`);
+        binds.push(q.from);
+      }
+      if (q.to) {
+        clauses.push(`occurred_at <= ?`);
+        binds.push(q.to);
+      }
+      if (q.participant_ids?.length) {
+        const ph = q.participant_ids.map(() => '?').join(',');
+        clauses.push(`txn_id IN (SELECT txn_id FROM v2_parties WHERE participant_id IN (${ph}))`);
+        binds.push(...q.participant_ids);
+      }
 
-    const rows = await this.db
-      .prepare(`SELECT * FROM v2_events WHERE ${clauses.join(' AND ')} ORDER BY global_seq ASC`)
-      .bind(...binds)
-      .all<EventDbRow>();
-    return (rows.results ?? []).map(toEventRow);
+      const rows = await this.db
+        .prepare(`SELECT * FROM v2_events WHERE ${clauses.join(' AND ')} ORDER BY global_seq ASC`)
+        .bind(...binds)
+        .all<EventDbRow>();
+      out.push(...(rows.results ?? []).map(toEventRow));
+    }
+    return out.sort((a, b) => a.global_seq! - b.global_seq!);
   }
 
   async dueTimers(nowIso: string, limit: number, cls: 'sla' | 'time_bar'): Promise<TimerRow[]> {
