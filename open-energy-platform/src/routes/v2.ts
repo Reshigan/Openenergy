@@ -192,6 +192,58 @@ import { pretradeCreditCheck } from '../v2/domain/chains/pretrade_credit_check';
 import { smartMeterAsset } from '../v2/domain/chains/smart_meter_asset';
 import { unservedEnergyClaim } from '../v2/domain/chains/unserved_energy_claim';
 import { greenTariffDisclosure } from '../v2/domain/chains/green_tariff_disclosure';
+import { ippAcs } from '../v2/domain/chains/ipp_acs';
+import { ippAel } from '../v2/domain/chains/ipp_ael';
+import { ippAnr } from '../v2/domain/chains/ipp_anr';
+import { ippAud } from '../v2/domain/chains/ipp_aud';
+import { ippBbbee } from '../v2/domain/chains/ipp_bbbee';
+import { ippBfs } from '../v2/domain/chains/ipp_bfs';
+import { ippCcc } from '../v2/domain/chains/ipp_ccc';
+import { ippContractorDefault } from '../v2/domain/chains/ipp_cd';
+import { ippCep } from '../v2/domain/chains/ipp_cep';
+import { ippCoc } from '../v2/domain/chains/ipp_coc';
+import { ippConstructionDiary } from '../v2/domain/chains/ipp_construction_diary';
+import { ippCtr } from '../v2/domain/chains/ipp_ctr';
+import { ippDocControl } from '../v2/domain/chains/ipp_doc_control';
+import { ippEam } from '../v2/domain/chains/ipp_eam';
+import { ippEco } from '../v2/domain/chains/ipp_eco';
+import { ippEmpr } from '../v2/domain/chains/ipp_empr';
+import { ippEnvClosure } from '../v2/domain/chains/ipp_env_closure';
+import { ippEnvMonitoring } from '../v2/domain/chains/ipp_env_monitoring';
+import { ippEqt } from '../v2/domain/chains/ipp_eqt';
+import { ippEsmr } from '../v2/domain/chains/ipp_esmr';
+import { ippFinalCompletion } from '../v2/domain/chains/ipp_final_completion';
+import { ippFm } from '../v2/domain/chains/ipp_fm';
+import { ippGcc } from '../v2/domain/chains/ipp_gcc';
+import { ippHra } from '../v2/domain/chains/ipp_hra';
+import { ippIeCert } from '../v2/domain/chains/ipp_ie_cert';
+import { ippIear } from '../v2/domain/chains/ipp_iear';
+import { ippInsr } from '../v2/domain/chains/ipp_insr';
+import { ippLam } from '../v2/domain/chains/ipp_lam';
+import { ippLandRegister } from '../v2/domain/chains/ipp_land_register';
+import { ippLcr } from '../v2/domain/chains/ipp_lcr';
+import { ippLrep } from '../v2/domain/chains/ipp_lrep';
+import { ippLta } from '../v2/domain/chains/ipp_lta';
+import { ippMc } from '../v2/domain/chains/ipp_mc';
+import { ippMethodStatement } from '../v2/domain/chains/ipp_method_statement';
+import { ippMir } from '../v2/domain/chains/ipp_mir';
+import { ippOmHandover } from '../v2/domain/chains/ipp_om_handover';
+import { ippOmc } from '../v2/domain/chains/ipp_omc';
+import { ippPaymentCert } from '../v2/domain/chains/ipp_payment_cert';
+import { ippPerformanceBonds } from '../v2/domain/chains/ipp_performance_bonds';
+import { ippPpavar } from '../v2/domain/chains/ipp_ppavar';
+import { ippProgressClaim } from '../v2/domain/chains/ipp_progress_claim';
+import { ippPsec } from '../v2/domain/chains/ipp_psec';
+import { ippQgr } from '../v2/domain/chains/ipp_qgr';
+import { ippRefi } from '../v2/domain/chains/ipp_refi';
+import { ippRfi } from '../v2/domain/chains/ipp_rfi';
+import { ippRpr } from '../v2/domain/chains/ipp_rpr';
+import { ippSed } from '../v2/domain/chains/ipp_sed';
+import { ippSubcontractor } from '../v2/domain/chains/ipp_subcontractor';
+import { ippSubmittal } from '../v2/domain/chains/ipp_submittal';
+import { ippTpa } from '../v2/domain/chains/ipp_tpa';
+import { ippTq } from '../v2/domain/chains/ipp_tq';
+import { ippWul } from '../v2/domain/chains/ipp_wul';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { IMPORTABLE_CHAINS, RENAMED_IMPORTS, fetchLegacyRows, importChain } from '../v2/import/legacy';
@@ -386,6 +438,58 @@ export const CHAINS = {
   smart_meter_asset: smartMeterAsset,
   unserved_energy_claim: unservedEnergyClaim,
   green_tariff_disclosure: greenTariffDisclosure,
+  ipp_acs: ippAcs,
+  ipp_ael: ippAel,
+  ipp_anr: ippAnr,
+  ipp_aud: ippAud,
+  ipp_bbbee: ippBbbee,
+  ipp_bfs: ippBfs,
+  ipp_ccc: ippCcc,
+  ipp_cd: ippContractorDefault,
+  ipp_cep: ippCep,
+  ipp_coc: ippCoc,
+  ipp_construction_diary: ippConstructionDiary,
+  ipp_ctr: ippCtr,
+  ipp_doc_control: ippDocControl,
+  ipp_eam: ippEam,
+  ipp_eco: ippEco,
+  ipp_empr: ippEmpr,
+  ipp_env_closure: ippEnvClosure,
+  ipp_env_monitoring: ippEnvMonitoring,
+  ipp_eqt: ippEqt,
+  ipp_esmr: ippEsmr,
+  ipp_final_completion: ippFinalCompletion,
+  ipp_fm: ippFm,
+  ipp_gcc: ippGcc,
+  ipp_hra: ippHra,
+  ipp_ie_cert: ippIeCert,
+  ipp_iear: ippIear,
+  ipp_insr: ippInsr,
+  ipp_lam: ippLam,
+  ipp_land_register: ippLandRegister,
+  ipp_lcr: ippLcr,
+  ipp_lrep: ippLrep,
+  ipp_lta: ippLta,
+  ipp_mc: ippMc,
+  ipp_method_statement: ippMethodStatement,
+  ipp_mir: ippMir,
+  ipp_om_handover: ippOmHandover,
+  ipp_omc: ippOmc,
+  ipp_payment_cert: ippPaymentCert,
+  ipp_performance_bonds: ippPerformanceBonds,
+  ipp_ppavar: ippPpavar,
+  ipp_progress_claim: ippProgressClaim,
+  ipp_psec: ippPsec,
+  ipp_qgr: ippQgr,
+  ipp_refi: ippRefi,
+  ipp_rfi: ippRfi,
+  ipp_rpr: ippRpr,
+  ipp_sed: ippSed,
+  ipp_subcontractor: ippSubcontractor,
+  ipp_submittal: ippSubmittal,
+  ipp_tpa: ippTpa,
+  ipp_tq: ippTq,
+  ipp_wul: ippWul,
 };
 
 const clock: Clock = { now: () => ({ epoch_ms: Date.now(), zone: 'UTC' }) };
