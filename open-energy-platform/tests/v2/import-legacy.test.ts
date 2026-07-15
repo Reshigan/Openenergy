@@ -7,7 +7,8 @@
 // imported txn as seq 2 chained off the imported hash.
 
 import { describe, it, expect } from 'vitest';
-import { importChain, importIdempotencyKey, IMPORTABLE_CHAINS, STATUS_MAP } from '../../src/v2/import/legacy';
+import { importChain, importIdempotencyKey, IMPORTABLE_CHAINS, RENAMED_IMPORTS, STATUS_MAP } from '../../src/v2/import/legacy';
+import { MERIDIAN_CHAINS } from '../../src/utils/chain-registry-meridian';
 import { applyTransition, type EngineDeps } from '../../src/v2/domain/engine';
 import { CHAINS } from '../../src/routes/v2';
 import { GUARDS } from '../../src/v2/domain/guards/registry';
@@ -221,16 +222,25 @@ describe('importChain', () => {
   it('every STATUS_MAP target is a real state of its chain', () => {
     for (const [ck, map] of Object.entries(STATUS_MAP)) {
       expect(ck in IMPORTABLE_CHAINS).toBe(true);
+      const chain = CHAINS[RENAMED_IMPORTS[ck] ?? ck];
       for (const [from, to] of Object.entries(map)) {
-        expect(CHAINS[ck].states[to], `${ck}: ${from} → ${to}`).toBeDefined();
+        expect(chain.states[to], `${ck}: ${from} → ${to}`).toBeDefined();
         // a mapping for a status that IS already a v2 state would silently shadow it
-        expect(CHAINS[ck].states[from], `${ck}: '${from}' is already a v2 state`).toBeUndefined();
+        expect(chain.states[from], `${ck}: '${from}' is already a v2 state`).toBeUndefined();
       }
     }
   });
 
+  it('every RENAMED_IMPORTS entry resolves: allow-listed source, real descriptor, real v2 chain', () => {
+    for (const [v1Key, v2Key] of Object.entries(RENAMED_IMPORTS)) {
+      expect(v1Key in IMPORTABLE_CHAINS, `${v1Key} missing from IMPORTABLE_CHAINS`).toBe(true);
+      expect(MERIDIAN_CHAINS.some((d) => d.key === v1Key), `${v1Key} has no MERIDIAN_CHAINS descriptor`).toBe(true);
+      expect(CHAINS[v2Key], `${v1Key} → ${v2Key}: no such v2 chain`).toBeDefined();
+    }
+  });
+
   it('rejects a chain outside the allow-list', async () => {
-    expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(89);
+    expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(122);
     await expect(importChain([], 'ppa_contract', newDeps())).rejects.toThrow(/not importable/);
   });
 });

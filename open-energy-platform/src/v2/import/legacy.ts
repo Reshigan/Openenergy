@@ -127,6 +127,84 @@ export const IMPORTABLE_CHAINS: Record<string, string | null> = {
   warranty_claim: 'vendor',
   warranty_recovery: 'vendor',
   wheeling_access: null,
+  // RENAMED sources (§2) — keys are v1 descriptor keys; see RENAMED_IMPORTS.
+  algo_certification: 'applicant', // trading-member firm seeking certification; v2 declares applicant_party role 'applicant'
+  capital_adequacy_report: null, // counterpartyCol is null (single-entity regulatory filing)
+  carbon_scope3_disclosure: 'reporter', // names the reporting entity (a participant); v2 states are held by 'reporter'
+  carbon_tax_return: null, // counterpartyCol is null (taxpayer's own SARS filing)
+  cbt_sed_report: null, // free-text community name, not a platform participant
+  change_request: null, // counterpartyCol is null (single-party desk record)
+  cod_chain: 'contractor', // EPC contractor is a participant (matches project_change_order precedent)
+  control_environment_audit: null, // counterpartyCol is null (internal control audit)
+  credit_facility_application: 'applicant', // borrower applying for the facility; v2 facility_offered holder is 'applicant'
+  crediting_period_renewal: 'validator', // VVB (validation & verification body) is a participant; v2 holder 'validator'
+  demand_response_event: null, // counterpartyCol is null (operator_id lookup exists but no counterparty column)
+  disbursement_case: 'borrower', // names the borrowing participant; v2 disbursement declares role 'borrower'
+  fsca_compliance_report: null, // counterpartyCol is null on the v1 descriptor
+  gca_connection: 'operator', // names the network operator participant; v2 gca declares role 'operator'
+  green_bond_report: null, // counterpartyCol is null on the v1 descriptor
+  imbalance_settlement: 'counterparty', // BRP participant id; v2 imbalance role 'counterparty' is labelled "Counterparty (BRP)"
+  ipp_aud: null, // last-actor party token, not a stable counterparty (handover_dossier precedent)
+  ipp_doc_control: null, // counterpartyCol is null on the v1 descriptor
+  ipp_fm: null, // counterpartyCol is null on the v1 descriptor
+  kyc_verification: 'subject', // the participant under verification; v2 kyc declares role 'subject'
+  market_abuse_case: null, // free-text name column (the id lives in subject_party_id, not the counterpartyCol)
+  milestone_variance_report: null, // counterpartyCol is null on the v1 descriptor
+  mrv_submissions: 'doe', // DOE auditor assignee is a participant (assignee precedent: pm_compliance)
+  om_work_order: null, // assigned_to is a technician id, not a contractual counterparty
+  ppa_contract_chain: null, // no seller-name column; project_name is the deal identifier
+  ppa_payment_security: 'seller', // seller (IPP) holding the credit support
+  ppa_take_or_pay: 'ipp', // IPP seller party to the ToP true-up
+  problem_record: null, // single-party desk record
+  procurement_rfp: 'vendor', // awarded bidder is the vendor counterparty
+  rez_capacity: 'applicant', // connection applicant party
+  slb_kpi_ratchet: null, // no counterparty column
+  support_tickets: 'reporter', // ticket reporter is the counterparty user
+  trade_report: 'counterparty', // trade counterparty (settlement_fail/trade_allocation precedent)
+};
+
+/** RENAMED sources (CUTOVER_COVERAGE §2): v1 descriptor key → v2 chain key.
+ *  Import is invoked with the v1 key (it names the source table via the
+ *  MERIDIAN_CHAINS descriptor); events and txns land under the v2 chain, so
+ *  genesis prev_hash, event type and txn chain_key all use the v2 key while
+ *  idempotency stays keyed by the v1 source (resumable per source table).
+ *  `work_order` (duplicate descriptor over om_work_orders) and `gcc_ncr`
+ *  (rides oe_grid_code_compliance, already drained via the EXACT import) are
+ *  deliberately absent — each table imports exactly once. Static allow-list. */
+export const RENAMED_IMPORTS: Record<string, string> = {
+  algo_certification: 'algo_cert',
+  capital_adequacy_report: 'capital_adequacy',
+  carbon_scope3_disclosure: 'scope3_disclosure',
+  carbon_tax_return: 'carbon_tax',
+  cbt_sed_report: 'cbt_sed',
+  change_request: 'change_enablement',
+  cod_chain: 'cod',
+  control_environment_audit: 'audit',
+  credit_facility_application: 'credit_origination',
+  crediting_period_renewal: 'crediting_renewal',
+  demand_response_event: 'demand_response',
+  disbursement_case: 'disbursement',
+  fsca_compliance_report: 'fsca_compliance',
+  gca_connection: 'gca',
+  green_bond_report: 'green_bond',
+  imbalance_settlement: 'imbalance',
+  ipp_aud: 'audit',
+  ipp_doc_control: 'ipp_document_control',
+  ipp_fm: 'force_majeure_claim',
+  kyc_verification: 'kyc',
+  market_abuse_case: 'market_abuse',
+  milestone_variance_report: 'milestone_variance',
+  mrv_submissions: 'carbon_mrv',
+  om_work_order: 'wo',
+  ppa_contract_chain: 'ppa_contract',
+  ppa_payment_security: 'payment_security',
+  ppa_take_or_pay: 'take_or_pay',
+  problem_record: 'problem_management',
+  procurement_rfp: 'procurement',
+  rez_capacity: 'grid_capacity_allocation',
+  slb_kpi_ratchet: 'slb_kpi',
+  support_tickets: 'support_ticket',
+  trade_report: 'trade_reporting',
 };
 
 /** Written status-mapping decisions (CUTOVER_COVERAGE §1 header rule): v1
@@ -820,6 +898,341 @@ export const STATUS_MAP: Record<string, Record<string, string>> = {
     terminated: 'access_granted',
     expired: 'access_granted',
   },
+  algo_certification: {
+    registration_submitted: 'submitted', // intake maps to earliest v2 state
+    documentation_review: 'under_review', // regulator doc review = under_review
+    conformance_testing: 'testing', // same phase, v2 name 'testing'
+    risk_controls_validation: 'testing', // risk-control validation is part of the conformance-testing phase
+    certification_review: 'under_review', // final regulator review before certify
+    recertification_review: 'under_review', // re-cert review re-enters regulator review
+    deployed: 'certified', // live/deployed algo = certified (non-terminal in v2)
+    remediation_required: 'suspended', // non-terminal remediation window; v2 suspended is regulator-held 30d
+    decommissioned: 'withdrawn', // voluntary end-of-life; revoked is regulator-stripped, so withdrawn is nearer
+  },
+  capital_adequacy_report: {
+    data_gathering: 'draft', // all pre-submission prep collapses to entity-held draft
+    rwa_calculation: 'draft', // pre-submission
+    capital_aggregation: 'draft', // pre-submission
+    icaap_review: 'draft', // internal review, still pre-SARB
+    board_review: 'draft', // internal governance, still pre-SARB
+    submitted_sarb: 'submitted', // filed with regulator
+    queries_raised: 'deficient', // regulator returned queries; v2 deficient is entity-held response state
+    queries_responded: 'under_review', // responses back with regulator
+    remediation_required: 'deficient', // returned deficient, entity must act
+    remediation: 'remediating', // same phase, v2 name
+    capital_breach: 'lapsed', // v1 adverse terminal; lapsed is the only non-accepted, non-voluntary v2 terminal (v1 status survives in payload.row)
+  },
+  carbon_scope3_disclosure: {
+    limited_assurance_complete: 'assurance_complete', // v2 collapses assurance grades into one complete state
+    reasonable_assurance_complete: 'assurance_complete', // grade preserved in payload.row
+  },
+  carbon_tax_return: {
+    period_open: 'draft', // all pre-submission prep collapses to taxpayer-held draft
+    data_collection: 'draft', // pre-submission
+    emissions_calc: 'draft', // pre-submission
+    allowances_applied: 'draft', // pre-submission
+    return_prepared: 'draft', // pre-submission
+    internal_approved: 'draft', // approved internally but not yet filed
+    acknowledged: 'submitted', // SARS acknowledged receipt; still regulator-held
+    under_sars_review: 'submitted', // v2 'submitted' covers the with-SARS review window
+    assessment_issued: 'assessed', // same phase, v2 name
+    payment_made: 'finalized', // v1 happy terminal -> v2 happy terminal (v2 'paid' is non-terminal)
+    disputed: 'rejected', // v1 adverse terminal -> nearest adverse v2 terminal
+  },
+  change_request: {
+    change_requested: 'submitted', // intake maps to earliest v2 state
+    assessment: 'assessing', // same phase, v2 name
+    cab_review: 'assessing', // CAB review is the tail of the assessing phase before 'approved'
+    implemented: 'review', // implemented awaiting PIR = post-implementation review
+    pir: 'review', // same phase, v2 name
+    cancelled: 'withdrawn', // v1 terminal cancel -> v2 withdrawn (no cancelled state)
+  },
+  cod_chain: {
+    draft: 'cod_declared', // v2 starts at COD readiness declaration; construction stages collapse to start
+    epc_signed: 'cod_declared', // pre-commissioning construction
+    ntp_issued: 'cod_declared', // pre-commissioning construction
+    mobilization: 'cod_declared', // pre-commissioning construction
+    mechanical_complete: 'cod_declared', // pre-commissioning construction (v1 status in payload.row)
+    cold_commissioning: 'commissioning_review', // commissioning phase
+    grid_synchronized: 'commissioning_review', // commissioning phase, pre reliability run
+    cancelled: 'withdrawn', // v1 terminal cancel -> v2 withdrawn (cod_rejected is certifier refusal)
+  },
+  control_environment_audit: {
+    control_defined: 'planned', // design/scoping phase = planning
+    design_documented: 'planned', // design phase
+    walkthrough_completed: 'planned', // design walkthrough still precedes test execution
+    tod_test_planned: 'fieldwork', // TOD/TOOE testing lanes are the audit fieldwork phase
+    tod_evidence_collected: 'fieldwork', // testing phase
+    tod_test_executed: 'fieldwork', // testing phase
+    tooe_test_planned: 'fieldwork', // testing phase
+    tooe_evidence_collected: 'fieldwork', // testing phase
+    tooe_test_executed: 'fieldwork', // testing phase
+    deficiency_assessed: 'findings_issued', // assessed deficiency = findings issued to auditee
+    remediation_completed: 'verified', // auditee done; v2 verified is auditor-held confirm-then-close (24h)
+    excepted: 'verified', // exception accepted, no remediation needed, heading to close
+    suspended: 'remediation', // paused mid assessment/remediation cycle; nearest non-terminal by position
+    remediated_re_test: 'verified', // re-test is the auditor verifying remediation
+    archived: 'audit_closed', // v1 happy terminal
+    deficient: 'audit_closed', // closed-with-deficiency is still a completed audit, not a cancel (v1 status in payload.row)
+  },
+  credit_facility_application: {
+    application_received: 'submitted', // intake
+    screening: 'submitted', // pre-assessment intake check, lender-held
+    credit_assessment: 'under_assessment', // same phase, v2 name
+    committee_review: 'under_assessment', // committee is part of the assessment phase pre-approval
+    referred_back: 'under_assessment', // referred back = more assessment
+    conditions_pending: 'credit_approved', // approved-with-conditions = committee approval granted
+    approved: 'credit_approved', // same phase, v2 name
+    agreement_issued: 'facility_offered', // agreement/offer out to applicant
+    cp_satisfied: 'facility_accepted', // CPs done, lender-held pre-activation
+    facility_available: 'originated', // v1 happy terminal -> v2 record-only origination terminal
+  },
+  crediting_period_renewal: {
+    renewal_due: 'renewal_requested', // earliest v2 state
+    application_submitted: 'renewal_requested', // intake
+    completeness_check: 'renewal_requested', // intake completeness check, validator-held
+    revision_requested: 'renewal_requested', // proponent revising = back at request stage
+    baseline_reassessment: 'under_reassessment', // reassessment phase
+    additionality_retest: 'under_reassessment', // reassessment phase
+    vvb_validation: 'under_reassessment', // VVB work is the reassessment phase
+    standard_review: 'validated', // standard-body review follows VVB validation; v2 validated is registry-held
+    refused: 'rejected', // v1 adverse terminal -> v2 name
+  },
+  demand_response_event: {
+    registered: 'called', // earliest v2 state; enrolment collapses to event start
+    notification_sent: 'called', // v2 'called' is the notification step
+    performance_metering: 'load_shed', // metering window post-shed, pre-verification (grid-held)
+    settlement_calc: 'performance_verified', // verified, computing compensation; v2 has no settlement stage before instruction
+    settlement_agreed: 'performance_verified', // non-terminal pre-instruction (v1 status in payload.row)
+    settlement_disputed: 'performance_verified', // measurement dispute keeps it non-terminal at verification
+    settled: 'compensated_instructed', // v1 happy terminal -> v2 record-only compensation terminal
+  },
+  disbursement_case: {
+    tranche_released: 'paid', // v1 chain opens post-release (UoP monitoring); funds out, receipt/UoP not yet confirmed
+    invoices_pending: 'paid', // borrower assembling UoP invoices post-payment; v2 has no post-payment verification stages
+    invoices_submitted: 'paid', // UoP invoices in, lender validating; collapses into paid, v1 status in payload.row
+    bank_validating: 'paid', // bank-statement validation is UoP evidence work under paid
+    ie_certifying: 'paid', // IE certification of UoP still pre-confirmation
+    uop_certified: 'paid', // certified but not reconciled; only non-terminal post-payment v2 state
+    reconciled: 'confirmed', // clean UoP reconciliation = receipt confirmed, matching clean terminal
+    clawback_executed: 'cancelled', // funds clawed back; adverse close of the disbursement
+    waived: 'confirmed', // reconciliation requirement waived, case closed benignly; waiver survives in payload.row
+  },
+  fsca_compliance_report: {
+    report_scheduled: 'drafted', // earliest pre-submission stage collapses to entity-held draft
+    data_gathering: 'drafted', // pre-submission prep; v1 status in payload.row
+    drafting: 'drafted', // same lifecycle position
+    internal_review: 'drafted', // internal QA still pre-submission
+    co_sign_off: 'drafted', // compliance-officer sign-off is the last pre-submission step
+    queries_received: 'under_review', // regulator query round is part of the review cycle; v1 status in payload.row
+    queries_responded: 'under_review', // response back with regulator, review continues
+    filed: 'compliant', // successful filing = clean terminal
+    deficiency_found: 'non_compliant', // exact semantic match: deficiency puts entity in non-compliant remediation path
+    refiled: 'compliant', // refiled after remediation = accepted close; v1 status in payload.row
+    revocation_risk: 'rejected', // adverse terminal (licence-revocation exposure)
+  },
+  gca_connection: {
+    application_filed: 'application_submitted', // same event, renamed
+    studies_required: 'under_review', // operator scoping studies is part of application review
+    studies_executing: 'under_review', // studies in flight; v1 status in payload.row
+    cost_estimate_issued: 'offer_issued', // cost estimate is the v1 connection offer
+    cost_accepted: 'offer_accepted', // applicant accepted the estimate
+    connection_agreement_drafted: 'offer_accepted', // UNGCA drafting post-acceptance, pre-execution; v1 status in payload.row
+    executed: 'agreement_executed', // same event, renamed
+    construction: 'agreement_executed', // build phase under the executed agreement; non-terminal, v1 status in payload.row
+    energised: 'agreement_executed', // energised but not yet in commercial service; non-terminal preferred, v1 status in payload.row
+    in_service: 'connected', // clean terminal: connected and energized
+    rejected: 'application_rejected', // adverse terminal, renamed
+  },
+  green_bond_report: {
+    impact_calculation: 'impact_calculated', // same stage, tense rename
+    queries_responded: 'under_review', // response lands back with JSE, review continues; v1 status in payload.row
+    deficiency_noted: 'queries_raised', // issuer-held defect-fixing stage; nearest issuer-held review state
+    remediation: 'queries_raised', // issuer remediating deficiency pre-resubmission; v1 status in payload.row
+  },
+  imbalance_settlement: {
+    period_open: 'raised', // settlement case opened, pre-computation
+    meter_data_received: 'raised', // data intake still pre-calculation; v1 status in payload.row
+    nominations_reconciled: 'raised', // reconciliation is calc input prep
+    imbalance_computed: 'calculated', // computation done, pricing pending collapses here
+    priced: 'calculated', // priced but statement not yet out; v1 status in payload.row
+    invoice_issued: 'statement_published', // invoice = the published settlement statement
+    invoice_acknowledged: 'statement_published', // counterparty-held post-publication window
+    dispute_window_open: 'statement_published', // window runs while statement stands
+    payment_pending: 'statement_published', // v2 has no payment state (settlement-honesty); v1 status in payload.row
+    settled: 'settlement_confirmed', // clean terminal, renamed
+    archived: 'settlement_confirmed', // archived post-settlement; terminal close, v1 status in payload.row
+    resolved_dispute: 'dispute_resolved', // same stage, word-order rename
+    invoice_revised: 'statement_published', // revised statement republished to counterparty; v1 status in payload.row
+    aged_arrears: 'statement_published', // unpaid but live collections (non-terminal in v1; written_off is the bad-debt terminal)
+  },
+  ipp_aud: {
+    audit_cycle_opened: 'planned', // cycle opened = audit planned
+    trial_balance_preparation: 'planned', // auditee prep pre-fieldwork; v1 status in payload.row
+    year_end_journals: 'planned', // still pre-fieldwork accounting prep
+    audit_fieldwork: 'fieldwork', // same stage, renamed
+    management_accounts_review: 'fieldwork', // review is part of fieldwork evidence phase; v1 status in payload.row
+    audit_queries_resolution: 'findings_issued', // auditee resolving auditor queries = findings on auditee's desk
+    draft_opinion_review: 'verified', // post-fieldwork, pre-close auditor-held stage; v1 status in payload.row
+    board_approval: 'verified', // approval pending before close; v1 status in payload.row
+    cipc_submission: 'verified', // statutory filing step pre-close; lossy, v1 status in payload.row
+    audit_completed: 'audit_closed', // clean terminal
+    audit_qualified: 'audit_closed', // qualified opinion still ends the audit; qualification survives in payload.row
+    audit_lapsed: 'audit_cancelled', // lapsed cycle = cancelled terminal
+  },
+  ipp_doc_control: {
+    draft_uploaded: 'document_submitted', // upload = submission into document control
+    metadata_indexed: 'document_submitted', // indexing is intake processing; v1 status in payload.row
+    revision_open: 'document_submitted', // new revision re-enters at submission
+    IDC_assigned: 'under_review', // IDC assignment starts the review
+    transmitted: 'under_review', // transmitted to reviewers; v1 status in payload.row
+    reviewed: 'under_review', // review outcome not yet dispositioned
+    commented: 'revision_required', // comments back to originator = revision required
+    revised: 'under_review', // revised document resubmitted for review
+    as_built_finalised: 'approved', // post-review, pre-archive; non-terminal preferred over terminal IFC, v1 status in payload.row
+    archived: 'issued_for_construction', // clean lifecycle-complete terminal; lossy, v1 status in payload.row
+    hold: 'under_review', // hold = paused review (isda_agreement on_hold precedent); v1 status in payload.row
+  },
+  ipp_fm: {
+    fm_event_occurred: 'notified', // v2 chain opens at notification; earliest state, v1 status in payload.row
+    fm_notice_issued: 'notified', // same event, renamed
+    fm_notice_verified: 'under_assessment', // verified notice moves claim into counterparty assessment
+    fm_relief_in_progress: 'assessed', // relief determined and running; non-terminal preferred over terminal relief_granted
+    fm_monitoring: 'assessed', // ongoing-event monitoring under an assessed claim; v1 status in payload.row
+    fm_disputed: 'under_assessment', // dispute reopens assessment; v1 status in payload.row
+    fm_arbitration: 'under_assessment', // v2 has no arbitration state; live contested claim, v1 status in payload.row
+    fm_resolved: 'relief_granted', // resolved FM = relief cycle concluded; clean terminal, v1 status in payload.row
+    fm_arbitration_determined: 'relief_granted', // determination outcome not derivable from status alone; v1 status in payload.row
+    fm_prolonged_termination: 'relief_denied', // prolonged-FM termination is the adverse terminal; v1 status in payload.row
+  },
+  kyc_verification: {
+    pending_submission: 'kyc_initiated', // case opened, documents awaited
+    documents_submitted: 'screening_pending', // docs in, screening is the next step
+    documents_incomplete: 'kyc_initiated', // back to document gathering; v1 status in payload.row
+    documents_received: 'screening_pending', // confirmed receipt, screening queued
+    automated_screening: 'screening_pending', // screening in flight; v1 status in payload.row
+    enhanced_due_diligence: 'edd_in_progress', // same stage, renamed
+    compliance_review: 'decision_pending', // compliance officer deciding
+    conditionally_approved: 'decision_pending', // conditions outstanding pre-final admit; non-terminal, v1 status in payload.row
+    verified: 'admitted', // clean terminal, renamed
+    rejected: 'declined', // adverse terminal, renamed
+    suspended: 'decision_pending', // v2 has no suspended state; live case back with compliance, v1 status in payload.row
+    lapsed: 'withdrawn', // timed out without decision; neutral terminal, v1 status in payload.row
+  },
+  market_abuse_case: {
+    alert_raised: 'flagged', // surveillance alert = flag
+    triaged: 'triage', // same stage, renamed
+    under_investigation: 'investigating', // same stage, renamed
+    evidence_review: 'investigating', // evidence work is part of the investigation; v1 status in payload.row
+    analysis_complete: 'investigating', // outcome (clear vs substantiate) not derivable from status alone; v1 status in payload.row
+    cleared: 'unfounded', // cleared after analysis = unfounded terminal
+    stor_filed: 'substantiated', // STOR filing implies a suspicious finding; non-terminal
+    regulator_referred: 'substantiated', // non-terminal in v1 (case continues); v2 enforcement_referred is terminal, so prefer non-terminal, v1 status in payload.row
+    enforcement_action: 'substantiated', // live enforcement stage; non-terminal preferred, v1 status in payload.row
+    sanctioned: 'closed', // enforcement concluded with sanction; v1 status in payload.row
+    disputed: 'substantiated', // post-finding dispute, case live; v1 status in payload.row
+    dispute_resolved: 'closed', // dispute concluded, case closed
+  },
+  milestone_variance_report: {
+    remediation_accepted: 'dfi_accepted', // DFI accepted the remediation = clean close; v1 status in payload.row
+  },
+  mrv_submissions: {
+    doe_assigned: 'under_verification', // DOE assigned = verification underway
+    doe_review: 'under_verification', // DOE reviewing the monitoring report
+    doe_opinion_positive: 'verified', // positive opinion = verification passed
+    doe_opinion_qualified: 'verified', // qualified-but-positive opinion still passes; v1 status in payload.row
+    cra_review: 'verified', // post-verification CRA step; nearest non-terminal post-verify state
+    cra_approved: 'verified', // CRA approved, awaiting issuance; pre-publish
+    issuance_authorized: 'verified', // authorized but not yet issued; non-terminal
+    doe_opinion_adverse: 'rejected', // adverse opinion = verification failed, terminal
+    doe_opinion_disclaimer: 'rejected', // disclaimer opinion = no assurance, terminal
+    cra_rejected: 'rejected', // CRA refused, terminal
+    issued: 'published', // credits issued = report published, terminal
+  },
+  om_work_order: {
+    created: 'new', // same intake state, renamed
+    diagnosing: 'diagnose', // gerund -> imperative rename
+    repairing: 'repair', // gerund -> imperative rename
+    testing: 'test', // gerund -> imperative rename
+  },
+  ppa_payment_security: {
+    security_required: 'security_requested', // same opening state, renamed
+    instrument_submitted: 'instrument_issued', // instrument lodged = issued into the case
+    under_verification: 'instrument_issued', // seller verifying the lodged instrument; pre-in_force
+    active: 'in_force', // live credit support
+    adequacy_review: 'in_force', // periodic review of a live instrument; non-terminal
+    drawdown_initiated: 'call_pending', // draw on the security = call in flight
+    replenishment_pending: 'call_pending', // post-draw top-up still inside the call workflow; non-terminal
+    expiry_pending: 'in_force', // nearing expiry but still live; v2 expired is terminal, prefer non-terminal
+    substitution_pending: 'in_force', // live instrument being substituted; non-terminal
+    forfeited: 'called', // security drawn/forfeited = call executed, terminal
+    rejected: 'request_rejected', // instrument refused, terminal
+  },
+  ppa_take_or_pay: {
+    accrual_open: 'period_open', // contract-year accrual running
+    year_end: 'volume_measured', // year closed, contracted-vs-delivered measurement stage
+    statement_issued: 'shortfall_computed', // statement quantifies the shortfall
+    evidence_required: 'shortfall_computed', // evidence step is part of shortfall assessment; non-terminal
+    evidence_submitted: 'shortfall_computed', // still assessing; v1 status in payload.row
+    quantum_proposed: 'shortfall_computed', // quantum proposed off the computed shortfall, pre-agreement
+    quantum_agreed: 'shortfall_computed', // agreed but not yet invoiced; v2 invoiced_instructed is terminal, prefer non-terminal
+    settled: 'invoiced_instructed', // settlement-honesty: instruction only, no custody; terminal
+    waived: 'met_closed', // claim waived = closed with no ToP liability, terminal
+  },
+  problem_record: {
+    categorized: 'problem_logged', // categorization is intake, pre-investigation
+    investigating: 'under_investigation', // same stage, renamed
+    rca_identified: 'root_cause_identified', // same stage, renamed
+    fix_proposed: 'known_error', // known error logged with proposed fix; pre-resolution
+    change_raised: 'known_error', // change in flight, not yet resolved; v1 status in payload.row
+    fix_deployed: 'resolved', // fix live, pending verification
+    resolution_verified: 'resolved', // verified resolution awaiting closure; non-terminal
+    escalated: 'closed', // v1 terminal hand-off; closed at this desk, v1 status in payload.row
+    cancelled: 'withdrawn', // cancelled record = withdrawn, terminal
+  },
+  procurement_rfp: {
+    draft: 'requisition_raised', // RFP being drafted = requisition stage
+    published: 'rfq_issued', // RFP published to market = RFQ out
+    bidding: 'rfq_issued', // bids open against the issued RFQ; non-terminal
+    bid_closed: 'bids_evaluating', // bids in, evaluation starting
+    evaluation: 'bids_evaluating', // same stage, renamed
+    shortlisted: 'bids_evaluating', // shortlist is part of evaluation; v1 status in payload.row
+    disputed: 'bids_evaluating', // bid dispute holds the award decision; nearest non-terminal
+    contracted: 'po_issued', // contract signed = PO issued
+  },
+  rez_capacity: {
+    completeness_screening: 'application_received', // intake screening, pre-study
+    information_requested: 'application_received', // applicant supplying info, still pre-study
+    capacity_assessment: 'study_in_progress', // grid study underway
+    queue_positioned: 'study_in_progress', // queued awaiting offer; v2 has no queue state, pre-offer
+    offer_issued: 'allocation_offered', // same stage, renamed
+    capacity_reserved: 'allocation_accepted', // offer accepted, capacity reserved pending milestones
+    capacity_allocated: 'allocation_active', // allocation in force, terminal
+    rejected: 'application_rejected', // application refused, terminal
+    lapsed: 'offer_declined', // offer lapsed unaccepted = declined by inaction, terminal
+    relinquished: 'withdrawn', // applicant gave capacity back = withdrew, terminal
+  },
+  slb_kpi_ratchet: {
+    kpi_missed: 'ratchet_applied', // missed KPI triggers the step-up ratchet; nearest terminal outcome
+  },
+  support_tickets: {
+    open: 'reported', // same opening state, renamed
+    awaiting_user: 'awaiting_reporter', // same pause state, renamed
+  },
+  trade_report: {
+    report_due: 'reporting_pending', // obligation open, report not yet made
+    report_generated: 'reporting_pending', // generated but not yet submitted to the TR
+    submitted_to_tr: 'submitted', // lodged at the trade repository
+    tr_acknowledged: 'acknowledged', // TR ack is v2's completion state; v2 has no post-ack recon, v1 status in payload.row
+    reconciled: 'acknowledged', // recon complete post-ack; v2 ack is the done state
+    break_identified: 'rejected', // recon break needs correction; v2 rejected is the non-terminal fix-and-resubmit state
+    break_resolved: 'acknowledged', // break cleared, report stands acknowledged
+    corrected: 'submitted', // corrected report resubmitted, awaiting ack
+    tr_rejected: 'rejected', // TR refused the submission; non-terminal pending correction
+    confirmed_complete: 'acknowledged', // confirmed done = acknowledged, terminal
+    exempted: 'withdrawn', // reporting obligation exempted = deliberately withdrawn, terminal
+    cancelled: 'withdrawn', // cancelled report = withdrawn, terminal
+  },
 };
 
 export type LegacyRow = Record<string, Json | undefined>;
@@ -891,7 +1304,8 @@ export async function importChain(
   opts: { dry_run?: boolean } = {},
 ): Promise<ImportReport> {
   const counterpartyRole = IMPORTABLE_CHAINS[chain_key];
-  const chain = deps.chains[chain_key];
+  const v2Key = RENAMED_IMPORTS[chain_key] ?? chain_key;
+  const chain = deps.chains[v2Key];
   if (counterpartyRole === undefined || !chain) throw new Error(`chain '${chain_key}' is not importable`);
   const desc = legacyDescriptor(chain_key);
   const dry_run = opts.dry_run === true;
@@ -928,8 +1342,8 @@ export async function importChain(
       txn_id: rowId,
       seq: 1,
       event_id,
-      chain_key,
-      type: `${chain_key}.imported`,
+      chain_key: v2Key,
+      type: `${v2Key}.imported`,
       from_state: null,
       to_state: status,
       actor_id: 'system:import',
@@ -941,7 +1355,7 @@ export async function importChain(
       reason_text: null,
       payload: { provenance: 'legacy', row: row as Json },
       payload_version: 1,
-      prev_hash: await genesisPrevHash(chain_key),
+      prev_hash: await genesisPrevHash(v2Key),
       idempotency_key: idem,
     };
     const event: EventRow = { ...unhashed, hash: await eventHash(unhashed) };
@@ -983,7 +1397,7 @@ export async function importChain(
     const refBase = typeof refVal === 'string' && refVal ? refVal : rowId;
     const txn: TxnRow = {
       id: rowId,
-      chain_key,
+      chain_key: v2Key,
       human_ref: refBase,
       title: chain.title(fields),
       state: status,
