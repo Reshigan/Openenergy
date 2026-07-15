@@ -35,11 +35,15 @@ export default function Find() {
   const [rows, setRows] = useState<TxnRow[] | null>(null);
   const role = user?.role ?? '';
 
+  // ?chain_key= → legacy /ledger/:chainKey redirects here for v2-covered chains
+  // (CUTOVER_COVERAGE.md §6); also usable as a direct deep-link filter.
+  const chainKeyFilter = params.get('chain_key') ?? undefined;
+
   useEffect(() => { getChains().then(setChains); }, []);
   useEffect(() => {
-    const h = setTimeout(() => { listTxns({ q: q || undefined, limit: 60 }).then(setRows); }, 160);
+    const h = setTimeout(() => { listTxns({ q: q || undefined, chain_key: chainKeyFilter, limit: 60 }).then(setRows); }, 160);
     return () => clearTimeout(h);
-  }, [q]);
+  }, [q, chainKeyFilter]);
 
   // ?start=chainKey:edgeId → compose overlay for that opener.
   const start = params.get('start');

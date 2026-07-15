@@ -5,7 +5,7 @@
 // so the counterparty gets no .actbar at all.
 import React from 'react';
 import './meridian.css';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { fmtZar, humanizeKey, type LedgerActionField } from './lib';
 import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
@@ -14,6 +14,7 @@ import { FuseBar } from './components';
 import { cleanLabel } from './labels';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
+import { getLegacyCoverage } from '../v2/api';
 
 // Format a raw case-record value for the L5 audit surface. Conservative on money:
 // ZAR only when the key clearly names it (this domain uses a consistent `_zar`
@@ -51,16 +52,30 @@ interface ThreadData {
 
 export default function ThreadPage() {
   const { chainKey = '', id = '' } = useParams();
+  const nav = useNavigate();
   const [t, setT] = React.useState<ThreadData | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [err, setErr] = React.useState<string | null>(null);          // load failure — replaces the page
   const [actErr, setActErr] = React.useState<string | null>(null);    // action failure — thread stays rendered
   const [formAction, setFormAction] = React.useState<ThreadData['actions'][number] | null>(null); // open action-form drawer
 
+  // v2 cutover check (CUTOVER_COVERAGE.md §6): v2-covered chains redirect to
+  // /v2/t/:id — v2 txn_id is the verbatim v1 row id, so no id translation needed.
+  const [covered, setCovered] = React.useState<boolean | null>(null);
+  React.useEffect(() => {
+    let live = true;
+    getLegacyCoverage().then((m) => {
+      if (!live) return;
+      if (chainKey in m) nav(`/v2/t/${id}`, { replace: true });
+      else setCovered(false);
+    });
+    return () => { live = false; };
+  }, [chainKey, id, nav]);
+
   const load = React.useCallback(() =>
     api.get(`/thread/${chainKey}/${id}`).then(r => setT(r.data.data)).catch(e => setErr(String(e))),
   [chainKey, id]);
-  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => { if (covered === false) load(); }, [load, covered]);
 
   // Deep-link from the Horizon board: ?act=<action> opens that action's FieldForm
   // drawer once the thread has loaded. Once-only (ref guard) so firing the action —

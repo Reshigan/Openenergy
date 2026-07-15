@@ -162,7 +162,7 @@ import { warrantyClaim } from '../v2/domain/chains/warranty_claim';
 import { warrantyRecovery } from '../v2/domain/chains/warranty_recovery';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
-import { IMPORTABLE_CHAINS, fetchLegacyRows, importChain } from '../v2/import/legacy';
+import { IMPORTABLE_CHAINS, RENAMED_IMPORTS, fetchLegacyRows, importChain } from '../v2/import/legacy';
 import { sealPendingEvents } from '../v2/domain/merkle-seal';
 // D1Store is authored in a parallel workstream (src/v2/store/d1.ts). Until it
 // lands, tsc reports "cannot find module '../v2/store/d1'" — that error is
@@ -475,6 +475,16 @@ v2.get('/txn/:id', async (c) => {
 // single source the four surfaces read to generate every screen and form.
 v2.get('/chains', (c) => {
   return c.json({ success: true, data: JSON.parse(JSON.stringify(CHAINS)) });
+});
+
+// ── GET /legacy-coverage — v1 chain_key → v2 chain_key, for legacy-route ─────
+// redirects. Same allow-list that gates POST /import/:chain_key: every key
+// here has a live v2 counterpart (RENAMED_IMPORTS remaps the key; identity
+// otherwise). Keys absent from this map are the P2 backlog — their /ledger
+// and /thread routes stay on legacy data. See CUTOVER_COVERAGE.md §6.
+v2.get('/legacy-coverage', (c) => {
+  const data = Object.fromEntries(Object.keys(IMPORTABLE_CHAINS).map((k) => [k, RENAMED_IMPORTS[k] ?? k]));
+  return c.json({ success: true, data });
 });
 
 // ── GET /txns — flexible list feeding Home / Find / Ledger ──────────────────

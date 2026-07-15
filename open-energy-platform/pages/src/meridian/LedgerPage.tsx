@@ -15,6 +15,7 @@ import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
+import { getLegacyCoverage } from '../v2/api';
 
 export default function LedgerPage() {
   const { chainKey = '' } = useParams();
@@ -29,6 +30,21 @@ export default function LedgerPage() {
   const [composeOpen, setComposeOpen] = React.useState(false);          // +New drawer
   const [notice, setNotice] = React.useState<string | null>(null);      // non-blocking compose advisory
 
+  // v2 cutover check (CUTOVER_COVERAGE.md §6): chains already imported into v2
+  // send this route to its /v2/find replacement instead of the legacy list. The
+  // 75-chain P2 backlog isn't in the coverage map, so it falls through untouched.
+  const [covered, setCovered] = React.useState<boolean | null>(null);
+  React.useEffect(() => {
+    let live = true;
+    getLegacyCoverage().then((m) => {
+      if (!live) return;
+      const v2Key = m[chainKey];
+      if (v2Key) nav(`/v2/find?chain_key=${v2Key}`, { replace: true });
+      else setCovered(false);
+    });
+    return () => { live = false; };
+  }, [chainKey, nav]);
+
   // Liveness-guard load (ThreadPage/AtlasPage idiom): a late resolve after unmount —
   // or after chainKey/status changes — must not setState with a stale result.
   const load = React.useCallback(() => {
@@ -38,7 +54,7 @@ export default function LedgerPage() {
       .catch(e => { if (live) setErr(classifyLoadError(e)); });
     return () => { live = false; };
   }, [chainKey, status]);
-  React.useEffect(() => load(), [load]);
+  React.useEffect(() => { if (covered === false) return load(); return undefined; }, [load, covered]);
 
   // Honor ?compose=1 once data confirms the role can initiate — then strip the param
   // so a reload or back-nav doesn't reopen the drawer. If the role can't initiate this

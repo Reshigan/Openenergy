@@ -26,6 +26,17 @@ export async function getChains(force = false): Promise<ChainMap> {
   return _chainsCache;
 }
 
+let _legacyCoverageCache: Record<string, string> | null = null;
+
+// v1 chain_key → v2 chain_key, for legacy /ledger and /thread routes to check
+// whether a chain has already cut over. See CUTOVER_COVERAGE.md §6.
+export async function getLegacyCoverage(): Promise<Record<string, string>> {
+  if (_legacyCoverageCache) return _legacyCoverageCache;
+  const { data } = await api.get('/v2/legacy-coverage');
+  _legacyCoverageCache = (data?.data ?? {}) as Record<string, string>;
+  return _legacyCoverageCache;
+}
+
 export interface ListParams {
   chain_key?: string;
   open?: boolean;
