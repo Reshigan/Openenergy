@@ -269,6 +269,10 @@ import { rezCapacity } from '../v2/domain/chains/rez_capacity';
 import { slbKpiRatchet } from '../v2/domain/chains/slb_kpi_ratchet';
 import { tradeReport } from '../v2/domain/chains/trade_report';
 import { supportTickets } from '../v2/domain/chains/support_tickets';
+import { carbonTaxReturn } from '../v2/domain/chains/carbon_tax_return';
+import { controlEnvironmentAudit } from '../v2/domain/chains/control_environment_audit';
+import { kycVerification } from '../v2/domain/chains/kyc_verification';
+import { mrvSubmissions } from '../v2/domain/chains/mrv_submissions';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { IMPORTABLE_CHAINS, RENAMED_IMPORTS, fetchLegacyRows, importChain } from '../v2/import/legacy';
@@ -542,6 +546,11 @@ export const CHAINS = {
   slb_kpi_ratchet: slbKpiRatchet,
   trade_report: tradeReport,
   support_tickets: supportTickets,
+  carbon_tax_return: carbonTaxReturn,
+  control_environment_audit: controlEnvironmentAudit,
+  kyc_verification: kycVerification,
+  mrv_submissions: mrvSubmissions,
+  work_order: omWorkOrder,
 };
 
 const clock: Clock = { now: () => ({ epoch_ms: Date.now(), zone: 'UTC' }) };
