@@ -27,6 +27,7 @@ import { permitToWork } from '../v2/domain/chains/permit_to_work';
 import { algoCert } from '../v2/domain/chains/algo_cert';
 import { bestExecution } from '../v2/domain/chains/best_execution';
 import { capitalAdequacyReturn } from '../v2/domain/chains/capital_adequacy';
+import { capitalAdequacyReport } from '../v2/domain/chains/capital_adequacy_report';
 import { ccpAssessment } from '../v2/domain/chains/ccp_assessment';
 import { counterpartyMargin } from '../v2/domain/chains/counterparty_margin';
 import { creditInsurance } from '../v2/domain/chains/credit_insurance';
@@ -244,6 +245,30 @@ import { ippSubmittal } from '../v2/domain/chains/ipp_submittal';
 import { ippTpa } from '../v2/domain/chains/ipp_tpa';
 import { ippTq } from '../v2/domain/chains/ipp_tq';
 import { ippWul } from '../v2/domain/chains/ipp_wul';
+import { carbonScope3Disclosure } from '../v2/domain/chains/carbon_scope3_disclosure';
+import { changeRequest } from '../v2/domain/chains/change_request';
+import { codChain } from '../v2/domain/chains/cod_chain';
+import { creditFacilityApplication } from '../v2/domain/chains/credit_facility_application';
+import { creditingPeriodRenewal } from '../v2/domain/chains/crediting_period_renewal';
+import { demandResponseEvent } from '../v2/domain/chains/demand_response_event';
+import { disbursementCase } from '../v2/domain/chains/disbursement_case';
+import { fscaComplianceReport } from '../v2/domain/chains/fsca_compliance_report';
+import { gcaConnection } from '../v2/domain/chains/gca_connection';
+import { gccNcr } from '../v2/domain/chains/gcc_ncr';
+import { greenBondReport } from '../v2/domain/chains/green_bond_report';
+import { imbalanceSettlement } from '../v2/domain/chains/imbalance_settlement';
+import { marketAbuseCase } from '../v2/domain/chains/market_abuse_case';
+import { milestoneVarianceReport } from '../v2/domain/chains/milestone_variance_report';
+import { omWorkOrder } from '../v2/domain/chains/om_work_order';
+import { ppaContractChain } from '../v2/domain/chains/ppa_contract_chain';
+import { ppaPaymentSecurity } from '../v2/domain/chains/ppa_payment_security';
+import { ppaTakeOrPay } from '../v2/domain/chains/ppa_take_or_pay';
+import { problemRecord } from '../v2/domain/chains/problem_record';
+import { procurementRfp } from '../v2/domain/chains/procurement_rfp';
+import { rezCapacity } from '../v2/domain/chains/rez_capacity';
+import { slbKpiRatchet } from '../v2/domain/chains/slb_kpi_ratchet';
+import { tradeReport } from '../v2/domain/chains/trade_report';
+import { supportTickets } from '../v2/domain/chains/support_tickets';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { IMPORTABLE_CHAINS, RENAMED_IMPORTS, fetchLegacyRows, importChain } from '../v2/import/legacy';
@@ -273,6 +298,7 @@ export const CHAINS = {
   algo_cert: algoCert,
   best_execution: bestExecution,
   capital_adequacy: capitalAdequacyReturn,
+  capital_adequacy_report: capitalAdequacyReport,
   ccp_assessment: ccpAssessment,
   counterparty_margin: counterpartyMargin,
   credit_insurance: creditInsurance,
@@ -490,6 +516,32 @@ export const CHAINS = {
   ipp_tpa: ippTpa,
   ipp_tq: ippTq,
   ipp_wul: ippWul,
+  algo_certification: algoCert,
+  carbon_scope3_disclosure: carbonScope3Disclosure,
+  cbt_sed_report: cbtSed,
+  change_request: changeRequest,
+  cod_chain: codChain,
+  credit_facility_application: creditFacilityApplication,
+  crediting_period_renewal: creditingPeriodRenewal,
+  demand_response_event: demandResponseEvent,
+  disbursement_case: disbursementCase,
+  fsca_compliance_report: fscaComplianceReport,
+  gca_connection: gcaConnection,
+  gcc_ncr: gccNcr,
+  green_bond_report: greenBondReport,
+  imbalance_settlement: imbalanceSettlement,
+  market_abuse_case: marketAbuseCase,
+  milestone_variance_report: milestoneVarianceReport,
+  om_work_order: omWorkOrder,
+  ppa_contract_chain: ppaContractChain,
+  ppa_payment_security: ppaPaymentSecurity,
+  ppa_take_or_pay: ppaTakeOrPay,
+  problem_record: problemRecord,
+  procurement_rfp: procurementRfp,
+  rez_capacity: rezCapacity,
+  slb_kpi_ratchet: slbKpiRatchet,
+  trade_report: tradeReport,
+  support_tickets: supportTickets,
 };
 
 const clock: Clock = { now: () => ({ epoch_ms: Date.now(), zone: 'UTC' }) };
