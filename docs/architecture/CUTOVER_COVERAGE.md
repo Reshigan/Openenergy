@@ -274,7 +274,7 @@ One event per row is **necessary but not sufficient**. The import must also **re
 1. **EXACT-clean chains first** (20 chains, §1 rows marked "clean") — the import needs no terminal-state mapping decision, so each is a pure mechanical replay; smallest blast radius per §11's per-chain strangler. Within this set, follow the P0/P1 pilot order where applicable (`ppa_contract` first, then the rest of the pilot six).
 2. **EXACT with mismatches** — after a written terminal-status mapping per chain (one table row per decision, appended to this document).
 3. **RENAMED-CANDIDATE** — after the rename is confirmed and the same mapping exercise done; the two shared-table pairs (`om_work_order`/`work_order` → `wo`, `grid_code_compliance`/`gcc_ncr`) import each table exactly once.
-4. **NO-COUNTERPART** — no cutover; each row exits this class only via P2 extraction (new ChainDecl, then reclassified above) or an explicit retire decision.
+4. **NO-COUNTERPART** — no cutover; each row exits this class only via P2 extraction (new ChainDecl, then reclassified above) or an explicit retire decision (§6).
 
 ### §4.1 Written status-mapping decisions (2026-07-15, dev-data sweep)
 
@@ -1151,4 +1151,38 @@ New capabilities (or v1 functionality that lived outside the Meridian chain regi
 - `subscription_billing` — Subscription invoice
 - `sustainability_transaction` — Sustainability transaction
 - `tcpi` — TCPI assessment
+
+---
+
+## §6 NO-COUNTERPART disposition (2026-07-15) — 6 retired, 75 backlogged
+
+Disposition decided for all 81 §3 rows: retire where v2 already supersedes the capability by design, backlog everything else. Backlog is not silent — each row keeps its legacy v1 route live and un-eliminated until a P2 ChainDecl lands and reclassifies it into §1/§2, exactly as §4 rule 4 requires. This section is that record.
+
+### §6.1 Retired (6) — v2 supersedes by design, not a gap
+
+Each of these was already called out in §3's domain note as *intentionally* not ported — the v1 capability is subsumed by a v2 architectural decision, not missing. No P2 extraction is planned for these; the v1 route stays reachable only as read-only legacy history until the legacy-surface elimination pass removes it.
+
+| v1 key | Disposition | Why |
+|---|---|---|
+| `audit_chain_block` | retired | Superseded by the v2 event-log architecture itself — every v2 event is already hash-chained; a separate block-proposal chain has no v2 role. |
+| `pnl_attribution` | retired | v2 treats analytics as projections (L4, REBUILD_PLAN.md), not transactions with their own chain. |
+| `pretrade_credit_check` | retired | v2 expresses this as an order guard (`pre-trade-guards.ts`), not a standalone case chain. |
+| `regulator_export_pack` | retired | Superseded by the v2 L6 export gate (`exportPack()`, §4) — every pack carries this disclosure natively; no separate chain needed. |
+| `smart_meter_asset` | retired | Master-data register, not a lifecycle — belongs in a reference table, not a chain. |
+| `substation_asset` | retired | Same as above: master-data register, not a lifecycle. |
+
+### §6.2 P2 backlog (75) — legacy route stays live, extraction not yet scheduled
+
+Grouped by domain cluster per §3's own framing. None of these are scheduled; this is the standing worklist a future P2 pass draws from. Each entry needs its own ChainDecl (states, edges, guards) before it can be imported and reclassified — these are not renames, so no shortcut through §4's mapping-table mechanism applies.
+
+**Construction-management suite (16)** — one shared lifecycle shape (site event → review → sign-off), plausible to design as a small family rather than 16 one-offs:
+`commissioning`, `dfr`, `ipp_construction_diary`, `ipp_final_completion`, `ipp_method_statement`, `ipp_mir`, `ipp_om_handover`, `ipp_payment_cert`, `ipp_progress_claim`, `ipp_rfi`, `ipp_subcontractor`, `ipp_submittal`, `ipp_tq`, `ncr`, `site_instruction`, `variation_order`
+
+**IPP annual-compliance / regulator-filing family (38)** — mostly annual-cadence filings against a fixed regulator or lender counterpart; also plausible as a shared "compliance filing" chain shape:
+`ipp_acs`, `ipp_ael`, `ipp_anr`, `ipp_bbbee`, `ipp_bfs`, `ipp_ccc`, `ipp_cd`, `ipp_cep`, `ipp_coc`, `ipp_ctr`, `ipp_eam`, `ipp_eco`, `ipp_empr`, `ipp_env_closure`, `ipp_env_monitoring`, `ipp_eqt`, `ipp_esmr`, `ipp_gcc`, `ipp_hra`, `ipp_ie_cert`, `ipp_iear`, `ipp_insr`, `ipp_lam`, `ipp_land_register`, `ipp_lcr`, `ipp_lrep`, `ipp_lta`, `ipp_mc`, `ipp_omc`, `ipp_performance_bonds`, `ipp_ppavar`, `ipp_psec`, `ipp_qgr`, `ipp_refi`, `ipp_rpr`, `ipp_sed`, `ipp_tpa`, `ipp_wul`
+
+**Misc single-domain gaps (21)** — no shared shape; each needs individual scoping:
+`article6_adjustment`, `asset_prognostics`, `bess_soh`, `compliance_notice`, `cp_tracker`, `csat_record`, `dlp_defect`, `dscr_monitoring`, `dscr_report`, `generation_revenue_assurance`, `green_tariff_disclosure`, `licence_obligation`, `oe_dispatch_nominations`, `poslimit_case`, `ppa_obligation`, `pr_underperformance`, `regulator_inbox`, `sla_performance_report`, `stage_gate`, `tariff_indexation`, `unserved_energy_claim`
+
+**Consequence for legacy-surface elimination:** `/ledger`, `/thread`, `/deals`, and `/surface` routes for these 75 chain keys stay live and load-bearing (several — `dscr_monitoring`, `licence_obligation`, `stage_gate` — are regulator/lender-facing, not dead weight) until each is individually P2-extracted. The v2 cutover for all other classes (§1 EXACT, §2 RENAMED-CANDIDATE, §5 v2-only) proceeds independently; it does not wait on this backlog.
 - `wayleave_consent` — Wayleave consent
