@@ -306,6 +306,148 @@ The first full dev import (164 rows across all 20 clean chains) quarantined rows
 | ppa_change_in_law | relief_granted | agreed | granted but not yet implemented |
 | transmission_outage | extended | outage_in_progress | an extended outage is still in progress |
 
+### §4.2 EXACT-with-mismatch wave (2026-07-15) — 69 chains mapped, 2 held
+
+Per §4 rule 2, one written decision per chain. All 69 below are now in `IMPORTABLE_CHAINS` (89 total) with mappings in `STATUS_MAP`; the counterparty role decisions are the map values in `IMPORTABLE_CHAINS`. Non-terminal targets re-arm that state's timers (noted); everything else lands terminal and arms nothing.
+
+**Held out (NOT importable yet — quarantine wholesale until a domain decision):**
+- `ccp_assessment` — v1 rows are Core Carbon Principles *label* assessments; the v2 decl is central-counterparty *risk admission*. Same key, different domain. Importing would file carbon-integrity labels as CCP admissions.
+- `disposition` — v1 rows are regulator disposition cases; the v2 decl is lender asset-disposal consent. Same key, different domain.
+
+| Chain | v1 status | → v2 state | Rationale |
+|---|---|---|---|
+| availability_guarantee | settled | remedy_instructed | settlement-honesty: instruction, not custody |
+| availability_guarantee | dispute_resolved | met_closed | resolved dispute closes the guarantee period |
+| best_execution | closed | attested | closure implies attestation completed |
+| best_execution | exception_escalated | rejected | escalated exception = failed attestation |
+| best_execution | rfq_expired | cancelled | expiry without execution |
+| black_start | recertified | certified | non-terminal; re-arms test timers |
+| black_start | contract_terminated | decertified | terminated contract ends certification |
+| carbon_budget | final | closed | rename |
+| carbon_budget | appeal | rejected | appeal follows rejection |
+| carbon_credit_rating | re_rated, downgraded | published | rating still in force; v1 status in payload.row |
+| carbon_credit_rating | escalated_to_integrity | rating_declined | integrity escalation kills the rating |
+| carbon_erpa | completed | delivery_confirmed | completion = final delivery confirmed |
+| carbon_erpa | withdrawn | negotiation_failed | withdrawal before execution |
+| carbon_issuance | cancelled | withdrawn | rename |
+| carbon_registration | crediting_active | registered | active crediting means registered |
+| carbon_registry_transfer | ca_notified, completed | transferred | post-transfer administrivia |
+| carbon_registry_transfer | aml_rejected, registry_rejected | rejected | rejection collapse |
+| carbon_registry_transfer | cancelled | withdrawn | rename |
+| carbon_retirement | cancelled | withdrawn | rename |
+| carbon_reversal | closed | compensated | closure implies compensation done |
+| carbon_reversal | escalated | under_assessment | non-terminal; back in assessment |
+| carbon_reversal | false_alarm | rejected | no reversal occurred |
+| certificate_bundle | retired | bundle_closed | rename |
+| certificate_bundle | expired, cancelled | withdrawn | bundle never delivered |
+| complaint_resolution | appealed | escalated | appeal = escalation path |
+| compliance_inspection | compliant_closed | closed_compliant | rename |
+| compliance_inspection | enforcement_closed | referred_enforcement | enforcement outcome |
+| compliance_inspection | withdrawn | cancelled | rename |
+| connection_energization | commercial_operation | energized | COD follows energization |
+| connection_energization | connection_withdrawn | withdrawn | rename |
+| construction_cost_report | budget_compliant, resolved | certified | compliant/resolved report is a certified report |
+| construction_cost_report | default_triggered | rejected | default outcome |
+| construction_cost_report | cancelled | withdrawn | rename |
+| counterparty_margin | recovered | margin_posted_instructed | settlement-honesty terminal |
+| counterparty_margin | written_off | defaulted | write-off follows default |
+| cp_clearance | expired | cp_defaulted | expiry without clearance = CP default |
+| credit_insurance | claim_paid | claim_instructed | settlement-honesty: instruction, not payment custody |
+| credit_insurance | lapsed | expired | rename |
+| cross_border_trade | trade_executed | delivered | executed trade completed delivery in v1 |
+| cross_border_trade | fsca_rejected, sarb_rejected | rejected | regulator-rejection collapse |
+| cross_border_trade | expired | cancelled | rename |
+| curtailment_claim | compensation_settled | compensated_instructed | settlement-honesty terminal |
+| curtailment_claim | arbitrated, non_compensable | dismissed | v2 'rejected' is a non-terminal appeal state; dismissed is the terminal |
+| drawdown | closed | disbursed | 'disbursed' is a settlement-honesty terminal with no live edge; import (Store.commit) is its only legitimate writer |
+| drawdown | cancelled | withdrawn | rename |
+| ed_commitment | closed | commitment_closed | rename |
+| enforcement_action | paid | resolved | payment resolves the action |
+| enforcement_action_s35 | settled, archived | action_closed | closure collapse |
+| enforcement_action_s35 | cancelled | withdrawn | rename |
+| eop_activation | per_completed, escalated_to_regulator | eop_closed | post-event review done / escalation recorded in payload.row |
+| eop_activation | per_outstanding | post_event_review | non-terminal; review still open |
+| eop_activation | withdrawn | stood_down | rename |
+| esap_compliance | accepted, verified | compliant | acceptance/verification = compliant |
+| esg_disclosure | archived | published | archive follows publication |
+| esg_disclosure | cancelled | withdrawn | rename |
+| export_curtailment | settled | closed | settlement closes the event |
+| export_curtailment | rejected | disputed | rejected claim is in dispute |
+| export_curtailment | withdrawn | cancelled | rename |
+| fsca_conduct_report | accepted, escalated | closed | report lifecycle done; escalation in payload.row |
+| grid_code_compliance | compliant_closed | resolved | rename |
+| grid_code_compliance | disconnection_issued | enforcement_referred | disconnection is an enforcement outcome |
+| handover_dossier | archived | handed_over | archive follows handover |
+| handover_dossier | rejected | dossier_rejected | rename |
+| handover_dossier | voided | withdrawn | rename |
+| interconnector_schedule | cancelled | withdrawn | rename |
+| ipp_schedule | completed, late_finish | schedule_completed | late finish still completed; v1 status in payload.row |
+| ipp_schedule | cancelled | schedule_cancelled | rename |
+| isda_agreement | active, suspended | executed | non-terminal live state; suspension survives in payload.row |
+| itp | archived | itp_closed | rename |
+| itp | rejected | itp_rejected | rename |
+| itp | voided | withdrawn | rename |
+| levy_assessment | settled | levy_settled | rename |
+| levy_assessment | written_off | assessment_waived | write-off = waiver |
+| levy_assessment | withdrawn | assessment_withdrawn | rename |
+| licence_renewal | granted | renewal_granted | non-terminal; arms 14d issue SLA |
+| licence_renewal | amended | renewal_issued | amendment happens post-issue |
+| load_curtailment | closed | curtailment_complete | rename |
+| load_curtailment | refused | non_compliance | refusal is non-compliance |
+| load_curtailment | withdrawn | directive_cancelled | rename |
+| loan_default | restructured | waived | restructure resolves the default (see loan_restructure chain for the restructure itself) |
+| loan_default | enforced_closed, written_off | enforced | enforcement collapse |
+| loan_transfer | completed | transfer_registered | completion = registration |
+| loan_transfer | declined, rejected | transfer_declined | decline collapse |
+| loan_transfer | withdrawn | transfer_withdrawn | rename |
+| market_conduct_exam | enforcement_action | referred_enforcement | rename |
+| market_conduct_exam | closed_satisfactory | closed | rename |
+| market_conduct_exam | withdrawn | cancelled | rename |
+| oem_fco | completed | closed | rename |
+| oem_fco | withdrawn | cancelled | rename |
+| planned_outage | rejected | request_rejected | rename |
+| planned_outage | closed | returned_to_service | closure implies RTS |
+| pm_compliance | closed | completed | rename |
+| poa_cpa_inclusion | excluded | rejected | exclusion = rejection |
+| poa_cpa_inclusion | completed | included | completion = inclusion |
+| ppa_annual_recon | settled | settled_instructed | settlement-honesty terminal |
+| ppa_annual_recon | restated | computed | non-terminal; re-arms agree/dispute timers |
+| ppa_nomination | deviation_settled, excused | accepted | deviation resolved; detail in payload.row |
+| ppa_nomination | cancelled | withdrawn | rename |
+| ppa_termination | closed | terminated | rename |
+| ppa_termination | reinstated | withdrawn | reinstatement = termination withdrawn |
+| project_change_order | incorporated | approved | incorporation follows approval |
+| project_change_order | cancelled | withdrawn | rename |
+| project_risk | cancelled | withdrawn | rename |
+| public_consultation | closed | outcome_published | closure implies outcome published (weakest call; v1 status in payload.row) |
+| rec_lifecycle | rejected, clawed_back | cancelled | certificate void collapse |
+| reserve_account | breached | shortfall | non-terminal; arms cure SLA |
+| reserve_account | cancelled | withdrawn | rename |
+| reserve_activation | settled, dispute_resolved | settlement_instructed | settlement-honesty terminal |
+| reserve_activation | withdrawn | cancelled | rename |
+| service_contract | renewed | active | non-terminal live contract; renewal in payload.row |
+| service_contract | cancelled | terminated | rename |
+| service_request | archived | closed | rename |
+| settlement_fail | closed_resolved | resolved | rename |
+| settlement_fail | written_off | cancelled | write-off abandons recovery |
+| sll_kpi | sustainability_event | breach_recorded | non-terminal; event = recorded breach |
+| sseg_registration | referred_to_licensing | technical_review | non-terminal; licensing referral re-enters review |
+| sseg_registration | refused | rejected | rename |
+| sseg_registration | lapsed | withdrawn | lapse = abandonment |
+| submittal_rfi | closed_clean | closed | rename |
+| tariff_determination | implemented | determined | implementation follows determination |
+| tariff_determination | remitted | analysis | non-terminal; remittal reopens analysis |
+| trade_allocation | settled | confirmed | settlement-honesty: allocation confirm is the v2 terminal |
+| vcm_project_development | credits_issued | registered | issuance follows registration |
+| vcm_project_development | cancelled | withdrawn | rename |
+| vendor_escalation | recall_issued, arbitration | remediation_in_progress | no v2 disputed state; state has no SLA so no timer arms |
+| virtual_ppa_settlement | settled | settled_instructed | settlement-honesty terminal |
+| virtual_ppa_settlement | written_off | cancelled | write-off abandons settlement |
+| warranty_claim | closed | claim_closed | rename |
+| warranty_recovery | rejected | recovery_denied | rename |
+| warranty_recovery | written_off | withdrawn | write-off abandons recovery |
+| wheeling_access | terminated, expired | access_granted | post-grant statuses land on the terminal grant (weakest call; v1 status in payload.row) |
+
 ---
 
 ## §5 v2-only chains — no v1 descriptor, no backfill needed (19)
