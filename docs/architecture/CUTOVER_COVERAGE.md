@@ -450,6 +450,363 @@ Per §4 rule 2, one written decision per chain. All 69 below are now in `IMPORTA
 
 ---
 
+### §4.3 Non-terminal backfill wave (2026-07-15) — 345 statuses across 51 chains
+
+The §4.2 wave mapped mostly terminal mismatches; the first dev import quarantined 741 rows sitting in
+non-terminal v1 statuses with no same-name v2 state. Per the §1 header rule, each maps to the nearest
+v2 state by lifecycle position: the original v1 status survives verbatim in `payload.row`, and a
+non-terminal target re-arms that state's timers from the row's `updated_at`. Targets were verified
+against each chain's ChainDecl `states`; the STATUS_MAP guard test enforces target-exists and
+no-shadow for every entry.
+
+| Chain | v1 status | v2 resume state | Note |
+|---|---|---|---|
+| `availability_guarantee` | `measurement_submitted` | `measured` |  |
+| `availability_guarantee` | `adjustment_review` | `measured` | non-terminal; adjustment still part of buyer's measurement assessment, re-arms 14d |
+| `availability_guarantee` | `reconciled` | `measured` | reconciled but outcome (met/shortfall) not yet assessed |
+| `availability_guarantee` | `meets_guarantee` | `met_closed` |  |
+| `availability_guarantee` | `shortfall_flagged` | `shortfall_computed` | non-terminal; provider owes remedy, re-arms 30d |
+| `availability_guarantee` | `ld_assessed` | `remedy_instructed` | LD assessment = remedy determined; settlement-honesty: instruction only, no custody |
+| `availability_guarantee` | `cure_period` | `shortfall_computed` | non-terminal; provider curing = provider-held pre-remedy window |
+| `best_execution` | `rfq_received` | `drafted` | v2 models the best-ex attestation, not the trade; pre-quote stages collapse to trader-held draft |
+| `best_execution` | `quotes_solicited` | `drafted` | lossy collapse; v1 status in payload.row |
+| `best_execution` | `quotes_received` | `drafted` | trader still assembling evidence |
+| `best_execution` | `best_ex_evaluated` | `submitted` | evaluation complete = report goes to compliance |
+| `best_execution` | `execution_approved` | `under_review` | compliance-held approval stage |
+| `best_execution` | `executed` | `under_review` | executed but not yet TCA-reviewed = attestation pending (closed -> attested per §4.2) |
+| `best_execution` | `override_executed` | `flagged` | best-ex override is a deficiency needing justification |
+| `best_execution` | `tca_reviewed` | `attested` | TCA review complete = attestation done |
+| `black_start` | `needs_assessed` | `capability_declared` |  |
+| `black_start` | `solicitation_issued` | `capability_declared` | v2 has no procurement stage; pre-bid collapses to start |
+| `black_start` | `bid_evaluation` | `under_assessment` |  |
+| `black_start` | `contract_awarded` | `under_assessment` | awarded but unexecuted; v2 has no award stage, v1 status in payload.row |
+| `black_start` | `contract_executed` | `certified` | non-terminal; executed contract = in restoration plan (matches contract_terminated->decertified precedent) |
+| `black_start` | `drill_scheduled` | `test_scheduled` |  |
+| `black_start` | `drill_in_progress` | `test_scheduled` | non-terminal; v2 has no in-progress state, witnessed only after completion |
+| `black_start` | `drill_completed` | `test_witnessed` | non-terminal; completed drill awaiting certification decision |
+| `black_start` | `drill_failed` | `decertified` | failed drill ends certification; re-drill re-initiates, v1 status in payload.row |
+| `carbon_credit_rating` | `desk_review` | `under_assessment` |  |
+| `carbon_credit_rating` | `methodology_score` | `under_assessment` | all five scoring pillars collapse into assessment; v1 status in payload.row |
+| `carbon_credit_rating` | `additionality_score` | `under_assessment` |  |
+| `carbon_credit_rating` | `permanence_score` | `under_assessment` |  |
+| `carbon_credit_rating` | `leakage_score` | `under_assessment` |  |
+| `carbon_credit_rating` | `cobenefit_score` | `under_assessment` |  |
+| `carbon_credit_rating` | `composite_score` | `committee_review` | scoring done, final review before publish |
+| `carbon_credit_rating` | `monitoring` | `published` | non-terminal in spirit but v2 published is the in-force state (re_rated->published precedent) |
+| `carbon_credit_rating` | `re_rating_triggered` | `under_assessment` | non-terminal; back into assessment, re-arms 5d |
+| `carbon_erpa` | `erpa_drafted` | `negotiating` |  |
+| `carbon_erpa` | `delivery_verified` | `delivery_confirmed` |  |
+| `carbon_erpa` | `erpa_executed` | `executed` | non-terminal; re-arms 7d schedule-delivery SLA |
+| `carbon_erpa` | `delivery_initiated` | `delivery_scheduled` | non-terminal; delivery in flight |
+| `carbon_erpa` | `shortfall_flagged` | `delivery_shortfall` |  |
+| `carbon_erpa` | `make_good_pending` | `delivery_scheduled` | non-terminal; make-good re-delivery pending, re-arms 365d |
+| `carbon_erpa` | `disputed` | `delivery_shortfall` | v2 has no ERPA dispute state; shortfall outcome recorded, dispute survives in payload.row |
+| `carbon_issuance` | `screening` | `under_review` |  |
+| `carbon_issuance` | `verification_check` | `under_review` | MRV still being checked; verified = check passed |
+| `carbon_issuance` | `serialization` | `verified` | non-terminal; verified, credits being serialized pre-issue |
+| `carbon_issuance` | `pending_registry` | `verified` | non-terminal; awaiting registry mint, re-arms 5d |
+| `carbon_issuance` | `on_hold` | `under_review` | non-terminal; hold = paused review, v1 status in payload.row |
+| `carbon_issuance` | `returned` | `requested` | sent back to proponent; restarts at request stage |
+| `carbon_issuance` | `disputed` | `under_review` | no dispute state; unresolved stays in review, v1 status in payload.row |
+| `carbon_registration` | `pin_submitted` | `project_submitted` |  |
+| `carbon_registration` | `pdd_drafted` | `info_requested` | non-terminal; proponent-held doc-prep matches holder+position (60d) |
+| `carbon_registration` | `validation_underway` | `validation` |  |
+| `carbon_registration` | `corrections_required` | `info_requested` | non-terminal; proponent must fix |
+| `carbon_registration` | `public_consultation` | `validation` | consultation runs within the validation window |
+| `carbon_registration` | `dna_authorization` | `registry_review` | post-validation authority step collapses into registry review |
+| `carbon_registration` | `registration_requested` | `registry_review` | request lodged, registry deciding; approved state comes after |
+| `carbon_retirement` | `requested` | `submitted` | request lodged at registry |
+| `carbon_retirement` | `validating` | `submitted` | non-terminal; registry validating, re-arms 5d |
+| `carbon_retirement` | `adjustment_pending` | `submitted` | non-terminal; corresponding-adjustment pending, still registry-held |
+| `carbon_retirement` | `adjusted` | `retired` | adjustment applied = retirement effective |
+| `carbon_reversal` | `reversal_reported` | `reported` |  |
+| `carbon_reversal` | `loss_quantified` | `under_assessment` | quantification is part of assessment |
+| `carbon_reversal` | `buffer_cancelled` | `compensated` | buffer-pool cancellation = compensation done (closed->compensated precedent) |
+| `carbon_reversal` | `replacement_required` | `compensation_pending` | non-terminal; replacement owed |
+| `carbon_reversal` | `replacement_submitted` | `compensation_pending` | non-terminal; awaiting verification, re-arms 5d |
+| `carbon_reversal` | `replacement_verified` | `compensated` |  |
+| `complaint_resolution` | `complaint_lodged` | `lodged` |  |
+| `complaint_resolution` | `admissibility_review` | `acknowledged` | post-lodge screening = handler acknowledgement stage |
+| `complaint_resolution` | `referred_to_licensee` | `under_investigation` | licensee response is part of investigation |
+| `complaint_resolution` | `mediation` | `resolution_proposed` | non-terminal; settlement process = proposal stage, re-arms 10d |
+| `complaint_resolution` | `adjudication_hearing` | `escalated` | left informal resolution for formal adjudication (appealed->escalated precedent) |
+| `complaint_resolution` | `ruling_issued` | `resolved` | ruling = outcome issued; v1 status in payload.row |
+| `compliance_inspection` | `inspection_in_progress` | `inspection_conducted` | v2 has no in-progress state; conducted is the inspection stage (3d regulator) |
+| `compliance_inspection` | `findings_drafted` | `inspection_conducted` | non-terminal; regulator drafting pre-issue |
+| `compliance_inspection` | `directive_issued` | `findings_issued` | directive to licensee = findings served, re-arms 14d |
+| `compliance_inspection` | `remediation_underway` | `findings_issued` | non-terminal; licensee-held remediation window |
+| `compliance_inspection` | `penalty_imposed` | `referred_enforcement` | penalty = enforcement outcome (enforcement_closed precedent) |
+| `connection_energization` | `connection_ready` | `energization_requested` | v1 chain opens pre-programme; earliest v2 state |
+| `connection_energization` | `program_review` | `energization_requested` | operator reviewing programme, holder matches |
+| `connection_energization` | `program_approved` | `inspection` | programme approved; inspection is the next v2 gate |
+| `connection_energization` | `pre_energization_inspection` | `inspection` |  |
+| `connection_energization` | `energization_authorized` | `cleared_to_energize` |  |
+| `connection_energization` | `cold_commissioning` | `cleared_to_energize` | cleared but not yet synced; v2 has no commissioning sub-state |
+| `connection_energization` | `synchronized` | `energized` | grid-synced = energized; v2 merged the commissioning tail |
+| `connection_energization` | `compliance_testing` | `energized` | post-sync testing; lossy — v1 status survives in payload.row |
+| `connection_energization` | `commissioning_suspended` | `defect_hold` | failed hold-point ≈ defect hold |
+| `construction_cost_report` | `cost_overrun_risk` | `under_review` | v1 SLA-breach escalation flag on an active un-certified report; non-terminal, v1 status in payload.row |
+| `counterparty_margin` | `limit_active` | `computed` | steady-state monitoring with requirement in place |
+| `counterparty_margin` | `exposure_warning` | `computed` | pre-call warning; v1 status in payload.row |
+| `counterparty_margin` | `margin_call_issued` | `margin_called` |  |
+| `counterparty_margin` | `collateral_received` | `margin_posted_instructed` | precedent: recovered -> margin_posted_instructed |
+| `counterparty_margin` | `position_restriction` | `margin_called` | post-call escalation, collateral still outstanding; re-arms 24h SLA |
+| `counterparty_margin` | `cure_period` | `margin_called` | cure window = call still open on counterparty |
+| `counterparty_margin` | `default_declared` | `defaulted` |  |
+| `counterparty_margin` | `close_out` | `defaulted` | default-waterfall stage; v1 status in payload.row |
+| `counterparty_margin` | `default_fund_draw` | `defaulted` | default-waterfall stage; v1 status in payload.row |
+| `curtailment_claim` | `curtailment_logged` | `raised` |  |
+| `curtailment_claim` | `classification_review` | `raised` | grid classifying, pre-validation; holder grid matches |
+| `curtailment_claim` | `claim_submitted` | `raised` | v2 'validated' means validation DONE; claim still with grid |
+| `curtailment_claim` | `validation_underway` | `raised` | same — validation incomplete; re-arms 48h grid SLA |
+| `curtailment_claim` | `quantum_proposed` | `quantified` |  |
+| `curtailment_claim` | `disputed` | `in_dispute` |  |
+| `drawdown` | `requested` | `submitted` | request lodged with lender; v2 draft is pre-submission |
+| `drawdown` | `documents_submitted` | `submitted` |  |
+| `drawdown` | `ie_review` | `submitted` | IE review is lender-side review; holder lender |
+| `drawdown` | `cp_checklist` | `conditions_pending` |  |
+| `drawdown` | `on_hold` | `conditions_pending` | v1 hold resumes to cp_checklist; nearest v2 hold state |
+| `drawdown` | `funded` | `disbursed` | settlement-honesty terminal; legacy import is its only legit writer (precedent: closed -> disbursed) |
+| `ed_commitment` | `false_alarm` | `monitoring` | variance flag was spurious (stale-data reconciliation); commitment resumes monitoring, v1 status in payload.row |
+| `enforcement_action` | `case_opened` | `notice_issued` | pre-notice case work; earliest v2 state |
+| `enforcement_action` | `allegations_drafted` | `notice_issued` | pre-service drafting; v1 status in payload.row |
+| `enforcement_action` | `allegations_served` | `notice_issued` | served = respondent's representations clock running |
+| `enforcement_action` | `representations_period` | `notice_issued` | respondent drafting representations; holder respondent, 14d |
+| `enforcement_action` | `hearing_held` | `under_representation` | regulator deliberating post-hearing, pre-determination |
+| `enforcement_action` | `determination` | `determination_made` |  |
+| `enforcement_action` | `penalty_imposed` | `remediation_pending` | awaiting payment/compliance (precedent: paid -> resolved) |
+| `enforcement_action` | `appealed` | `determination_made` | no v2 appeal state; back with regulator, re-arms 7d |
+| `enforcement_action` | `enforced_via_court` | `resolved` | penalty enforced through court = case concluded |
+| `enforcement_action_s35` | `triggered` | `notice_issued` | pre-notice trigger; earliest v2 state |
+| `enforcement_action_s35` | `notice_drafted` | `notice_issued` |  |
+| `enforcement_action_s35` | `respondent_acknowledged` | `notice_issued` | acknowledged, representations still due; holder respondent |
+| `enforcement_action_s35` | `response_received` | `representations_made` |  |
+| `enforcement_action_s35` | `adjudication_in_progress` | `under_review` |  |
+| `enforcement_action_s35` | `adjudicated` | `determination_made` |  |
+| `enforcement_action_s35` | `sanction_imposed` | `remediation_pending` | sanction issued, compliance outstanding |
+| `enforcement_action_s35` | `appeal_window_open` | `determination_made` | post-determination window; re-arms 7d |
+| `enforcement_action_s35` | `appealed` | `under_review` | appeal re-opens regulator review |
+| `enforcement_action_s35` | `re_adjudicated` | `determination_made` |  |
+| `enforcement_action_s35` | `enforcement_in_progress` | `remediation_pending` |  |
+| `esap_compliance` | `data_collection` | `monitoring_period_open` |  |
+| `esap_compliance` | `site_verification` | `monitoring_period_open` | pre-report field work; holder developer |
+| `esap_compliance` | `draft_report` | `monitoring_period_open` | report not yet submitted |
+| `esap_compliance` | `lender_review` | `report_submitted` | report with monitor/lender for review |
+| `esap_compliance` | `minor_findings` | `findings_review` | severity survives in finding_count_minor + payload.row |
+| `esap_compliance` | `major_findings` | `findings_review` | severity survives in finding_count_major + payload.row |
+| `esap_compliance` | `action_plan_required` | `remediation_required` |  |
+| `esap_compliance` | `action_plan_submitted` | `remediation_submitted` |  |
+| `esg_disclosure` | `period_open` | `data_collection` |  |
+| `esg_disclosure` | `data_collected` | `data_collection` | v2 merged collection/verification/computation |
+| `esg_disclosure` | `boundary_verified` | `data_collection` |  |
+| `esg_disclosure` | `metrics_computed` | `data_collection` | draft not yet compiled |
+| `esg_disclosure` | `draft_compiled` | `internal_review` | draft exists; internal review is next v2 step |
+| `esg_disclosure` | `assurance_engaged` | `under_assurance` |  |
+| `esg_disclosure` | `assurance_in_progress` | `under_assurance` |  |
+| `esg_disclosure` | `assured` | `board_review` | assurance done, pre-publish governance |
+| `esg_disclosure` | `filed` | `published` | v1 filed is post-published; nearest terminal |
+| `esg_disclosure` | `disputed` | `internal_review` | v1 resolve_dispute returns to internal_review; nearest non-terminal |
+| `grid_code_compliance` | `monitoring` | `nc_raised` | v2 chain opens at the NC; earliest state, v1 status in payload.row |
+| `grid_code_compliance` | `non_conformance_raised` | `nc_raised` |  |
+| `grid_code_compliance` | `corrective_action_required` | `remediation_required` |  |
+| `grid_code_compliance` | `cap_submitted` | `remediation_submitted` | CAP with operator for review; v2 merged CAP + evidence review |
+| `grid_code_compliance` | `cap_approved` | `remediation_required` | plan approved, remediation executing; back to holder responsible |
+| `grid_code_compliance` | `remediation_in_progress` | `remediation_required` |  |
+| `grid_code_compliance` | `operating_restriction` | `remediation_required` | restriction imposed while responsible party remediates; v1 status in payload.row |
+| `handover_dossier` | `dossier_compiled` | `dossier_drafting` | compiled but not yet submitted; re-arms 30d drafting SLA |
+| `handover_dossier` | `submitted` | `submitted_for_review` |  |
+| `handover_dossier` | `revision_required` | `rectification_required` | rename |
+| `handover_dossier` | `approved` | `accepted` | non-terminal; arms 3d handover SLA |
+| `handover_dossier` | `witnessed_acceptance_scheduled` | `accepted` | v2 collapses witnessed-acceptance into accepted->handed_over; v1 status in payload.row |
+| `handover_dossier` | `witnessed_acceptance` | `accepted` | acceptance witnessed, ops transfer still pending |
+| `handover_dossier` | `training_transferred` | `accepted` | training done but operations not yet owning; last pre-handover step |
+| `handover_dossier` | `operations_owned` | `handed_over` | terminal: ops ownership = handed over |
+| `handover_dossier` | `warranty_activated` | `handed_over` | post-handover step; v1 status in payload.row |
+| `ipp_schedule` | `wbs_drafted` | `schedule_drafted` |  |
+| `ipp_schedule` | `baseline_set` | `baseline_active` |  |
+| `ipp_schedule` | `in_progress` | `baseline_active` | execution under active baseline |
+| `ipp_schedule` | `status_updated` | `baseline_active` | progress updates are field writes, not states, in v2 |
+| `ipp_schedule` | `variance_detected` | `baseline_active` | variance is data under the active baseline; v1 status in payload.row |
+| `ipp_schedule` | `impact_assessed` | `baseline_active` | assessment pre-dates any rebaseline submission |
+| `ipp_schedule` | `rebaselined` | `baseline_active` | re-baseline done => new baseline active (rebaseline_review is the pending case) |
+| `ipp_schedule` | `recovered` | `baseline_active` | back on plan |
+| `ipp_schedule` | `suspended` | `baseline_active` | v2 has no suspended state; non-terminal live state, v1 status in payload.row (isda_agreement precedent) |
+| `itp` | `submitted` | `under_review` | submitted for engineer review |
+| `itp` | `approved` | `itp_approved` |  |
+| `itp` | `in_inspection` | `inspection_in_progress` |  |
+| `itp` | `witness_attended` | `inspection_in_progress` | witness point attended mid-programme; counts live in fields |
+| `itp` | `passed` | `inspection_complete` | non-terminal; arms 48h close SLA |
+| `itp` | `corrective_action` | `under_review` | matches v2 raise_ncr edge (inspection -> under_review rework loop) |
+| `itp` | `failed` | `itp_rejected` | terminal failure; detail in payload.row |
+| `levy_assessment` | `levy_assessed` | `draft_assessment` | assessed but pre-issue (v1 review still follows) |
+| `levy_assessment` | `assessment_review` | `draft_assessment` | internal regulator review pre-issue |
+| `levy_assessment` | `invoiced` | `payment_pending` | billed => payment due; re-arms 30d payment SLA |
+| `levy_assessment` | `objection_review` | `under_objection` | rename |
+| `levy_assessment` | `partially_paid` | `payment_pending` | balance outstanding; v1 status in payload.row |
+| `levy_assessment` | `in_arrears` | `payment_pending` | overdue, still collectible |
+| `levy_assessment` | `final_demand` | `payment_pending` | dunning step within payment_pending |
+| `levy_assessment` | `enforcement` | `payment_pending` | v2 has no enforcement state; live collections case, v1 status in payload.row |
+| `licence_renewal` | `renewal_initiated` | `renewal_requested` |  |
+| `licence_renewal` | `application_filed` | `renewal_requested` | filing = the request; arms 5d start SLA |
+| `licence_renewal` | `completeness_check` | `compliance_review` | nearest review stage |
+| `licence_renewal` | `public_consultation` | `evaluation` | consultation is part of the v2 evaluation phase |
+| `licence_renewal` | `decision_drafted` | `renewal_decision` | decision pending council |
+| `licence_renewal` | `council_voted` | `renewal_decision` | vote outcome not derivable from status alone; operator re-drives grant/refuse, v1 status in payload.row |
+| `load_curtailment` | `instruction_issued` | `directive_issued` | rename; re-arms 2h no-ack time_bar |
+| `load_curtailment` | `curtailment_started` | `curtailment_active` |  |
+| `load_curtailment` | `target_achieved` | `curtailment_active` | target met, curtailment still standing |
+| `load_curtailment` | `partial_compliance` | `curtailment_active` | live event; v1 status in payload.row (non_compliance is the terminal for refusal) |
+| `load_curtailment` | `instruction_lifted` | `restoration_pending` | lifted => load restoration underway |
+| `load_curtailment` | `reconciled` | `curtailment_complete` |  |
+| `load_curtailment` | `post_mortem` | `curtailment_complete` | post-event review; v1 status in payload.row |
+| `loan_default` | `default_flagged` | `default_declared` | v2 has no pre-declaration stage; re-arms 30d cure time_bar |
+| `loan_default` | `under_review` | `default_declared` | lender assessment pre-notice; v1 status in payload.row |
+| `loan_default` | `default_notice_issued` | `default_declared` | the notice IS the declaration |
+| `loan_default` | `cure_period` | `cure_in_progress` | rename |
+| `loan_default` | `accelerated` | `enforcement_pending` | acceleration = enforcement elected |
+| `loan_default` | `enforcement_commenced` | `enforcement_pending` | commenced but not complete (v2 enforced = enforcement complete) |
+| `loan_transfer` | `transfer_requested` | `transfer_proposed` |  |
+| `loan_transfer` | `kyc_screening` | `transfer_proposed` | pre-consent diligence; re-arms 30d consent time_bar |
+| `loan_transfer` | `screening_remediation` | `transfer_proposed` | still pre-consent; v1 status in payload.row |
+| `loan_transfer` | `consent_solicitation` | `transfer_proposed` | consent not yet obtained |
+| `loan_transfer` | `regulatory_review` | `consent_obtained` | consents in, regulatory CP outstanding; arms 15d CP SLA |
+| `loan_transfer` | `transfer_approved` | `cp_satisfied` | approved => ready to execute |
+| `loan_transfer` | `certificate_executed` | `transfer_executed` | rename |
+| `loan_transfer` | `settled` | `transfer_registered` | terminal |
+| `oem_fco` | `draft` | `issued` | v2 has no OEM-side authoring states; v1 status in payload.row |
+| `oem_fco` | `under_review` | `issued` | pre-issue review collapsed into issued |
+| `oem_fco` | `approved` | `issued` | approved but operators not yet notified |
+| `oem_fco` | `population_identified` | `issued` | fleet population is field data in v2 |
+| `oem_fco` | `notification_sent` | `issued` | notification = issuance to operator; re-arms 48h ack SLA |
+| `oem_fco` | `scheduling` | `acknowledged` | actively arranging rollout = acknowledged's 72h schedule SLA |
+| `oem_fco` | `suspended` | `scheduled` | v2 has no suspended state; rollout on hold pre-restart, v1 status in payload.row |
+| `planned_outage` | `draft` | `outage_requested` | v2 has no draft state; re-arms 24h triage SLA |
+| `planned_outage` | `submitted` | `under_review` |  |
+| `planned_outage` | `approved` | `window_approved` |  |
+| `planned_outage` | `rescheduled` | `window_approved` | new window approved; v1 status in payload.row |
+| `planned_outage` | `notified` | `window_approved` | stakeholder notification pre-start, still approved-awaiting-window |
+| `planned_outage` | `in_progress` | `outage_in_progress` | re-arms 7d begin_restoration time_bar |
+| `planned_outage` | `restoring` | `restoration_pending` | rename |
+| `planned_outage` | `restored` | `returned_to_service` | terminal |
+| `pm_compliance` | `pm_scheduled` | `work_assigned` | scheduled = assigned; re-arms 24h start SLA |
+| `pm_compliance` | `on_hold` | `deferred` | hold = deferral granted; v1 status in payload.row |
+| `pm_compliance` | `verification_pending` | `in_progress` | v2 has no verify state; only complete_pm from in_progress reaches completed |
+| `poa_cpa_inclusion` | `cpa_proposed` | `inclusion_requested` |  |
+| `poa_cpa_inclusion` | `inclusion_review` | `doe_validation` | final pre-inclusion review; v2's last review stage |
+| `poa_cpa_inclusion` | `monitoring` | `included` | v1 post-inclusion monitoring loop; v2 lifecycle ends at inclusion (payload keeps status) |
+| `poa_cpa_inclusion` | `verified` | `included` | same collapse — verified is a monitoring-loop rest state after inclusion |
+| `ppa_annual_recon` | `year_opened` | `initiated` |  |
+| `ppa_annual_recon` | `data_collected` | `data_gathering` | non-terminal; data in but compute pending — v2 computed implies compute done |
+| `ppa_annual_recon` | `variance_classified` | `computed` | v1 compute pipeline (classify->residual->CPI->reconcile) merged into v2 computed |
+| `ppa_annual_recon` | `top_residual_computed` | `computed` | same merge |
+| `ppa_annual_recon` | `cpi_capacity_applied` | `computed` | same merge |
+| `ppa_annual_recon` | `reconciled` | `computed` | numbers reconciled, awaiting sign-off = v2 computed (buyer review, 21d timer re-arms) |
+| `ppa_annual_recon` | `signed_off` | `agreed` | non-terminal; sign-off = mutual agreement, settlement instruction still due |
+| `ppa_annual_recon` | `invoiced` | `settled_instructed` | invoice raised = settlement instructed; rails are downstream (record-only chain) |
+| `ppa_nomination` | `nomination_window_open` | `submitted` | v2 has no pre-submission window; earliest state, grid 4h timer re-arms |
+| `ppa_nomination` | `da_nominated` | `submitted` | nominated, awaiting grid validation |
+| `ppa_nomination` | `da_confirmed` | `validated` |  |
+| `ppa_nomination` | `id_revised` | `submitted` | v2 revise loops back to submitted for re-validation |
+| `ppa_nomination` | `delivery_in_progress` | `accepted` | v2 nomination ends at acceptance; delivery is downstream — lossy, payload keeps status |
+| `ppa_nomination` | `delivery_complete` | `accepted` | same collapse |
+| `ppa_nomination` | `reconciled` | `accepted` | post-delivery reconciliation not modelled in v2 |
+| `ppa_nomination` | `dispute_raised` | `accepted` | v2 has no dispute state; reconciliation dispute is downstream of the accepted nomination |
+| `ppa_termination` | `termination_triggered` | `notified` | v2 opens at notice served; trigger precedes it — earliest state |
+| `ppa_termination` | `notice_served` | `notified` |  |
+| `ppa_termination` | `termination_review` | `cure_period` | post-cure review; last v2 non-terminal before the terminate/withdraw decision |
+| `ppa_termination` | `termination_confirmed` | `terminated` |  |
+| `ppa_termination` | `eta_assessment` | `terminated` | buy-out (ETA) computation is post-termination; v2 moves no money (record-only) |
+| `ppa_termination` | `eta_agreed` | `terminated` | same collapse |
+| `ppa_termination` | `disputed` | `terminated` | ETA dispute — PPA already confirmed terminated; v2 has no dispute state |
+| `ppa_termination` | `settlement_pending` | `terminated` | payment is a downstream settlement chain's concern |
+| `project_change_order` | `draft` | `raised` |  |
+| `project_change_order` | `submitted` | `raised` | v2 raise = submit; pre-assessment |
+| `project_change_order` | `screening` | `raised` | screening precedes impact assessment; v2 assessed means assessment complete |
+| `project_change_order` | `impact_assessment` | `raised` | assessment underway, not done; originator 24h timer re-arms |
+| `project_change_order` | `deferred` | `raised` | parked pending resubmit; v2 has no parked state |
+| `project_change_order` | `disputed` | `pending_approval` | v1 dispute arises at approval and resolves back to re-assessment; approver holds |
+| `rec_lifecycle` | `issuance_requested` | `active` | v2 has no pre-issuance states; certificate enters as active — lossy, payload keeps status |
+| `rec_lifecycle` | `eligibility_review` | `active` | same collapse |
+| `rec_lifecycle` | `issued` | `active` |  |
+| `rec_lifecycle` | `listed_for_transfer` | `active` | listing not modelled; still holder-held |
+| `rec_lifecycle` | `allocated` | `reserved` | allocated to a consumption claim pending retirement = v2 reserved-for-retirement (30d timer) |
+| `rec_lifecycle` | `disputed` | `transferred` | integrity dispute freezes a post-transfer cert; v2 has no dispute state, transferred is untimed |
+| `reserve_account` | `reserve_required` | `establishment_requested` |  |
+| `reserve_account` | `funding_scheduled` | `funding` | v2 merged schedule + in-progress into one awaiting-funding state |
+| `reserve_account` | `funding_in_progress` | `funding` |  |
+| `reserve_account` | `shortfall_flagged` | `shortfall` |  |
+| `reserve_account` | `cure_pending` | `shortfall` | cure underway; v2 shortfall (borrower, 5d) is the cure window |
+| `reserve_account` | `drawn` | `shortfall` | authorised draw leaves balance below target pending replenish; nearest v2 analogue |
+| `reserve_account` | `release_requested` | `funded` | release pending; v2 released is terminal, so hold at funded (agent holds) |
+| `reserve_activation` | `activation_issued` | `instructed` |  |
+| `reserve_activation` | `ramping` | `dispatched` | v2 dispatched label is 'ramping to output' |
+| `reserve_activation` | `sustaining` | `dispatched` | v2 merged ramp + sustain into dispatched |
+| `reserve_activation` | `released` | `delivered` | activation ended, delivery report/review due; grid 2d timer re-arms |
+| `reserve_activation` | `performance_review` | `delivered` | SO reviewing delivered performance = v2 delivery-reported-awaiting-verification |
+| `reserve_activation` | `verified` | `delivery_verified` | non-terminal; settlement instruction still due |
+| `reserve_activation` | `non_performance` | `non_delivery` |  |
+| `reserve_activation` | `disputed` | `delivery_verified` | v2 has no dispute state; hold at last pre-settlement review state |
+| `service_contract` | `quoted` | `under_review` | quote issued, customer considering (72h timer re-arms) |
+| `service_contract` | `renewal_due` | `active` | renewal sub-process not modelled in v2; contract remains active |
+| `service_contract` | `negotiating` | `active` | renewal negotiation on a live contract — mapping to under_review would un-execute it |
+| `service_contract` | `in_grace` | `active` | grace period keeps service running; v2 has no grace state, expiry is a manual transition |
+| `service_request` | `approved` | `assigned` | v2 merged approve->assign; approval granted, agent queue (8h timer re-arms) |
+| `service_request` | `user_responded` | `fulfilment_in_progress` | user reply puts the ball back with the agent, matching v2 awaiting_user exit |
+| `settlement_fail` | `instruction_pending` | `detected` | pre-fail instruction pending; earliest v2 state (clearing 1d timer) |
+| `settlement_fail` | `fail_recorded` | `detected` |  |
+| `settlement_fail` | `extension_granted` | `investigating` | extension runs inside the investigation/cure window |
+| `settlement_fail` | `penalty_accruing` | `investigating` | v2 has no penalty state; fail still unresolved, payload keeps accrual status |
+| `settlement_fail` | `buy_in_initiated` | `buy_in_instructed` |  |
+| `settlement_fail` | `buy_in_executing` | `buy_in_instructed` | execution happens on the rails; v2 records instruction only |
+| `settlement_fail` | `buy_in_settled` | `resolved` |  |
+| `settlement_fail` | `cash_compensation` | `resolved` | compensation instructed = fail resolved; cash movement is downstream (record-only) |
+| `sseg_registration` | `registration_received` | `submitted` |  |
+| `sseg_registration` | `eligibility_screening` | `under_review` | non-terminal; re-arms 10d review SLA |
+| `sseg_registration` | `information_requested` | `under_review` | non-terminal; v2 has no info-gap loop — collapses into the review it rejoins; applicant-held gap survives in payload.row |
+| `sseg_registration` | `technical_verification` | `technical_review` | non-terminal |
+| `sseg_registration` | `exemption_determination` | `technical_review` | non-terminal; v2 has no committee-determination state between technical review and approval — still regulator-held pre-decision |
+| `submittal_rfi` | `drafted` | `submitted` | v2 has no draft state; entry |
+| `submittal_rfi` | `distributed` | `submitted` | non-terminal; v1 distributed = with reviewer awaiting review start, exactly v2 submitted (holder reviewer, 2d) |
+| `submittal_rfi` | `clarification_requested` | `revision_requested` | non-terminal; ball with originator in both |
+| `submittal_rfi` | `responded` | `answered` | non-terminal; arms 3d close timer |
+| `submittal_rfi` | `approved` | `answered` | non-terminal; post-decision pre-closeout; approval survives in payload.row |
+| `submittal_rfi` | `returned_for_revision` | `revision_requested` | non-terminal; direct match |
+| `submittal_rfi` | `distributed_for_construction` | `closed` | v2 collapses IFC/incorporate/close into terminal closed |
+| `tariff_determination` | `application_received` | `filed` |  |
+| `tariff_determination` | `completeness_review` | `filed` | non-terminal; v2 filed (regulator, 30d) covers intake + completeness screening |
+| `tariff_determination` | `public_consultation` | `public_process` | non-terminal; rename |
+| `tariff_determination` | `revenue_analysis` | `analysis` | non-terminal |
+| `tariff_determination` | `determination_issued` | `determined` | v2 collapses issue/implement into terminal determined |
+| `tariff_determination` | `reconsideration_requested` | `analysis` | non-terminal; v2 has no reconsideration state — regulator re-analysing, re-arms 45d; v1 status in payload.row |
+| `trade_allocation` | `executed` | `proposed` | entry; executing broker to propose allocation |
+| `trade_allocation` | `allocation_pending` | `proposed` | non-terminal; allocation still with executing broker |
+| `trade_allocation` | `give_up_pending` | `allocated` | non-terminal; counterparty (clearing broker) to accept = v2 allocated holder |
+| `trade_allocation` | `give_up_accepted` | `allocated` | non-terminal; accepted but pre-confirmation |
+| `trade_allocation` | `confirmation_issued` | `allocated` | non-terminal; awaiting counterparty affirmation |
+| `trade_allocation` | `affirmed` | `confirmed` | terminal; v1 matched/settled tail is beyond v2 scope |
+| `trade_allocation` | `break_review` | `allocated` | non-terminal; v1 break rejoins confirmation_issued — back in counterparty court; break survives in payload.row |
+| `vendor_escalation` | `filed` | `raised` |  |
+| `vendor_escalation` | `vendor_triage` | `acknowledged` | non-terminal; vendor engaged, triaging |
+| `vendor_escalation` | `vendor_decision` | `acknowledged` | non-terminal; vendor position recorded, pre-plan; decision in payload.row |
+| `vendor_escalation` | `escalated_to_oem` | `acknowledged` | non-terminal; v2 has no OEM tier — still vendor-side assessment; OEM stage in payload.row |
+| `vendor_escalation` | `oem_field_investigation` | `acknowledged` | non-terminal; investigation = assessment phase |
+| `vendor_escalation` | `oem_decision` | `remediation_planned` | non-terminal; v1 oem_decision recorded → next step is remediation, same position as plan-in-hand |
+| `vendor_escalation` | `remediation` | `remediation_in_progress` | non-terminal; work underway |
+| `warranty_claim` | `opened` | `claim_submitted` | v2 has no internal draft/triage stage; entry |
+| `warranty_claim` | `triaged` | `claim_submitted` | non-terminal; still pre-vendor in v1 — collapses to entry; v1 status in payload.row |
+| `warranty_claim` | `submitted` | `claim_submitted` | non-terminal; direct match (holder vendor, 5d) |
+| `warranty_claim` | `acknowledged` | `under_assessment` | non-terminal; vendor engaged |
+| `warranty_claim` | `under_review` | `under_assessment` | non-terminal; rename |
+| `warranty_claim` | `disputed` | `under_assessment` | non-terminal; v2 has no dispute state — v1 dispute can resolve back to approved, so back in assessment; re-arms 10d |
+| `warranty_claim` | `fulfilled` | `remediation_complete` | non-terminal; v1 fulfilled → close remains — v2 remediation_complete (claimant verifies then closes, 5d) is the same position |
+| `warranty_recovery` | `claim_drafted` | `recovery_filed` | v2 has no draft state; entry |
+| `warranty_recovery` | `submitted_to_oem` | `recovery_filed` | non-terminal; filed with OEM awaiting acknowledgement (holder vendor, 72h) |
+| `warranty_recovery` | `oem_acknowledged` | `under_assessment` | non-terminal; OEM engaged, assessing |
+| `warranty_recovery` | `assessment_complete` | `under_assessment` | non-terminal; assessment done but approve/deny decision pending — v2 has no interstitial pre-decision state; v1 status in payload.row |
+| `warranty_recovery` | `approved` | `recovery_approved` | non-terminal; awaiting recovery, arms 72h |
+| `warranty_recovery` | `disputed` | `under_assessment` | non-terminal; v2 has no dispute state — v1 dispute resolves back to approved, so back in assessment |
+| `warranty_recovery` | `recovery_pending` | `recovery_approved` | non-terminal; approved with payment pending = v2 recovery_approved (vendor to pay, 72h) |
+
 ## §5 v2-only chains — no v1 descriptor, no backfill needed (19)
 
 New capabilities (or v1 functionality that lived outside the Meridian chain registry). They start with an empty log and need no import:
