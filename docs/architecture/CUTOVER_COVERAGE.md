@@ -276,6 +276,36 @@ One event per row is **necessary but not sufficient**. The import must also **re
 3. **RENAMED-CANDIDATE** — after the rename is confirmed and the same mapping exercise done; the two shared-table pairs (`om_work_order`/`work_order` → `wo`, `grid_code_compliance`/`gcc_ncr`) import each table exactly once.
 4. **NO-COUNTERPART** — no cutover; each row exits this class only via P2 extraction (new ChainDecl, then reclassified above) or an explicit retire decision.
 
+### §4.1 Written status-mapping decisions (2026-07-15, dev-data sweep)
+
+The first full dev import (164 rows across all 20 clean chains) quarantined rows whose **non-terminal** v1 status has no same-name v2 state. Decisions below are encoded in `STATUS_MAP` in `src/v2/import/legacy.ts` (statically, per the identifier rule) and pinned by `tests/v2/import-legacy.test.ts` — including a guard that every target is a real state of its chain and never shadows an existing same-name state. The original v1 status always survives verbatim inside `payload.row`; the mapping only picks the v2 resume state (and therefore which timers arm).
+
+| Chain | v1 status | → v2 state | Rationale |
+|---|---|---|---|
+| cyber_incident | detected | reported | same lifecycle entry point |
+| cyber_incident | investigating, escalated | triaged | active handling pre-containment |
+| cyber_incident | notified_regulator, notified_subjects | contained | POPIA s22 notifications happen post-containment in the v1 flow |
+| cyber_incident | remediation_planned, remediation_executing | eradicated | remediation ≈ eradication work |
+| cyber_incident | verified | recovered | post-remediation verification |
+| cyber_incident | false_alarm | dismissed | terminal no-incident |
+| hse_incident | notified_authority | investigating | authority notice occurs during investigation |
+| hse_incident | escalated | triaged | escalation returns to triage ownership |
+| hse_incident | corrective_actions_planned, corrective_actions_executing | corrective_actions_assigned | v2 collapses plan/execute into assigned |
+| hse_incident | verified | corrective_actions_verified | direct rename |
+| hse_incident | false_alarm | dismissed | terminal no-incident |
+| ipp_evm | CR_logged | variance_detected | v1 change-request flow ≈ v2 reforecast flow |
+| ipp_evm | CR_approved, contingency_drawn | reforecast_published | approved CR / drawn contingency = published reforecast |
+| loan_restructure | restructure_proposal_drafted | proposal_drafted | rename |
+| loan_restructure | lender_credit_committee_review | committee_review | rename |
+| loan_restructure | borrower_term_sheet_negotiation | term_negotiation | rename |
+| loan_restructure | legal_documentation_drafted | legal_documentation | rename |
+| loan_restructure | effective_date | effective | rename |
+| ppa_change_in_law | event_logged | notified | lifecycle entry |
+| ppa_change_in_law | eligibility_review, impact_assessment, claim_submitted, counterparty_review, negotiation | assessing | v2 collapses the assessment pipeline into one state |
+| ppa_change_in_law | in_arbitration | disputed | rename |
+| ppa_change_in_law | relief_granted | agreed | granted but not yet implemented |
+| transmission_outage | extended | outage_in_progress | an extended outage is still in progress |
+
 ---
 
 ## §5 v2-only chains — no v1 descriptor, no backfill needed (19)

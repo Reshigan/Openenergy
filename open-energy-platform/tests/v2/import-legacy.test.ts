@@ -7,7 +7,7 @@
 // imported txn as seq 2 chained off the imported hash.
 
 import { describe, it, expect } from 'vitest';
-import { importChain, importIdempotencyKey, IMPORTABLE_CHAINS } from '../../src/v2/import/legacy';
+import { importChain, importIdempotencyKey, IMPORTABLE_CHAINS, STATUS_MAP } from '../../src/v2/import/legacy';
 import { applyTransition, type EngineDeps } from '../../src/v2/domain/engine';
 import { CHAINS } from '../../src/routes/v2';
 import { GUARDS } from '../../src/v2/domain/guards/registry';
@@ -189,6 +189,43 @@ describe('importChain', () => {
       expect(r.event.seq).toBe(2);
       expect(r.event.prev_hash).toBe(imported.hash);
       expect(r.txn.state).toBe('waiver_requested');
+    }
+  });
+
+  it('maps legacy-only statuses to their written v2 state and arms that state timers', async () => {
+    const deps = newDeps();
+    const rows = [
+      // 'detected' has no v2 state — STATUS_MAP sends it to 'reported' (non-terminal)
+      { id: 'cy-3', case_number: 'CYBE-3', chain_status: 'detected', incident_title: 'probe', updated_at: '2026-04-01 10:00:00' },
+      // 'false_alarm' maps to terminal 'dismissed'
+      { id: 'cy-4', case_number: 'CYBE-4', chain_status: 'false_alarm', incident_title: 'noise', updated_at: '2026-04-02 10:00:00' },
+    ];
+    const report = await importChain(rows, 'cyber_incident', deps);
+    expect(report.imported).toBe(2);
+    expect(report.quarantined).toEqual([]);
+
+    const mapped = (await deps.store.getTxn('cy-3'))!;
+    expect(mapped.txn.state).toBe('reported');
+    expect(mapped.events[0].to_state).toBe('reported');
+    // original v1 status survives verbatim inside the preserved row
+    expect((mapped.events[0].payload as { row: { chain_status: string } }).row.chain_status).toBe('detected');
+    // mapped non-terminal state arms ITS timers (reported → triage sla)
+    const due = await deps.store.dueTimers('2999-01-01T00:00:00.000Z', 10, 'sla');
+    expect(due.map((t) => t.txn_id)).toEqual(['cy-3']);
+
+    const dismissed = (await deps.store.getTxn('cy-4'))!;
+    expect(dismissed.txn.state).toBe('dismissed');
+    expect(dismissed.txn.closed_at).not.toBeNull();
+  });
+
+  it('every STATUS_MAP target is a real state of its chain', () => {
+    for (const [ck, map] of Object.entries(STATUS_MAP)) {
+      expect(ck in IMPORTABLE_CHAINS).toBe(true);
+      for (const [from, to] of Object.entries(map)) {
+        expect(CHAINS[ck].states[to], `${ck}: ${from} → ${to}`).toBeDefined();
+        // a mapping for a status that IS already a v2 state would silently shadow it
+        expect(CHAINS[ck].states[from], `${ck}: '${from}' is already a v2 state`).toBeUndefined();
+      }
     }
   });
 

@@ -57,6 +57,60 @@ export const IMPORTABLE_CHAINS: Record<string, string | null> = {
   transmission_outage: null, // asset_label — not a participant
 };
 
+/** Written status-mapping decisions (CUTOVER_COVERAGE §1 header rule): v1
+ *  statuses with no same-name v2 state map to the nearest v2 state by lifecycle
+ *  position. The original v1 status survives verbatim in payload.row — the
+ *  mapping only picks which v2 state the txn resumes in (and therefore which
+ *  timers arm). Unmapped unknown statuses still quarantine. */
+export const STATUS_MAP: Record<string, Record<string, string>> = {
+  cyber_incident: {
+    detected: 'reported',
+    investigating: 'triaged',
+    escalated: 'triaged',
+    // POPIA s22 notifications happen post-containment in the v1 flow
+    notified_regulator: 'contained',
+    notified_subjects: 'contained',
+    remediation_planned: 'eradicated',
+    remediation_executing: 'eradicated',
+    verified: 'recovered',
+    false_alarm: 'dismissed',
+  },
+  hse_incident: {
+    notified_authority: 'investigating',
+    escalated: 'triaged',
+    corrective_actions_planned: 'corrective_actions_assigned',
+    corrective_actions_executing: 'corrective_actions_assigned',
+    verified: 'corrective_actions_verified',
+    false_alarm: 'dismissed',
+  },
+  ipp_evm: {
+    // v1 change-request flow ≈ v2 reforecast flow
+    CR_logged: 'variance_detected',
+    CR_approved: 'reforecast_published',
+    contingency_drawn: 'reforecast_published',
+  },
+  loan_restructure: {
+    restructure_proposal_drafted: 'proposal_drafted',
+    lender_credit_committee_review: 'committee_review',
+    borrower_term_sheet_negotiation: 'term_negotiation',
+    legal_documentation_drafted: 'legal_documentation',
+    effective_date: 'effective',
+  },
+  ppa_change_in_law: {
+    event_logged: 'notified',
+    eligibility_review: 'assessing',
+    impact_assessment: 'assessing',
+    claim_submitted: 'assessing',
+    counterparty_review: 'assessing',
+    negotiation: 'assessing',
+    in_arbitration: 'disputed',
+    relief_granted: 'agreed',
+  },
+  transmission_outage: {
+    extended: 'outage_in_progress',
+  },
+};
+
 export type LegacyRow = Record<string, Json | undefined>;
 
 export interface ImportDeps {
@@ -134,10 +188,11 @@ export async function importChain(
 
   for (const row of rows) {
     const rowId = row.id == null ? '' : String(row.id);
-    const status = typeof row[desc.statusCol] === 'string' ? (row[desc.statusCol] as string) : '';
+    const rawStatus = typeof row[desc.statusCol] === 'string' ? (row[desc.statusCol] as string) : '';
+    const status = chain.states[rawStatus] ? rawStatus : (STATUS_MAP[chain_key]?.[rawStatus] ?? rawStatus);
     const state = chain.states[status];
     if (!rowId || !state) {
-      report.quarantined.push({ id: rowId, status });
+      report.quarantined.push({ id: rowId, status: rawStatus });
       continue;
     }
     const idem = importIdempotencyKey(chain_key, rowId);
