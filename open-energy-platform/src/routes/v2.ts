@@ -160,6 +160,38 @@ import { vcmProjectDevelopment } from '../v2/domain/chains/vcm_project_developme
 import { vendorEscalation } from '../v2/domain/chains/vendor_escalation';
 import { warrantyClaim } from '../v2/domain/chains/warranty_claim';
 import { warrantyRecovery } from '../v2/domain/chains/warranty_recovery';
+import { poslimitCase } from '../v2/domain/chains/poslimit_case';
+import { ppaObligation } from '../v2/domain/chains/ppa_obligation';
+import { tariffIndexation } from '../v2/domain/chains/tariff_indexation';
+import { oeDispatchNominations } from '../v2/domain/chains/oe_dispatch_nominations';
+import { substationAsset } from '../v2/domain/chains/substation_asset';
+import { dscrMonitoring } from '../v2/domain/chains/dscr_monitoring';
+import { regulatorInbox } from '../v2/domain/chains/regulator_inbox';
+import { complianceNotice } from '../v2/domain/chains/compliance_notice';
+import { commissioning } from '../v2/domain/chains/commissioning';
+import { assetPrognostics } from '../v2/domain/chains/asset_prognostics';
+import { prUnderperformance } from '../v2/domain/chains/pr_underperformance';
+import { ncr } from '../v2/domain/chains/ncr';
+import { bessSoh } from '../v2/domain/chains/bess_soh';
+import { generationRevenueAssurance } from '../v2/domain/chains/generation_revenue_assurance';
+import { siteInstruction } from '../v2/domain/chains/site_instruction';
+import { dfr } from '../v2/domain/chains/dfr';
+import { dscrReport } from '../v2/domain/chains/dscr_report';
+import { slaPerformanceReport } from '../v2/domain/chains/sla_performance_report';
+import { csatRecord } from '../v2/domain/chains/csat_record';
+import { stageGate } from '../v2/domain/chains/stage_gate';
+import { article6Adjustment } from '../v2/domain/chains/article6_adjustment';
+import { auditChainBlock } from '../v2/domain/chains/audit_chain_block';
+import { variationOrder } from '../v2/domain/chains/variation_order';
+import { regulatorExportPack } from '../v2/domain/chains/regulator_export_pack';
+import { licenceObligation } from '../v2/domain/chains/licence_obligation';
+import { cpTracker } from '../v2/domain/chains/cp_tracker';
+import { dlpDefect } from '../v2/domain/chains/dlp_defect';
+import { pnlAttribution } from '../v2/domain/chains/pnl_attribution';
+import { pretradeCreditCheck } from '../v2/domain/chains/pretrade_credit_check';
+import { smartMeterAsset } from '../v2/domain/chains/smart_meter_asset';
+import { unservedEnergyClaim } from '../v2/domain/chains/unserved_energy_claim';
+import { greenTariffDisclosure } from '../v2/domain/chains/green_tariff_disclosure';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { IMPORTABLE_CHAINS, RENAMED_IMPORTS, fetchLegacyRows, importChain } from '../v2/import/legacy';
@@ -322,6 +354,38 @@ export const CHAINS = {
   vendor_escalation: vendorEscalation,
   warranty_claim: warrantyClaim,
   warranty_recovery: warrantyRecovery,
+  poslimit_case: poslimitCase,
+  ppa_obligation: ppaObligation,
+  tariff_indexation: tariffIndexation,
+  oe_dispatch_nominations: oeDispatchNominations,
+  substation_asset: substationAsset,
+  dscr_monitoring: dscrMonitoring,
+  regulator_inbox: regulatorInbox,
+  compliance_notice: complianceNotice,
+  commissioning: commissioning,
+  asset_prognostics: assetPrognostics,
+  pr_underperformance: prUnderperformance,
+  ncr: ncr,
+  bess_soh: bessSoh,
+  generation_revenue_assurance: generationRevenueAssurance,
+  site_instruction: siteInstruction,
+  dfr: dfr,
+  dscr_report: dscrReport,
+  sla_performance_report: slaPerformanceReport,
+  csat_record: csatRecord,
+  stage_gate: stageGate,
+  article6_adjustment: article6Adjustment,
+  audit_chain_block: auditChainBlock,
+  variation_order: variationOrder,
+  regulator_export_pack: regulatorExportPack,
+  licence_obligation: licenceObligation,
+  cp_tracker: cpTracker,
+  dlp_defect: dlpDefect,
+  pnl_attribution: pnlAttribution,
+  pretrade_credit_check: pretradeCreditCheck,
+  smart_meter_asset: smartMeterAsset,
+  unserved_energy_claim: unservedEnergyClaim,
+  green_tariff_disclosure: greenTariffDisclosure,
 };
 
 const clock: Clock = { now: () => ({ epoch_ms: Date.now(), zone: 'UTC' }) };
