@@ -359,3 +359,33 @@ export function tsToSAST(ts: string | null | undefined): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${sast.getUTCFullYear()}-${p(sast.getUTCMonth() + 1)}-${p(sast.getUTCDate())} ${p(sast.getUTCHours())}:${p(sast.getUTCMinutes())} SAST`;
 }
+
+// ── HeroBar — role display copy + collapse-state decisions ──────────────────
+// Keyed by raw JWT role (admin/trader/ipp/wind/offtaker/lender/carbon/regulator/
+// grid/support) — HeroBar shows blurb before any roleAlias() bridging, same as
+// the account-menu role chip in Shell.
+const HERO_BLURB: Record<string, string> = {
+  admin: 'Platform oversight — users, tenants, configuration, and system health.',
+  trader: 'Order book, positions, and margin at a glance.',
+  ipp: 'Project delivery — schedule, cost, documents, and compliance.',
+  wind: 'Wind asset delivery — schedule, cost, documents, and compliance.',
+  offtaker: 'Contracts, delivery, and settlement across your PPAs.',
+  lender: 'Drawdowns, covenants, and portfolio risk across financed assets.',
+  carbon: 'Carbon credits, verification, and registry retirements.',
+  regulator: 'Compliance filings, licence obligations, and market oversight.',
+  grid: 'Grid connections, outages, and network compliance.',
+  support: 'Tickets, escalations, and platform assistance.',
+};
+export function heroBlurb(role: string): string | undefined {
+  return HERO_BLURB[role];
+}
+
+export function heroStorageKey(role: string): string {
+  return `heroCollapsed:${role}`;
+}
+
+// Transaction (/v2/t/:id) always starts compact — a high-frequency page a
+// high-volume user opens repeatedly; every other surface starts full.
+export function heroDefaultCollapsed(pathname: string): boolean {
+  return pathname.startsWith('/v2/t/');
+}
