@@ -40,7 +40,7 @@ import { PrimaryAction } from '../shared/ease/PrimaryAction';
 import { EaseLoading, EaseError } from '../shared/ease/states';
 import { isTileReachable, tileTarget, surfaceRole } from './reachability';
 import { SURFACE_REGISTRY } from './surfaces';
-import { SurfaceBoundary } from './MeridianSurfacePage';
+import { SurfaceBoundary } from '../shared/SurfaceBoundary';
 import { cleanLabel } from './labels';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';

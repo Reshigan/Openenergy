@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
 import { Shell } from './v2/Shell';
-import { SurfaceBoundary } from './meridian/MeridianSurfacePage';
+import { SurfaceBoundary } from './shared/SurfaceBoundary';
 import './v2/surface-skin.css';
 
 // Page components — all lazy so each route only pays for its chunk on first visit.

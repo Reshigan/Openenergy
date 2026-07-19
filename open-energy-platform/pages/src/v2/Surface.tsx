@@ -13,7 +13,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
 import { SURFACE_REGISTRY } from '../meridian/surfaces';
-import { SurfaceBoundary } from '../meridian/MeridianSurfacePage';
+import { SurfaceBoundary } from '../shared/SurfaceBoundary';
 import { humanizeKey } from '../shared/lib';
 import { EaseLoading } from '../shared/ease/states';
 import './surface-skin.css';

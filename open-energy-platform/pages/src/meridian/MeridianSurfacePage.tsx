@@ -11,23 +11,7 @@ import { MeridianFrame } from './MeridianFrame';
 import { SURFACE_REGISTRY } from './surfaces';
 import { humanizeKey } from '../shared/lib';
 import { EaseLoading, EaseError } from '../shared/ease/states';
-
-// Every leaf inherits graceful failure: a surface that throws renders the shared
-// EaseError card (with retry + an Atlas escape) instead of blanking the app.
-export class SurfaceBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() {
-    if (this.state.failed) {
-      return (
-        <EaseError message="This surface hit an error and couldn't render." onRetry={() => this.setState({ failed: false })}>
-          <Link to="/cockpit" className="btn ghost">Back to your cockpit</Link>
-        </EaseError>
-      );
-    }
-    return this.props.children;
-  }
-}
+import { SurfaceBoundary } from '../shared/SurfaceBoundary';
 
 export default function MeridianSurfacePage() {
   const { key = '' } = useParams();
