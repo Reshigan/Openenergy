@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { surfaceRole, tileTarget, isTileReachable } from '../pages/src/meridian/reachability';
 // Import from the PURE modules (no axios/react) so this server-vitest suite
 // resolves under the root npm install — see lib-pure.ts / quicklinks.ts headers.
-import { singleChainOf, classifyLoadError } from '../pages/src/meridian/lib-pure';
+import { singleChainOf, classifyLoadError } from '../pages/src/shared/lib-pure';
 import { quicklinkVisible } from '../pages/src/meridian/quicklinks';
 
 // hasSurface stub: only this one composite key exists.
