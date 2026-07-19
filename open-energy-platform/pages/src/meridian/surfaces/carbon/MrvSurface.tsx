@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 import { mrvViz } from './viz';
 
 const MRV_TRANSITIONS = [

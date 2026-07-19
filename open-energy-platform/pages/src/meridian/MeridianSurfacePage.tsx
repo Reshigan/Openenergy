@@ -10,7 +10,7 @@ import { useAuth } from '../lib/useAuth';
 import { MeridianFrame } from './MeridianFrame';
 import { SURFACE_REGISTRY } from './surfaces';
 import { humanizeKey } from '../shared/lib';
-import { EaseLoading, EaseError } from './ease/states';
+import { EaseLoading, EaseError } from '../shared/ease/states';
 
 // Every leaf inherits graceful failure: a surface that throws renders the shared
 // EaseError card (with retry + an Atlas escape) instead of blanking the app.

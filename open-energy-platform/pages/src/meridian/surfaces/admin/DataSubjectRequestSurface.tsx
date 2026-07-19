@@ -10,7 +10,7 @@
 // roleData feature key `popia`. Non-chain operational surface (Bucket E).
 import React from 'react';
 import { Pill, ActionModal } from '../../../components/launch/WorkstationShell';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 type DsrRow = {
   id: string;

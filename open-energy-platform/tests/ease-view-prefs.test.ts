@@ -1,6 +1,6 @@
 // Pure prefs-application helper (no api/axios import), backend-testable.
 import { describe, it, expect } from 'vitest';
-import { applyViewPrefs, EMPTY_PREFS } from '../pages/src/meridian/ease/applyViewPrefs';
+import { applyViewPrefs, EMPTY_PREFS } from '../pages/src/shared/ease/applyViewPrefs';
 
 const items = [{ key: 'a' }, { key: 'b' }, { key: 'c' }, { key: 'd' }];
 const k = (x: { key: string }) => x.key;

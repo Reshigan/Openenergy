@@ -3,7 +3,7 @@
 // Backend vitest runner is node-only, so we stub document/localStorage for the
 // cookie path; statusLabel is pure TS and needs no stub.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { statusLabel, statusTone } from '../pages/src/meridian/ease/statusLabel';
+import { statusLabel, statusTone } from '../pages/src/shared/ease/statusLabel';
 
 // pages/src/lib/api.ts imports axios at module load (axios.create + interceptors).
 // axios is a pages/ dependency, not installed in the backend (open-energy-platform)

@@ -12,7 +12,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { Pill } from '../launch/WorkstationShell';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 type Run = {
   id: string;

@@ -7,7 +7,7 @@
 // feature key `facilities`. Non-chain listing surface (Bucket B).
 import React from 'react';
 import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 export default function FacilitiesSurface(_props: { role: string }) {
   return (

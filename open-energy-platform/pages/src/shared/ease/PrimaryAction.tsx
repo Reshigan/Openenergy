@@ -1,4 +1,4 @@
-// pages/src/meridian/ease/PrimaryAction.tsx — Ease Kit one-tap duty button.
+// pages/src/shared/ease/PrimaryAction.tsx — Ease Kit one-tap duty button.
 // The time-to-action primitive, extracted verbatim from Horizon's act() so every
 // surface fires a chain transition the same way:
 //   • fielded action (needs a reason/quantum/evidence) → hand to the Thread drawer

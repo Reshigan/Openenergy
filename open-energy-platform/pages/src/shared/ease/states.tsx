@@ -1,4 +1,4 @@
-// pages/src/meridian/ease/states.tsx — Ease Kit shared state surfaces.
+// pages/src/shared/ease/states.tsx — Ease Kit shared state surfaces.
 // Three plain-language, on-brand placeholders every Meridian leaf can lean on
 // instead of hand-rolling its own "Loading…" / "Nothing here" / "It broke" markup.
 // All visuals reuse existing meridian.css classes (.mer, .skel*, .mer-loading,

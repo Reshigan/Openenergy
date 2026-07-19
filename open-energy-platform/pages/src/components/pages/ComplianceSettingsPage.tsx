@@ -13,7 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { StitchPage } from '../StitchPage';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 type Tab = 'mfa' | 'kyc' | 'popia' | 'regulator';
 

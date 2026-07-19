@@ -12,7 +12,7 @@
 import React, { useState } from 'react';
 import { Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 type SubInvoice = {
   id: string;

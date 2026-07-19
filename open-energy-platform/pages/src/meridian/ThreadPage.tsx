@@ -8,7 +8,7 @@ import './meridian.css';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { fmtZar, humanizeKey, type LedgerActionField } from '../shared/lib';
-import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
+import { statusLabel, STATUS_TONE_CLASS } from '../shared/ease/statusLabel';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 import { cleanLabel } from './labels';

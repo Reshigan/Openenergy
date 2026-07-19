@@ -22,7 +22,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 import '../../meridian/meridian.css';
 
 // Accept only the document formats the reviewers can open, and cap pre-upload size

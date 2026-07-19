@@ -2,7 +2,7 @@
 // Bucket B: extracted verbatim from the retired IppWorkstationPage `projects` tab body
 // (a non-chain ListingTable over /projects). Self-contained `{ role }` body.
 import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 export default function ProjectsSurface(_props: { role: string }) {
   return (

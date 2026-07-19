@@ -13,7 +13,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ActionModal, FieldSpec } from '../launch/WorkstationShell';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 const BG     = 'var(--s0, oklch(0.96 0.003 250))';
 const BG1    = 'var(--s1, oklch(0.99 0.002 80))';

@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 export default function OrdersSurface(_props: { role: string }) {
   const [cancelling, setCancelling] = useState<any | null>(null);

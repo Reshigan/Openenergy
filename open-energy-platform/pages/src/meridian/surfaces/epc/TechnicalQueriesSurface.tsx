@@ -10,7 +10,7 @@
 // ListingTable unwraps the `data` array directly.
 import React from 'react';
 import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 export default function TechnicalQueriesSurface(_props: { role: string }) {
   return (

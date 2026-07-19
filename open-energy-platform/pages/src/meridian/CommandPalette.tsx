@@ -12,7 +12,7 @@ import { SURFACE_REGISTRY } from './surfaces';
 import { tileTarget } from './reachability';
 import { fetchHorizon, fetchInitiable, type MerCase, type InitiableChain } from '../shared/lib';
 import { cleanLabel } from './labels';
-import { statusLabel } from './ease/statusLabel';
+import { statusLabel } from '../shared/ease/statusLabel';
 
 interface Hit { type: 'function' | 'case' | 'create'; label: string; sub: string; go: () => void }
 

@@ -18,7 +18,7 @@ import { SURFACE_REGISTRY } from './surfaces';
 import { isTileReachable, tileTarget } from './reachability';
 import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from '../shared/lib';
 import { cleanLabel } from './labels';
-import { useViewPrefs } from './ease/useViewPrefs';
+import { useViewPrefs } from '../shared/ease/useViewPrefs';
 
 const RECENTS_KEY = 'mer.atlas.recents';
 function getRecents(): string[] {

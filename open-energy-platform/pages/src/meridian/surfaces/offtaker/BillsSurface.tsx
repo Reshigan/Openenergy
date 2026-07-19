@@ -9,7 +9,7 @@
 // roleData feature key `bills` (added in E2.6). Non-chain analytics/AI surface (Bucket D/E).
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pill } from '../../../components/launch/WorkstationShell';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 import { api } from '../../../lib/api';
 
 type BillProfile = {

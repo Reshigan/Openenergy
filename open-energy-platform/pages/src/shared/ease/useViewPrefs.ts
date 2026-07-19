@@ -1,4 +1,4 @@
-// pages/src/meridian/ease/useViewPrefs.ts — the Ease customisation engine (client).
+// pages/src/shared/ease/useViewPrefs.ts — the Ease customisation engine (client).
 // One hook backs per-user pin / hide / reorder on any surface, persisted to
 // /api/prefs/:scope (server-side, so it survives devices). The role default is the
 // starting layout; these are the user's overrides. Used by Horizon (lanes + duty)

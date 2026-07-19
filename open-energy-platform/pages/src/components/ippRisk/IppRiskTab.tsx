@@ -10,7 +10,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 

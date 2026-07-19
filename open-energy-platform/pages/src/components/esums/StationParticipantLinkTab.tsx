@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 interface StationLink {
   id: string;

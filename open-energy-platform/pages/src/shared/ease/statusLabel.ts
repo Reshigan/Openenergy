@@ -1,4 +1,4 @@
-// pages/src/meridian/ease/statusLabel.ts — plain-language status for every surface.
+// pages/src/shared/ease/statusLabel.ts — plain-language status for every surface.
 // Replaces the 119+ `status.replace(/_/g,' ').toUpperCase()` render sites that show
 // operators raw SHOUTING state codes. Two wins in one call:
 //   1. comprehension — sentence case + curated phrasing for stems where snake→words

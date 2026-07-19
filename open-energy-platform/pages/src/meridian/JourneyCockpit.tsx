@@ -34,10 +34,10 @@ function fmtField(k: string, v: unknown): string {
   }
   return String(v);
 }
-import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
-import { byAtRisk } from './ease/money';
-import { PrimaryAction } from './ease/PrimaryAction';
-import { EaseLoading, EaseError } from './ease/states';
+import { statusLabel, STATUS_TONE_CLASS } from '../shared/ease/statusLabel';
+import { byAtRisk } from '../shared/ease/money';
+import { PrimaryAction } from '../shared/ease/PrimaryAction';
+import { EaseLoading, EaseError } from '../shared/ease/states';
 import { isTileReachable, tileTarget, surfaceRole } from './reachability';
 import { SURFACE_REGISTRY } from './surfaces';
 import { SurfaceBoundary } from './MeridianSurfacePage';

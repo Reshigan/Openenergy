@@ -14,7 +14,7 @@ import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ActionModal, FieldSpec } from '../launch/WorkstationShell';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 // ── design tokens ──────────────────────────────────────────────────────
 const BG      = 'var(--s0, oklch(0.96 0.003 250))';

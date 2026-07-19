@@ -19,7 +19,7 @@ import { OfferCompareGrid } from './OfferCompareGrid';
 import { DealOfferComposer } from './DealOfferComposer';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
-import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
+import { statusLabel, STATUS_TONE_CLASS } from '../shared/ease/statusLabel';
 
 // Active composer veil: which deal type, and offer vs request.
 interface ComposeState { info: DealTypeInfo; mode: 'offer' | 'request' }

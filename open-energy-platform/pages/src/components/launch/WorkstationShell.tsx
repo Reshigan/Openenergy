@@ -17,7 +17,7 @@ import { api } from '../../lib/api';
 // Ease kit — plain-language shared state surfaces (meridian.css classes only).
 // Replaces the Skeleton/ErrorBanner/EmptyState early-returns in ListingTable so
 // every leaf leans on one shared, on-brand loading/error/empty vocabulary.
-import { EaseLoading, EaseError, EaseEmpty } from '../../meridian/ease/states';
+import { EaseLoading, EaseError, EaseEmpty } from '../../shared/ease/states';
 import { RoleShell, CommandRail, type CommandItem } from '../signature';
 import { themeFor, type RoleKey } from '../../lib/role-themes';
 import { useDensityPreference } from '../../lib/density';

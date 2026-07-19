@@ -12,7 +12,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Clock, AlertTriangle, CheckCircle, XCircle, Zap } from 'lucide-react';
 import { ChainStateBar } from './ChainStateBar';
-import { statusLabel as easeStatusLabel } from '../meridian/ease/statusLabel';
+import { statusLabel as easeStatusLabel } from '../shared/ease/statusLabel';
 import { ActionModal, type FieldSpec } from './launch/WorkstationShell';
 
 // ─── Design tokens (mockup-b) ─────────────────────────────────────────

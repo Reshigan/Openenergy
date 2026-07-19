@@ -1,4 +1,4 @@
-// pages/src/meridian/ease/applyViewPrefs.ts — pure prefs-application helper.
+// pages/src/shared/ease/applyViewPrefs.ts — pure prefs-application helper.
 // Split out from useViewPrefs.ts (which imports the axios api client) so this
 // stays dependency-free and testable in the backend vitest project.
 

@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
 import { X } from 'lucide-react';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const [subject, setSubject] = useState('');

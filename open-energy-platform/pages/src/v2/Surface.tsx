@@ -15,7 +15,7 @@ import { Shell } from './Shell';
 import { SURFACE_REGISTRY } from '../meridian/surfaces';
 import { SurfaceBoundary } from '../meridian/MeridianSurfacePage';
 import { humanizeKey } from '../shared/lib';
-import { EaseLoading } from '../meridian/ease/states';
+import { EaseLoading } from '../shared/ease/states';
 import './surface-skin.css';
 
 export default function Surface() {

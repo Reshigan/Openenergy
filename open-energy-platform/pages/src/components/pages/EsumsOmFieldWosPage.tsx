@@ -22,7 +22,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { enqueueMutation, flushQueue, offlineFirstFetch, listPending } from '../../lib/offlineQueue';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 type WoRow = {
   id: string;

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { StitchPage } from '../StitchPage';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 type Tab = 'info-officer' | 'sar' | 'kyc-review' | 'devices' | 'lockouts' | 'submissions' | 'incidents' | 'maintenance';
 

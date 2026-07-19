@@ -4,7 +4,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { fmtZar, zarMagnitudeClass, fuseFraction, humanizeKey, type MerCase } from '../shared/lib';
-import { statusLabel, STATUS_TONE_CLASS, type StatusTone } from './ease/statusLabel';
+import { statusLabel, STATUS_TONE_CLASS, type StatusTone } from '../shared/ease/statusLabel';
 
 // Inline, non-fatal action error — sits above a board's action buttons; the board
 // keeps its last-good data behind it. Renders nothing when there's no error. Every

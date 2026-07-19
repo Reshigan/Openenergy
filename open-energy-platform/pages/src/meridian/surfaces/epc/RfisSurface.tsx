@@ -9,7 +9,7 @@
 // Atlas (⌘K) via roleData feature key `rfis`.
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal } from '../../../components/launch/WorkstationShell';
-import { statusLabel } from '../../ease/statusLabel';
+import { statusLabel } from '../../../shared/ease/statusLabel';
 
 const TERMINAL_GOOD = new Set(['closed', 'closed_out', 'answered', 'archived']);
 const TERMINAL_BAD = new Set(['rejected', 'voided', 'void']);
