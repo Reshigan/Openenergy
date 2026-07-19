@@ -13,7 +13,7 @@ import {
   dealLabel, dealStage, fmtZar,
   type MyDeals, type DealTypeInfo, type DealRequestSummary, type DealOfferSummary,
   type ScoredOption, type DealKind,
-} from './lib';
+} from '../shared/lib';
 import { DealProcessRail } from './DealProcessRail';
 import { OfferCompareGrid } from './OfferCompareGrid';
 import { DealOfferComposer } from './DealOfferComposer';

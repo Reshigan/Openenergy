@@ -13,7 +13,7 @@ import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { MeridianHeader } from './MeridianHeader';
 import { cleanLabel } from './labels';
-import { fetchHorizon, type HorizonData } from './lib';
+import { fetchHorizon, type HorizonData } from '../shared/lib';
 
 export default function NewPage() {
   // ProtectedRoute guarantees a signed-in user before this page mounts.

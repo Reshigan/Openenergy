@@ -9,7 +9,7 @@ import React from 'react';
 import './meridian.css';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { fetchLedger, classifyLoadError, fmtZar, type LedgerData, type LoadErrorKind } from './lib';
+import { fetchLedger, classifyLoadError, fmtZar, type LedgerData, type LoadErrorKind } from '../shared/lib';
 import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';

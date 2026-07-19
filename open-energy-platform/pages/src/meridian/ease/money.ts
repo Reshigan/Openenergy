@@ -2,7 +2,7 @@
 // One ZAR formatter and one "what matters most" ranking key, so every surface
 // formats and ranks identically (the money-first move the v2 Horizons proved).
 // Pure, dependency-free (the Bucket type import is erased at compile time).
-import type { Bucket } from '../lib';
+import type { Bucket } from '../../shared/lib';
 
 // Canonical ZAR formatter — compact, R-prefixed, magnitude-aware. Mirrors the
 // long-standing Horizon lib.ts fmtZar so promoting call-sites is behaviour-safe.

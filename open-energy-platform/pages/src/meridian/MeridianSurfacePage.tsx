@@ -9,7 +9,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { MeridianFrame } from './MeridianFrame';
 import { SURFACE_REGISTRY } from './surfaces';
-import { humanizeKey } from './lib';
+import { humanizeKey } from '../shared/lib';
 import { EaseLoading, EaseError } from './ease/states';
 
 // Every leaf inherits graceful failure: a surface that throws renders the shared

@@ -4,7 +4,7 @@
 // .field/label/input/select, .preview, .cascade-hint; .btn .pri/.ghost). Pure form
 // state; the parent owns publishing via onPublish.
 import React from 'react';
-import { fmtZar, humanizeKey, type DealKind, type DealFieldSpec } from './lib';
+import { fmtZar, humanizeKey, type DealKind, type DealFieldSpec } from '../shared/lib';
 
 // A unit reads as monetary if it mentions ZAR or rands ('R…', 'R/MWh' etc.).
 function isMonetary(unit?: string): boolean {

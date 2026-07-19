@@ -1,7 +1,7 @@
 // pages/src/meridian/DealProcessRail.tsx — kind-aware 5-step process spine.
 // Markup is the .drail / .step (.done|.now|.ahead) pattern styled in meridian.css.
 // The canonical DealStage order drives done/now/ahead; the kind only swaps labels.
-import type { DealKind, DealStage } from './lib';
+import type { DealKind, DealStage } from '../shared/lib';
 
 // Canonical stage spine — index in this array decides done (before) / now / ahead (after).
 const CANON: DealStage[] = ['offer', 'match', 'evaluate', 'accept', 'track'];

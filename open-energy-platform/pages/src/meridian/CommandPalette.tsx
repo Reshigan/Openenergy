@@ -10,7 +10,7 @@ import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { SURFACE_REGISTRY } from './surfaces';
 import { tileTarget } from './reachability';
-import { fetchHorizon, fetchInitiable, type MerCase, type InitiableChain } from './lib';
+import { fetchHorizon, fetchInitiable, type MerCase, type InitiableChain } from '../shared/lib';
 import { cleanLabel } from './labels';
 import { statusLabel } from './ease/statusLabel';
 

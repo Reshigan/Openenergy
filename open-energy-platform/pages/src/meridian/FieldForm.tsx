@@ -3,8 +3,8 @@
 // client-side, coerces values to declared types, and calls onSubmit with a plain values
 // object. Used by the Thread action drawer and the Ledger "+ New" drawer.
 import React from 'react';
-import type { LedgerActionField, LookupOption } from './lib';
-import { fetchLookup, humanizeKey } from './lib';
+import type { LedgerActionField, LookupOption } from '../shared/lib';
+import { fetchLookup, humanizeKey } from '../shared/lib';
 import { cleanLabel } from './labels';
 
 export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel, onSubmit, onCancel }: {

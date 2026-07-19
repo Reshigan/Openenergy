@@ -14,7 +14,7 @@ import { api } from '../lib/api';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { getJourneys } from './journeys';
 import { Icon } from './icons';
-import { fetchHorizon, fetchLedger, fetchInitiable, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField, type InitiableChain } from './lib';
+import { fetchHorizon, fetchLedger, fetchInitiable, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField, type InitiableChain } from '../shared/lib';
 import { FieldForm } from './FieldForm';
 import StreamInsight from './StreamInsight';
 

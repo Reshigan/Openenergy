@@ -6,7 +6,7 @@
 // so Horizon never depends on it.
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { fetchRoleStats, fmtZar, type RoleStats } from './lib';
+import { fetchRoleStats, fmtZar, type RoleStats } from '../shared/lib';
 
 // `warn`/`crit` are thresholds that tint a tile amber/red. `lowBad` flips the
 // comparison (tint when the value drops BELOW the threshold — e.g. delivered %,

@@ -16,7 +16,7 @@ import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
 import { SURFACE_REGISTRY } from './surfaces';
 import { isTileReachable, tileTarget } from './reachability';
-import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from './lib';
+import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from '../shared/lib';
 import { cleanLabel } from './labels';
 import { useViewPrefs } from './ease/useViewPrefs';
 

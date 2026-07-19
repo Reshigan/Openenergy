@@ -5,7 +5,7 @@
 // "▸ sweeteners" expander toggles a wrapper class and animates grid-rows/opacity via the
 // .sweet-reveal rules in meridian.css, eased with var(--ease) — never JS.
 import React from 'react';
-import { fmtZar, zarMagnitudeClass, type ScoredOption } from './lib';
+import { fmtZar, zarMagnitudeClass, type ScoredOption } from '../shared/lib';
 
 // A ZAR-looking primary_metric (large rand figure) renders through fmtZar; otherwise the raw
 // number carries an optional unit hint scraped from secondary (e.g. R/MWh, %, MW).

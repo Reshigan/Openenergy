@@ -14,7 +14,7 @@ import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
 import { SURFACE_REGISTRY } from '../meridian/surfaces';
 import { SurfaceBoundary } from '../meridian/MeridianSurfacePage';
-import { humanizeKey } from '../meridian/lib';
+import { humanizeKey } from '../shared/lib';
 import { EaseLoading } from '../meridian/ease/states';
 import './surface-skin.css';
 
