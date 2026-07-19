@@ -135,6 +135,27 @@
 .v2-menu button.danger:hover { background: color-mix(in oklch, var(--bad) 16%, var(--s2)); color: var(--bad); }
 .v2-menu-sep { height: 1px; background: var(--s-panel); margin: 4px 2px; }
 @media (prefers-reduced-motion: reduce) { .v2-menu { animation: none; } }
+
+/* ── HeroBar: role hero + role-scoped domain menu ──────────────────────── */
+.v2-herobar {
+  display: flex; align-items: center; gap: var(--sp-4);
+  max-width: 1240px; margin: 0 auto; padding: var(--sp-4) var(--sp-6) 0;
+}
+.v2-herobar.compact { padding-top: var(--sp-2); }
+.v2-herobar-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.v2-herobar-name { font-size: var(--t-15); font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
+.v2-herobar-blurb { font-size: var(--t-13); color: var(--ink-2); max-width: 62ch; }
+.v2-herobar-toggle { padding: 4px 8px; line-height: 1; }
+.v2-herobar-menu { position: relative; }
+.v2-hero-dropdown { min-width: 280px; max-height: 70vh; overflow-y: auto; }
+.v2-hero-domain-hd {
+  display: flex; align-items: center; gap: var(--sp-2); width: 100%;
+}
+.v2-hero-domain-hd .dot { width: 8px; height: 8px; border-radius: 2px; background: var(--dc, var(--accent)); flex: none; }
+.v2-hero-domain-hd .n { font-size: var(--t-11); color: var(--ink-2); font-family: var(--font-mono); }
+.v2-hero-domain-body { display: flex; flex-direction: column; padding-left: var(--sp-4); }
+.v2-hero-domain-loading { font-size: var(--t-13); color: var(--ink-2); padding: 8px 10px; }
+
 .v2-main { max-width: 1240px; margin: 0 auto; padding: var(--sp-6); }
 
 /* ── buttons ────────────────────────────────────────────────────────── */

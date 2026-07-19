@@ -18,6 +18,7 @@ import {
 } from './api';
 import { tsToSAST, type ChainMap, type TxnRow } from './decl';
 import { roleStarts, hasTrade, type JourneyStart } from './starts';
+import { HeroBar } from './HeroBar';
 import './tokens.css';
 
 type NavItem = { to: string; label: string; end?: boolean };
@@ -95,6 +96,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </header>
+      <HeroBar role={role} chains={chains} />
       <main className="v2-main">{children}</main>
       {paletteOpen && <Palette role={role} chains={chains} onClose={() => setPaletteOpen(false)} />}
     </div>
