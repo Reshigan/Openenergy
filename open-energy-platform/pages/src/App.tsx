@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
@@ -32,13 +32,9 @@ const SignaturePreview       = React.lazy(() => import('./components/signature/_
 const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeedShell').then(m => ({ default: m.ActivityFeedShell })));
 
 // Meridian redesign — full-canvas pages with their own chrome (no Layout wrapper).
-const ThreadPage            = React.lazy(() => import('./meridian/ThreadPage'));
-const AtlasPage             = React.lazy(() => import('./meridian/AtlasPage'));
-const NewPage               = React.lazy(() => import('./meridian/NewPage'));
 const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
 const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
-const JourneyCockpit        = React.lazy(() => import('./meridian/JourneyCockpit'));
 
 // v2 generative frontend — chains-as-data, own chrome (Shell). Four surfaces.
 const V2Home                = React.lazy(() => import('./v2/Home'));
@@ -47,28 +43,6 @@ const V2Find                = React.lazy(() => import('./v2/Find'));
 const V2Trade               = React.lazy(() => import('./v2/Trade'));
 const V2Surface             = React.lazy(() => import('./v2/Surface'));
 
-// The cockpit is the post-login home; if it throws at runtime, show a graceful
-// fallback with an escape to the (still-live) classic Horizon board rather than
-// blanking the app for everyone.
-class CockpitBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() {
-    if (this.state.failed) {
-      return (
-        <div className="mer mer-error" role="alert" style={{ padding: 32 }}>
-          <p>Your workspace hit an error loading.</p>
-          <div className="mer-error-acts">
-            <button type="button" className="btn ghost" onClick={() => location.reload()}>Reload</button>
-            <Link to="/cockpit" className="btn pri">Back to your cockpit</Link>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 const KycSubmission         = React.lazy(() => import('./components/onboarding/KycSubmission').then(m => ({ default: m.KycSubmission })));
 
 // Core page components
@@ -248,7 +222,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
 
 // SSO Landing Page — invoked by backend callback redirect. Reads the token
 // bundle from the URL fragment, stashes it via AuthContext, and navigates to
-// the `return_to` path (default: /cockpit).
+// the `return_to` path (default: /v2).
 function SsoLanding() {
   const { acceptSsoTokens } = useAuth();
   const navigate = useNavigate();
@@ -259,7 +233,7 @@ function SsoLanding() {
     const params = new URLSearchParams(frag);
     const token = params.get('token');
     const refresh_token = params.get('refresh_token') || undefined;
-    const returnTo = params.get('return_to') || '/cockpit';
+    const returnTo = params.get('return_to') || '/v2';
     if (!token) {
       setError('Missing SSO token. Please try signing in again.');
       const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
@@ -616,6 +590,12 @@ function LaunchRedirect() {
   );
 }
 
+// /thread/:chainKey/:id retired — v2 Transaction resolves chain_key from the id.
+function ThreadRedirect() {
+  const { id = '' } = useParams();
+  return <Navigate to={`/v2/t/${id}`} replace />;
+}
+
 // App Router
 function AppRoutes() {
   return (
@@ -639,11 +619,9 @@ function AppRoutes() {
       <Route path="/settings/security" element={<ProtectedRoute><Layout><Security /></Layout></ProtectedRoute>} />
       {/* KYC self-service submission - live Meridian surface inside the chrome. */}
       <Route path="/kyc" element={<ProtectedRoute><Layout><KycSubmission /></Layout></ProtectedRoute>} />
-      {/* /cockpit and /launch (no role) both resolve to the signed-in user's
-          role-specific board. Cockpit kept as a soft redirect so existing
-          bookmarks keep working — but the Launchpad nav now points to
-          /launch. */}
-      <Route path="/cockpit" element={<ProtectedRoute><CockpitBoundary><JourneyCockpit /></CockpitBoundary></ProtectedRoute>} />
+      {/* /cockpit retired (JourneyCockpit deleted) — soft redirect to v2 so
+          existing bookmarks keep working. */}
+      <Route path="/cockpit" element={<Navigate to="/v2" replace />} />
       <Route path="/feed" element={<ProtectedRoute><AppShellLayout><ActivityFeedShell /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
@@ -656,7 +634,9 @@ function AppRoutes() {
       <Route path="/v2/trade" element={<ProtectedRoute><V2Trade /></ProtectedRoute>} />
       <Route path="/v2/t/:id" element={<ProtectedRoute><V2Transaction /></ProtectedRoute>} />
       <Route path="/v2/s/:key" element={<ProtectedRoute><V2Surface /></ProtectedRoute>} />
-      <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
+      {/* /thread/:chainKey/:id retired (ThreadPage deleted) — v2 Transaction
+          resolves chain_key from the id, so only :id survives into /v2/t/:id. */}
+      <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadRedirect /></ProtectedRoute>} />
       {/* Retired browse planes — create is in-journey, search is the ⌘K palette.
          Redirect into the cockpit so old links/bookmarks land on the single plane. */}
       <Route path="/atlas" element={<Navigate to="/v2" replace />} />
@@ -785,9 +765,6 @@ function AppRoutes() {
       <Route path="/" element={<RootLanding />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
-    {/* Meridian ⌘K palette — global on every authed page; renders null when
-        there's no signed-in role config. */}
-    <CommandPalette />
     </React.Suspense>
   );
 }

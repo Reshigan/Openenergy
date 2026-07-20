@@ -7,7 +7,7 @@
 // surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `sites-portfolio`.
 import React from 'react';
 import { ListingTable } from '../../../components/launch/WorkstationShell';
-import { StatusPill } from '../../components';
+import { StatusPill } from '../../../meridian/components';
 
 export default function SitesPortfolioSurface(_props: { role: string }) {
   return (

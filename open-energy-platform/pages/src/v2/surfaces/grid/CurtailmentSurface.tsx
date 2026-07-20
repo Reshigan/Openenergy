@@ -8,7 +8,7 @@
 // key `curtailment`.
 import React, { useState } from 'react';
 import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
-import { StatusPill } from '../../components';
+import { StatusPill } from '../../../meridian/components';
 import { api } from '../../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {

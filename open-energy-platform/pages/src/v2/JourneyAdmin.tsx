@@ -4,7 +4,7 @@
 // This is where new functionality is slotted into a journey and priced. The cockpit
 // reads the same config (hides unavailable, badges required, shows charges).
 import React from 'react';
-import './meridian.css';
+import '../shared/surfaces.css';
 import { api } from '../lib/api';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { getJourneys } from './journeys';

@@ -8,7 +8,7 @@
 // reached from Atlas (⌘K) via the roleData feature key `trades`.
 import React, { useState } from 'react';
 import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
-import { StatusPill } from '../../components';
+import { StatusPill } from '../../../meridian/components';
 
 const num = (n: any, d = 2) => (n == null || isNaN(Number(n)) ? '—' : Number(n).toLocaleString('en-ZA', { minimumFractionDigits: d, maximumFractionDigits: d }));
 

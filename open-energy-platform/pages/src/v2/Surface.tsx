@@ -12,7 +12,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
-import { SURFACE_REGISTRY } from '../meridian/surfaces';
+import { SURFACE_REGISTRY } from './surfaces';
 import { SurfaceBoundary } from '../shared/SurfaceBoundary';
 import { humanizeKey } from '../shared/lib';
 import { EaseLoading } from '../shared/ease/states';

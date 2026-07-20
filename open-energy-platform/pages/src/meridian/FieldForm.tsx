@@ -1,11 +1,15 @@
 // pages/src/meridian/FieldForm.tsx — Meridian shared schema-driven action form.
 // Renders a LedgerActionField[] schema (.composer classes), validates required fields
 // client-side, coerces values to declared types, and calls onSubmit with a plain values
-// object. Used by the Thread action drawer and the Ledger "+ New" drawer.
+// object. Used by the Ledger "+ New" drawer (the Thread action drawer that also used
+// this was retired with ThreadPage — see App.tsx ThreadRedirect).
+// ponytail: kept in place (not moved into v2/) — its only remaining live consumer,
+// meridian/LedgerPage.tsx, is itself Bucket A and is deleted in the next task; moving
+// both together then is less churn than moving this one now.
 import React from 'react';
 import type { LedgerActionField, LookupOption } from '../shared/lib';
 import { fetchLookup, humanizeKey } from '../shared/lib';
-import { cleanLabel } from './labels';
+import { cleanLabel } from '../v2/labels';
 
 export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel, onSubmit, onCancel }: {
   fields: LedgerActionField[];

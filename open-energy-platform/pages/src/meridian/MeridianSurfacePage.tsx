@@ -8,7 +8,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { MeridianFrame } from './MeridianFrame';
-import { SURFACE_REGISTRY } from './surfaces';
+import { SURFACE_REGISTRY } from '../v2/surfaces';
 import { humanizeKey } from '../shared/lib';
 import { EaseLoading, EaseError } from '../shared/ease/states';
 import { SurfaceBoundary } from '../shared/SurfaceBoundary';

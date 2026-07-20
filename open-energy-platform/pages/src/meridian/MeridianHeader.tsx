@@ -9,7 +9,7 @@ import { api } from '../lib/api';
 
 // Re-export so existing './MeridianHeader' importers keep resolving the symbol.
 // The pure definition lives in ./quicklinks (no React) for server-side unit tests.
-export { quicklinkVisible } from './quicklinks';
+export { quicklinkVisible } from '../v2/quicklinks';
 
 export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
   const { user, logout } = useAuth();
