@@ -113,7 +113,7 @@ export function GridOutageDetailPage() {
       <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TX3, marginBottom: 8 }}>
-          <Link to="/cockpit" style={{ color: TX3, textDecoration: 'none' }}>
+          <Link to="/v2" style={{ color: TX3, textDecoration: 'none' }}>
             Grid ops workstation
           </Link>
           <span>/</span>
@@ -307,7 +307,7 @@ export function GridOutageDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             type="button"
-            onClick={() => navigate('/cockpit')}
+            onClick={() => navigate('/v2')}
             style={{
               background: 'transparent',
               color: ACC,

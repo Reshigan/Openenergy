@@ -168,7 +168,7 @@ export function Support() {
       sessionStorage.setItem('oe_impersonation_original_token', localStorage.getItem('token') || '');
       localStorage.setItem('token', token);
       flashToast('Impersonating — page will reload');
-      setTimeout(() => { window.location.href = '/cockpit'; }, 600);
+      setTimeout(() => { window.location.href = '/v2'; }, 600);
     } catch (e: any) {
       flashToast(e?.response?.data?.error || 'Impersonation failed');
     } finally { setBusy(null); }

@@ -250,7 +250,7 @@ export default function LoginPage() {
     setError('');
     setSsoLoading(true);
     try {
-      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/cockpit' });
+      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/v2' });
       if (r.data?.success && r.data?.data?.redirect_url) {
         window.location.href = r.data.data.redirect_url;
         return;
@@ -274,7 +274,7 @@ export default function LoginPage() {
       // lifecycle lanes, create/advance/surfaces all in place. The old per-role Horizon
       // board stays reachable at /horizon ("classic board") but is no longer the home.
       // ponytail: deep-link `from` still wins (e.g. a bookmarked deep path).
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/cockpit';
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/v2';
       navigate(from, { replace: true });
     } catch (err: unknown) {
       const anyErr = err as { name?: string; message?: string };

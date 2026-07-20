@@ -76,7 +76,7 @@ export function BillingRunDetailPage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
-            <Link to="/cockpit" className="hover:underline">Admin workstation</Link>
+            <Link to="/v2" className="hover:underline">Admin workstation</Link>
             <span>/</span>
             <span style={{ color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}>Billing run</span>
           </div>
@@ -92,7 +92,7 @@ export function BillingRunDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/cockpit')} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/v2')} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Workstation
           </button>
           <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">

@@ -100,7 +100,7 @@ function actionDeepLink(a: ActionItem): string {
     case 'grid_constraints':
     case 'grid_connections':
     case 'grid_wheeling_agreements': return '/grid';
-    default: return '/cockpit';
+    default: return '/v2';
   }
 }
 

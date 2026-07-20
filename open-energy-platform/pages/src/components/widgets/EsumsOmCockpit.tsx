@@ -396,7 +396,7 @@ function WoKanban({ wos }: { wos: WoRow[] }) {
           <div className="widget-card-title">Active work orders</div>
           <div className="widget-card-subtitle">Drag-to-reassign in the WO Board · countdown shown for SLA</div>
         </div>
-        <Link to="/ledger/om_work_order" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
+        <Link to="/v2/find?chain_key=om_work_order" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-3">
         {lanes.map((lane) => (
@@ -428,7 +428,7 @@ function WoCard({ wo }: { wo: WoRow }) {
   const minsLeft = Math.round((new Date(wo.sla_deadline).getTime() - Date.now()) / 60_000);
   const slaTone = minsLeft < 0 ? 'widget-tone-bad-text' : minsLeft < 60 ? 'widget-tone-warn-text' : 'widget-tone-good-text';
   return (
-    <Link to={`/thread/om_work_order/${wo.id}`}
+    <Link to={`/v2/t/${wo.id}`}
           className="block rounded bg-surface-v2 border border-[var(--border-subtle, #e2e8f0)] p-2 text-[11px] hover:border-[oklch(0.46_0.16_55)] transition-colors">
       <div className="flex items-center justify-between gap-1">
         <span className="font-mono font-semibold text-[var(--ink, #0f1c2e)]">{wo.wo_number}</span>

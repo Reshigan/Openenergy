@@ -133,7 +133,7 @@ export function LicenceActionDetailPage() {
       <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TX3, marginBottom: 16 }}>
-          <Link to="/cockpit" style={{ color: TX3, textDecoration: 'none' }}>
+          <Link to="/v2" style={{ color: TX3, textDecoration: 'none' }}>
             Regulator workstation
           </Link>
           <span>/</span>
@@ -272,7 +272,7 @@ export function LicenceActionDetailPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/cockpit')}
+              onClick={() => navigate('/v2')}
               style={{ background: 'transparent', color: TX2, border: `1px solid ${BORDER}`, padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
             >
               <ArrowLeft size={13} /> Workstation

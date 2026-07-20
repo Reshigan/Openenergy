@@ -175,7 +175,7 @@ export function LenderWorkoutPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <button
               type="button"
-              onClick={() => navigate('/cockpit')}
+              onClick={() => navigate('/v2')}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 background: 'transparent', border: `1px solid ${BORDER}`,

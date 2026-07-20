@@ -374,7 +374,7 @@ export function SupportTicketDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             type="button"
-            onClick={() => navigate('/cockpit')}
+            onClick={() => navigate('/v2')}
             style={{
               background: 'transparent', color: TX2, border: `1px solid ${BORDER}`,
               padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer',
