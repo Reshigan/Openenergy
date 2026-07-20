@@ -31,11 +31,6 @@ const BillingRunDetailPage  = React.lazy(() => import('./components/pages/Billin
 const SignaturePreview       = React.lazy(() => import('./components/signature/__preview__/SignaturePreview'));
 const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeedShell').then(m => ({ default: m.ActivityFeedShell })));
 
-// Meridian redesign — full-canvas pages with their own chrome (no Layout wrapper).
-const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
-const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
-const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
-
 // v2 generative frontend — chains-as-data, own chrome (Shell). Four surfaces.
 const V2Home                = React.lazy(() => import('./v2/Home'));
 const V2Transaction         = React.lazy(() => import('./v2/Transaction'));
@@ -596,6 +591,18 @@ function ThreadRedirect() {
   return <Navigate to={`/v2/t/${id}`} replace />;
 }
 
+// /ledger/:chainKey retired — v2 Find is the chain-scoped list surface.
+function LedgerRedirect() {
+  const { chainKey = '' } = useParams();
+  return <Navigate to={`/v2/find?chain_key=${encodeURIComponent(chainKey)}`} replace />;
+}
+
+// /surface/:key retired — v2 already renders SURFACE_REGISTRY at /v2/s/:key.
+function SurfaceRedirect() {
+  const { key = '' } = useParams();
+  return <Navigate to={`/v2/s/${encodeURIComponent(key)}`} replace />;
+}
+
 // App Router
 function AppRoutes() {
   return (
@@ -641,12 +648,12 @@ function AppRoutes() {
          Redirect into the cockpit so old links/bookmarks land on the single plane. */}
       <Route path="/atlas" element={<Navigate to="/v2" replace />} />
       <Route path="/new" element={<Navigate to="/v2" replace />} />
-      <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
-      {/* One parametric route for every non-chain Meridian surface (master-data CRUD,
-          settings, analytics/ML panels, connectors). Resolves SURFACE_REGISTRY by
-          `${role}:${key}`; full-canvas, no Layout/AppShell wrapper. */}
-      <Route path="/surface/:key" element={<ProtectedRoute><MeridianSurfacePage /></ProtectedRoute>} />
-      <Route path="/deals" element={<ProtectedRoute><DealDeskPage /></ProtectedRoute>} />
+      {/* /ledger/:chainKey retired (LedgerPage deleted) — v2 Find is the chain-scoped list. */}
+      <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerRedirect /></ProtectedRoute>} />
+      {/* /surface/:key retired (MeridianSurfacePage deleted) — v2 already renders
+          SURFACE_REGISTRY at /v2/s/:key. */}
+      <Route path="/surface/:key" element={<ProtectedRoute><SurfaceRedirect /></ProtectedRoute>} />
+      <Route path="/deals" element={<Navigate to="/v2/trade" replace />} />
       {/* Meridian cutover — legacy role launchpads redirect to Horizon. The
           launchpad components stay routable at /launch-legacy/:role for
           reference, but their internal nav still targets /launch/* and so

@@ -9,7 +9,7 @@
 // `tenant_events`. Non-chain CRUD surface (Bucket B).
 import React, { useState } from 'react';
 import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
-import { StatusPill } from '../../../meridian/components';
+import { StatusPill } from '../../../shared/StatusPill';
 import { api } from '../../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {

@@ -1,4 +1,7 @@
-/* pages/src/meridian/meridian.css — scoped: every Meridian page wraps in <div className="mer"> */
+/* pages/src/shared/meridian.css — relocated from the retired meridian/ chrome (Task 6).
+   Still the load-bearing stylesheet for shared/ease's EaseLoading/EaseEmpty/EaseError
+   and PrimaryAction (consumed by shared/SurfaceBoundary + v2/Surface) — every .mer-scoped
+   surface (v2 Layout, /kyc) wraps in <div className="mer">, matching the classes below. */
 /* Substation design system: Archivo (display, condensed grotesque) / Inter Tight (body)
  * / IBM Plex Mono (labels+numbers). Fonts loaded via <link> in index.html. The brand
  * token names (--petrol*) are retained but now resolve to indigo so the whole system

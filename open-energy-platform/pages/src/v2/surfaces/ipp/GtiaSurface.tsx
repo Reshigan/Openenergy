@@ -5,7 +5,7 @@
 // `onRefresh` replaced by the body's own local refreshKey.
 import { useState } from 'react';
 import { ListingTable, Pill, ActionModal } from '../../../components/launch/WorkstationShell';
-import { StatusPill } from '../../../meridian/components';
+import { StatusPill } from '../../../shared/StatusPill';
 import { gtiaViz } from './viz';
 
 const GTIA_TIER_TONE: Record<string, 'neutral' | 'info' | 'warn' | 'bad'> = {
