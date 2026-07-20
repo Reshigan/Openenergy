@@ -1,6 +1,6 @@
 // cleanLabel display hygiene — build codes stripped, leaked snake_case keys humanized.
 import { describe, it, expect } from 'vitest';
-import { cleanLabel } from '../pages/src/meridian/labels';
+import { cleanLabel } from '../pages/src/v2/labels';
 
 describe('cleanLabel', () => {
   it('strips build-tracking codes', () => {
