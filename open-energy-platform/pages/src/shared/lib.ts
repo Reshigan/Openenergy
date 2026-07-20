@@ -1,4 +1,4 @@
-// pages/src/meridian/lib.ts — Meridian data layer + formatters
+// shared/lib.ts — chain data layer + formatters (relocated from retired meridian/)
 import { api } from '../lib/api';
 // Pure helpers live in lib-pure.ts (no axios) so they're unit-testable from the
 // server vitest suite; re-exported here so existing './lib' importers are unchanged.

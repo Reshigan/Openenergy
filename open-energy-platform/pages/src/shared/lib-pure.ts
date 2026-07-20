@@ -1,4 +1,4 @@
-// pages/src/meridian/lib-pure.ts — Meridian pure helpers (no api / no axios).
+// shared/lib-pure.ts — pure helpers (no api / no axios), relocated from retired meridian/.
 // Split out of lib.ts so the server vitest suite can unit-test this logic
 // without resolving axios (a pages-only dependency). lib.ts re-exports these.
 
