@@ -1,18 +1,21 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Full journey audit — Meridian routing reality.
+// Full journey audit — v2 rebuild routing reality.
 //
-// The tab-based workstation chrome was retired in the Meridian cutover: every
-// /launch/:role, every */workstation, /esums, and the legacy listing routes
-// (/admin /trading /settlement /carbon /projects /grid /contracts) now redirect
-// to the per-role Horizon workspace at /horizon. The seven role-suite landings
-// (/trader-risk, /ipp-lifecycle, /offtaker-suite, /carbon-registry, /lender-suite,
-// /regulator-suite, /grid-operator) and the standalone pages still render.
+// Meridian (the tab-based workstation chrome, then the journey-cockpit chrome
+// that replaced it) is fully retired. Every /launch/:role, every */workstation,
+// /esums, /horizon, /cockpit, and the legacy listing routes (/admin /trading
+// /settlement /carbon /projects /grid /contracts) now redirect into the v2
+// rebuild at /v2. The seven role-suite landings (/trader-risk, /ipp-lifecycle,
+// /offtaker-suite, /carbon-registry, /lender-suite, /regulator-suite,
+// /grid-operator) also now redirect to /v2 — they no longer render bespoke
+// suite content. The standalone pages (below) still render.
 //
-// Horizon renders the board + duty stream ONLY after GET /api/horizon/:role
-// succeeds (needs a REAL token). A fake placeholder token 401s and Horizon shows
-// its error state ("Horizon failed to load."). Per-role strict assertions are
-// therefore gated on a real token; the universal assertion only proves the
-// HorizonPage mounted (one of its three states is on screen).
+// v2 Home (/v2) renders the live work queue ONLY after GET /api/txn/list (or
+// equivalent) succeeds (needs a REAL token). A fake placeholder token 401s and
+// Home shows its honest load-error state (.v2-empty, "Couldn't load..."). Per-
+// role strict assertions are therefore gated on a real token; the universal
+// assertion only proves the v2 shell mounted (nav.v2-nav is on screen,
+// regardless of which of Home's three load states is showing).
 //
 // Run locally:
 //   BASE=http://localhost:3000 \
@@ -162,9 +165,6 @@ async function seedToken(page: Page, tokenRole: string): Promise<void> {
       marketing: false,
       at: new Date().toISOString(),
     }));
-    // Pre-open the duty stream so collapse-regression tests start from a known
-    // state (Horizon persists the operator's last choice in this key).
-    localStorage.setItem('mer.duty.collapsed', '0');
   }, { token: tokenValue });
 }
 
@@ -220,7 +220,7 @@ const PUBLIC_PAGE_CASES: Array<{ name: string; path: string; expectText: RegExp 
   { name: 'Audit page',   path: '/audit',  expectText: /audit|chain|verify|block/i },
 ];
 
-// ── Routes retired in the Meridian cutover — every one redirects to /horizon ──
+// ── Routes retired across both cutovers — every one now redirects to /v2 ─────
 const REDIRECT_PATHS: string[] = [
   // Legacy listing routes
   '/admin', '/trading', '/settlement', '/carbon', '/projects', '/grid', '/contracts',
@@ -236,31 +236,32 @@ const REDIRECT_PATHS: string[] = [
 // TESTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Horizon — per-role workspace renders', () => {
+test.describe('Home (/v2) — per-role work queue renders', () => {
   for (const c of HORIZON_CASES) {
-    test(`horizon [${c.role}] mounts and loads its board`, async ({ page, baseURL }) => {
+    test(`v2 home [${c.role}] mounts and loads the work queue`, async ({ page, baseURL }) => {
       const errors = collectErrors(page);
       await seedToken(page, c.tokenRole);
       await goTo(page, baseURL, '/horizon');
+      await page.waitForURL('**/v2', { timeout: 15_000 });
 
       // Not the login page (ProtectedRoute let us through on the mocked user).
       await expect(page.locator('input[type=password]')).toHaveCount(0, { timeout: 5_000 });
-      // /horizon retired (journeys-only UI): every role lands on the journey
-      // cockpit — one .mer.jc root regardless of role.
-      await expect(page.locator('.mer.jc, .mer.mer-error').first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('nav.v2-nav')).toBeVisible({ timeout: 30_000 });
 
       if (hasRealToken(c.tokenRole)) {
-        // Real token → GET /api/horizon/:role succeeds → success branch:
-        // the journey cockpit renders and there is no error state.
-        await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
-        await expect(page.locator('.mer-error')).toHaveCount(0);
+        // Real token → the queue read succeeds → success branch: the metric
+        // strip or all-clear hero renders, never the load-error state.
+        await expect(
+          page.locator('.v2-stats').or(page.locator('.v2-hero h1')).first(),
+        ).toBeVisible({ timeout: 30_000 });
         const real = errors.filter((e) => e.startsWith('api.5'));
-        expect(real, `5xx on /horizon as ${c.role}:\n${real.join('\n')}`).toEqual([]);
+        expect(real, `5xx on /v2 as ${c.role}:\n${real.join('\n')}`).toEqual([]);
       } else {
         // No real token this run (e.g. cold setup hit the login rate limit for a
-        // newly-added role). The board needs live data, so only the mount is
-        // asserted above. Flag the skipped strict check so it isn't silent.
-        console.warn(`[horizon] no real token for "${c.tokenRole}" — asserted Meridian mount only`);
+        // newly-added role). Live data isn't reachable, so only assert the
+        // honest load-error mount. Flag the skipped strict check so it isn't silent.
+        await expect(page.locator('.v2-empty').first()).toBeVisible({ timeout: 30_000 });
+        console.warn(`[v2 home] no real token for "${c.tokenRole}" — asserted load-error mount only`);
       }
     });
   }
@@ -268,16 +269,17 @@ test.describe('Horizon — per-role workspace renders', () => {
 
 test.describe('Suite pages — load without errors', () => {
   for (const c of SUITE_CASES) {
-    test(`suite [${c.name}] loads without 5xx errors`, async ({ page, baseURL }) => {
+    test(`suite [${c.name}] redirects into v2`, async ({ page, baseURL }) => {
       const errors = collectErrors(page);
       await seedToken(page, c.tokenRole);
       await goTo(page, baseURL, c.path);
-      // Journeys-only: every legacy suite route redirects to the journey cockpit.
-      // The old role-copy match (expectText) survived on 6/7 only by coincidence
-      // (a journey tab label happened to contain the word). The honest assertion
-      // now is: the redirect lands on the cockpit chrome and nothing 5xx'd.
-      await page.waitForURL(/\/cockpit/, { timeout: 15_000 }).catch(() => {});
-      await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
+      // Every legacy suite route now redirects into the v2 rebuild. The old
+      // role-copy match (expectText) survived only by coincidence (a journey
+      // tab label happened to contain the word) and has no v2 analogue — the
+      // honest assertion now is: the redirect lands on the v2 shell and
+      // nothing 5xx'd.
+      await page.waitForURL('**/v2', { timeout: 15_000 }).catch(() => {});
+      await expect(page.locator('nav.v2-nav')).toBeVisible({ timeout: 25_000 });
       const real = errors.filter((e) => e.startsWith('api.5'));
       expect(real, `5xx errors on ${c.path}:\n${real.join('\n')}`).toEqual([]);
     });
@@ -329,7 +331,7 @@ test.describe('Auth flows', () => {
   });
 
   test('unauthenticated access to protected route redirects to login', async ({ page, baseURL }) => {
-    // No token seeded — auth refresh returns 401. /admin redirects to /horizon,
+    // No token seeded — auth refresh returns 401. /admin redirects to /v2,
     // which is ProtectedRoute-gated → redirects on to /login.
     await page.goto(`${baseURL}/admin`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/login/, { timeout: 15_000 }).catch(() => {});
@@ -342,7 +344,7 @@ test.describe('Auth flows', () => {
     const errors = collectErrors(page);
     await seedToken(page, 'admin');
     await goTo(page, baseURL, '/launch/invalid_role_xyz');
-    // Should redirect (to /horizon) or show an error — not hang on the bad path.
+    // Should redirect (to /v2) or show an error — not hang on the bad path.
     await page.waitForTimeout(3000);
     const url = page.url();
     expect(url).not.toContain('invalid_role_xyz');
@@ -351,79 +353,28 @@ test.describe('Auth flows', () => {
   });
 });
 
-test.describe('Legacy + workstation routes redirect to Horizon', () => {
+test.describe('Legacy + workstation routes redirect into v2', () => {
   for (const path of REDIRECT_PATHS) {
-    test(`retired route [${path}] redirects to the journey cockpit`, async ({ page, baseURL }) => {
+    test(`retired route [${path}] redirects into v2`, async ({ page, baseURL }) => {
       await seedToken(page, 'admin');
       await goTo(page, baseURL, path);
-      // The SPA fires <Navigate to="/cockpit"> client-side once it mounts.
-      await page.waitForURL(/\/cockpit/, { timeout: 15_000 }).catch(() => {});
-      expect(page.url(), `${path} did not redirect to /cockpit`).toContain('/cockpit');
-      await expect(page.locator('.mer.jc, .mer.mer-error').first()).toBeVisible({ timeout: 20_000 });
+      await page.waitForURL('**/v2', { timeout: 15_000 }).catch(() => {});
+      expect(page.url(), `${path} did not redirect to /v2`).toContain('/v2');
+      await expect(page.locator('nav.v2-nav')).toBeVisible({ timeout: 20_000 });
     });
   }
 });
 
-test.describe('Meridian chrome + duty-stream collapse', () => {
-  // Admin token is reliably cached by global-setup (first/most-used login), so
-  // the success branch (header + board + duty stream) is reachable here.
-  test('renders Meridian chrome, not the old FioriShell rail', async ({ page, baseURL }) => {
-    test.skip(!hasRealToken('admin'), 'needs a real admin token to reach the Horizon success branch');
-    const errors = collectErrors(page);
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedToken(page, 'admin');
-    await goTo(page, baseURL, '/horizon');
-
-    // Wait for the journey cockpit (success branch) before asserting chrome.
-    await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
-
-    // The retired FioriShell sidebar is gone. NB: match the specific rail classes,
-    // NOT [class*="rail"] — Meridian's own duty-rail would false-positive on that.
-    await expect(page.locator('aside.oe-rail, aside.fiori-rail')).toHaveCount(0);
-
-    // Meridian header chrome is present: CEC wordmark + the one ⌘K search entry
-    // (the "Platform sections" quicklinks nav and Atlas plane retired with the
-    // journey cockpit).
-    await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
-    await expect(page.locator('body')).toContainText(/Search anything/i, { timeout: 5_000 });
-
-    const real = errors.filter((e) => e.startsWith('pageerror'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  // ("duty stream collapses and restores" retired: the collapse affordance
-  // exists only on the shared lane×bucket board, which no tokened role renders
-  // any more — every lane-holding role has a bespoke Horizon and global-setup
-  // mints no tokens for the fallback roles (wind, epc) that still see it.)
-});
-
-test.describe('Admin role-switch board', () => {
-  test('admin can switch the board across lane-holding roles', async ({ page, baseURL }) => {
-    test.skip(!hasRealToken('admin'), 'needs a real admin token to reach the Horizon success branch');
-    const errors = collectErrors(page);
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedToken(page, 'admin');
-    await goTo(page, baseURL, '/horizon');
-
-    // Admin lands on the journey cockpit; the Compliance desk is the default view.
-    await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
-
-    // The admin-only role switcher: aria-label sits on the wrapping nav, the
-    // role="group" on the inner .role-switch (AdminHorizon.tsx).
-    const group = page.locator('nav[aria-label="View board as role"] .role-switch[role="group"]');
-    await expect(group).toBeVisible({ timeout: 5_000 });
-    const buttons = group.locator('button');
-    expect(await buttons.count(), 'role switcher should expose multiple lane roles').toBeGreaterThanOrEqual(8);
-
-    // Switch to a different role's view — the whole journey cockpit re-derives
-    // for that role (same .mer.jc root).
-    await buttons.nth(1).click();
-    await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
-
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, `5xx after admin role switch:\n${real.join('\n')}`).toEqual([]);
-  });
-});
+// NOTE: two describe blocks previously lived here —
+// "Meridian chrome + duty-stream collapse" (asserted .mer.jc, the absence of
+// aside.oe-rail/fiori-rail, and a header .wordmark "OPEN ENERGY" string) and
+// "Admin role-switch board" (asserted an admin-only role switcher at
+// `nav[aria-label="View board as role"] .role-switch[role="group"]`). Both
+// selectors are Meridian-only and have no v2 analogue — the v2 shell has no
+// wordmark header and no admin board role-switcher (confirmed absent from
+// pages/src/v2/Shell.tsx and Home.tsx). Deleted rather than retargeted; the
+// per-role mount + load-error coverage they duplicated already lives in
+// "Home (/v2) — per-role work queue renders" above.
 
 test.describe('Error states and edge cases', () => {
   test('monitoring page has retry button on error state', async ({ page, baseURL }) => {

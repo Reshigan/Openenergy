@@ -107,9 +107,59 @@ test.describe('v2 surfaces', () => {
 
   test('retired routes redirect to /v2', async ({ page, baseURL }) => {
     await seedToken(page, ADMIN_TOKEN!);
-    for (const path of ['/horizon', '/atlas', '/new', '/trading', '/admin']) {
+    // NOTE: /deals is deliberately excluded — it redirects to /v2/trade, not
+    // plain /v2 (see App.tsx DealsRedirect). Covered by its own test below.
+    for (const path of ['/horizon', '/atlas', '/new', '/trading', '/admin', '/cockpit']) {
       await page.goto(`${baseURL}${path}`, { waitUntil: 'load' });
       await page.waitForURL('**/v2', { timeout: 15000 });
     }
+  });
+
+  test('/deals redirects to /v2/trade', async ({ page, baseURL }) => {
+    await seedToken(page, ADMIN_TOKEN!);
+    await page.goto(`${baseURL}/deals`, { waitUntil: 'load' });
+    await page.waitForURL('**/v2/trade', { timeout: 15000 });
+  });
+
+  test('parametrized legacy routes redirect into their v2 equivalents', async ({ page, baseURL }) => {
+    await seedToken(page, ADMIN_TOKEN!);
+    await page.goto(`${baseURL}/thread/some_chain/abc123`, { waitUntil: 'load' });
+    await page.waitForURL('**/v2/t/abc123', { timeout: 15000 });
+    await page.goto(`${baseURL}/ledger/green_bond`, { waitUntil: 'load' });
+    await page.waitForURL('**/v2/find?chain_key=green_bond', { timeout: 15000 });
+    await page.goto(`${baseURL}/surface/admin:journeys`, { waitUntil: 'load' });
+    await page.waitForURL('**/v2/s/admin%3Ajourneys', { timeout: 15000 });
+  });
+
+  test('/v2/s/admin:journeys renders the ported JourneyAdmin surface without a 5xx', async ({ page, baseURL }) => {
+    // Guards the port-forward: JourneyAdmin used to be a Meridian-only surface,
+    // now reached exclusively via the parametric /v2/s/:key route + SURFACE_REGISTRY.
+    await seedToken(page, ADMIN_TOKEN!);
+    const errs = track5xx(page);
+    await page.goto(`${baseURL}/v2/s/admin%3Ajourneys`, { waitUntil: 'load' });
+    await expect(page.locator('nav.v2-nav')).toBeVisible({ timeout: 15000 });
+    // Honest mount check only — assert the surface body actually painted
+    // something (not a blank shell), without asserting on specific journey data.
+    const body = await page.locator('main, .v2-main, body').first().textContent();
+    expect(body ?? '').not.toBe('');
+    expect(errs, `5xx on /v2/s/admin:journeys:\n${errs.join('\n')}`).toEqual([]);
+  });
+
+  test('Find (/v2/find?chain_key=) filters to the ledger-redirect target chain', async ({ page, baseURL }) => {
+    // This is the live target of the retired /ledger/:chainKey redirect (see
+    // parametrized-redirects test above). `audit` is a real, stable chain_key
+    // (admin/Platform domain — see starts.ts ORPHAN_SLOTS), so this exercises
+    // the actual query-param wiring end to end, not just the URL shape.
+    await seedToken(page, ADMIN_TOKEN!);
+    const errs = track5xx(page);
+    await page.goto(`${baseURL}/v2/find?chain_key=audit`, { waitUntil: 'load' });
+    const input = page.locator('input.v2-input');
+    await expect(input).toBeVisible({ timeout: 15000 });
+    // Debounced live search against the filtered chain: either result rows or
+    // the honest empty state — never a crash or unfiltered fall-through.
+    const row = page.locator('table.v2-table tbody tr').first();
+    const empty = page.locator('.v2-empty');
+    await expect(row.or(empty).first()).toBeVisible({ timeout: 15000 });
+    expect(errs, `5xx on /v2/find?chain_key=audit:\n${errs.join('\n')}`).toEqual([]);
   });
 });

@@ -70,48 +70,6 @@ const KYC_PENDING_PAYLOAD = {
   },
 };
 
-// Minimal valid HorizonData envelope - HorizonPage.tsx bails to a skeleton until
-// fetchHorizon resolves. counts must be present; lanes/duty may be empty.
-const HORIZON_PAYLOAD = {
-  success: true,
-  data: {
-    lanes: [],
-    duty: [],
-    counts: { total: 0, breached: 0 },
-  },
-};
-
-// Checklist envelope for the Getting-Started card on Horizon.
-const CHECKLIST_PAYLOAD = {
-  success: true,
-  data: {
-    role: 'ipp_developer',
-    items: [
-      { key: 'complete_profile', label: 'Complete your profile', description: 'x', href: '/horizon', done: false },
-    ],
-    progress: { done: 0, total: 1 },
-    complete: false,
-    next_best_step: null,
-  },
-};
-
-const STATE_PAYLOAD = {
-  success: true,
-  data: {
-    step: 'complete',
-    data: {},
-    completed: true,
-    skipped: false,
-    role: 'ipp_developer',
-    manifest: {
-      headline: 'Welcome to Open Energy.',
-      profile_summary: {},
-      next_actions: [],
-    },
-    provisioned: { kind: 'manifest', entities: [] },
-  },
-};
-
 test('KYC surface renders the status timeline and per-document-type slots', async ({ page, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -159,39 +117,10 @@ test('KYC surface renders the status timeline and per-document-type slots', asyn
   expect(real, real.join('\n')).toEqual([]);
 });
 
-test('Getting-Started surfaces the verify-to-transact item when KYC is not approved', async ({ page, baseURL }) => {
-  const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
-  page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
-
-  await seedToken(page);
-
-  await page.route('**/api/onboarding/checklist/**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(CHECKLIST_PAYLOAD) });
-  });
-  await page.route('**/api/onboarding/state', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(STATE_PAYLOAD) });
-  });
-  await page.route('**/api/horizon/**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HORIZON_PAYLOAD) });
-  });
-  // The gate renders on user.kyc_status !== 'approved' (GettingStarted.tsx) and
-  // the demo persona IS approved on prod — patch /auth/me to a pending user so
-  // the assertion is deterministic instead of data-dependent.
-  await page.route('**/api/auth/me', async (route) => {
-    const real = await route.fetch();
-    const body = await real.json();
-    if (body?.data) body.data.kyc_status = 'pending';
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
-  });
-
-  await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
-
-  // Best-effort: the verify item depends on the GettingStarted card rendering
-  // past the horizon skeleton guard. The /kyc surface test above is the
-  // must-pass; this assertion documents the intended gate.
-  await expect(page.getByText(/Verify to start transacting/i)).toBeVisible({ timeout: 20_000 });
-
-  const real = errors.filter((e) => !isBenign(e));
-  expect(real, real.join('\n')).toEqual([]);
-});
+// NOTE: a second test here ("Getting-Started surfaces the verify-to-transact
+// item when KYC is not approved") was removed — it depended entirely on the
+// Meridian-only GettingStarted card mounted on the retired /cockpit Horizon
+// workspace (next_best_step / checklist UI). v2 Home.tsx has no checklist or
+// next-best-step card at all, so there is no v2 analogue to retarget this to.
+// The remaining test above (KYC surface at the live /kyc route) is unrelated
+// to Meridian and needed no changes.
