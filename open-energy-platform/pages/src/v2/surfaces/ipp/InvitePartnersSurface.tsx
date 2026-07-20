@@ -1,0 +1,264 @@
+// pages/src/meridian/surfaces/ipp/InvitePartnersSurface.tsx — IPP "Invite partners" surface.
+// Bucket B: extracted verbatim from the retired IppWorkstationPage `invite_partners` tab body
+// (direct partner invite form + sent-invitation history). Self-contained `{ role }` body;
+// the original tab took no onRefresh prop, so its internal state is unchanged.
+import { useEffect, useState } from 'react';
+import { api } from '../../../lib/api';
+
+const PARTNER_ROLES = [
+  { role: 'lender',      label: 'Lender / Investor',        desc: 'Auto-creates 5 standard covenants (DSCR, LLCR, availability, insurance, debt ratio)' },
+  { role: 'offtaker',    label: 'Offtaker / Corporate Buyer', desc: 'Auto-creates a PPA contract shell in Draft state' },
+  { role: 'carbon_fund', label: 'Carbon Fund / Registry',   desc: 'Links the fund to your project for carbon credit flows' },
+];
+
+type Proj = { id: string; project_name?: string; name?: string; capacity_mw?: number };
+type Invitation = { id: string; token: string; role: string; project_id?: string; expires_at: string; invite_url: string };
+
+export default function InvitePartnersSurface(_props: { role: string }) {
+  const [projects, setProjects] = useState<Proj[]>([]);
+  const [selectedRole, setSelectedRole] = useState('lender');
+  const [form, setForm] = useState({ project_id: '', email: '', organization: '', note: '' });
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [sent, setSent] = useState<Invitation | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [histLoading, setHistLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/projects').then(r => {
+      const rows: Proj[] = r.data?.data ?? r.data?.projects ?? r.data ?? [];
+      setProjects(rows);
+      if (rows.length) setForm(f => ({ ...f, project_id: rows[0].id }));
+    }).catch(() => {});
+    api.get('/rbac/me/invitations').then(r => {
+      setHistory((r.data?.data ?? []).filter((i: any) => ['lender', 'offtaker', 'carbon_fund'].includes(i.role)));
+    }).catch(() => {}).finally(() => setHistLoading(false));
+  }, []);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr('');
+    setLoading(true);
+    setSent(null);
+    try {
+      const res = await api.post('/rbac/me/invitations', {
+        role: selectedRole,
+        project_id: form.project_id || undefined,
+        email: form.email || undefined,
+        organization: form.organization || undefined,
+        note: form.note || undefined,
+      });
+      if (!res.data.success) throw new Error(res.data.error);
+      setSent(res.data.data);
+      setHistory(h => [{ ...res.data.data, status: 'pending', created_at: new Date().toISOString() }, ...h]);
+      setForm(f => ({ ...f, email: '', organization: '', note: '' }));
+    } catch (e: any) {
+      setErr(e?.response?.data?.error || e.message || 'Failed to create invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyUrl = (url: string) => navigator.clipboard?.writeText(`${window.location.origin}${url}`).catch(() => {});
+
+  const selectedPartner = PARTNER_ROLES.find(r => r.role === selectedRole)!;
+
+  // KPIs derived client-side from the invitation history already fetched.
+  const invited = history.length;
+  const accepted = history.filter((i: any) => i.status === 'accepted').length;
+  const pending = history.filter((i: any) => i.status === 'pending').length;
+  // Primary view: partners needing follow-up (still pending) surface first.
+  const historyView = [...history].sort((a: any, b: any) =>
+    (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1));
+  const kpi = (label: string, value: number) => (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10.5px] uppercase tracking-wider text-[var(--ink3)]">{label}</span>
+      <span className="text-[20px] font-bold text-[var(--ink)]">{histLoading ? '—' : value.toLocaleString('en-ZA')}</span>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Outreach summary */}
+      <div className="rounded-lg border border-[var(--line)] p-5" style={{ background: 'linear-gradient(135deg, color-mix(in oklab, var(--petrol) 14%, transparent), transparent)' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[13px] font-bold text-[var(--ink)]">Partner outreach</span>
+          {!histLoading && pending > 0 && (
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[var(--petrol-tint)] text-[var(--petrol)]">{pending} need follow-up</span>
+          )}
+        </div>
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+          {kpi('Invited', invited)}
+          {kpi('Accepted', accepted)}
+          {kpi('Pending', pending)}
+        </div>
+      </div>
+
+      {/* Send invite form */}
+      <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-5">
+        <h3 className="text-sm font-semibold text-[var(--ink)] mb-1">Invite a partner</h3>
+        <p className="text-xs text-[var(--ink3)] mb-4">
+          Send a direct invitation. The partner registers via a unique link and their account is immediately active — no admin approval required.
+        </p>
+
+        {err && <div className="mb-3 rounded-md border border-[var(--oxide)] bg-[var(--oxide-tint)] px-3 py-2 text-xs text-[var(--oxide-deep)]">{err}</div>}
+
+        {sent && (
+          <div className="mb-4 rounded-lg border border-[var(--petrol-tint)] bg-[var(--petrol-tint)] p-3">
+            <p className="text-xs font-semibold text-[var(--ink)] mb-1">Invitation created</p>
+            <div className="flex items-center gap-2 font-mono text-xs text-[var(--petrol)] bg-surface-v2 rounded-md border border-[var(--line)] px-2 py-1.5 break-all">
+              {window.location.origin}{sent.invite_url}
+              <button type="button"
+                onClick={() => copyUrl(sent.invite_url)}
+                className="ml-auto shrink-0 text-[10px] uppercase tracking-wide font-bold text-[var(--petrol)] hover:underline"
+              >
+                Copy
+              </button>
+            </div>
+            <p className="text-[10px] text-[var(--ink3)] mt-1">Expires: {new Date(sent.expires_at).toLocaleDateString()}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSend} className="space-y-4">
+          {/* Role selector */}
+          <div>
+            <label className="block text-xs font-medium text-[var(--ink2)] mb-2">Partner type</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PARTNER_ROLES.map(r => (
+                <button
+                  key={r.role}
+                  type="button"
+                  onClick={() => setSelectedRole(r.role)}
+                  className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                    selectedRole === r.role
+                      ? 'border-[var(--petrol)] bg-[var(--petrol-tint)] text-[var(--ink)]'
+                      : 'border-[var(--line)] bg-surface-v2 text-[var(--ink3)] hover:border-[var(--petrol)]'
+                  }`}
+                >
+                  <div className="text-xs font-semibold">{r.label.split(' /')[0]}</div>
+                  <div className="text-[10px] mt-0.5 opacity-70 truncate">{r.label.split(' /')[1] || ''}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-[var(--ink3)] mt-1.5">{selectedPartner.desc}</p>
+          </div>
+
+          {/* Project selector */}
+          {projects.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-[var(--ink2)] mb-1">Link to project</label>
+              <select
+                value={form.project_id}
+                onChange={(e) => setForm(f => ({ ...f, project_id: e.target.value }))}
+                className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm text-[var(--ink)]"
+              >
+                <option value="">— no project —</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.project_name || p.name || p.id}{p.capacity_mw ? ` (${p.capacity_mw} MW)` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Email */}
+          <div>
+            <label className="block text-xs font-medium text-[var(--ink2)] mb-1">
+              Partner email <span className="font-normal text-[var(--ink3)]">(optional — locks invite to this address)</span>
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+              className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm"
+              placeholder="partner@bank.co.za"
+            />
+          </div>
+
+          {/* Organisation */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-[var(--ink2)] mb-1">Organisation</label>
+              <input
+                type="text"
+                value={form.organization}
+                onChange={(e) => setForm(f => ({ ...f, organization: e.target.value }))}
+                className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm"
+                placeholder="First National Bank"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[var(--ink2)] mb-1">Note to recipient</label>
+              <input
+                type="text"
+                value={form.note}
+                onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+                className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm"
+                placeholder="Invitation to review term sheet"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn pri"
+          >
+            {loading ? 'Generating link…' : 'Generate invite link'}
+          </button>
+        </form>
+      </div>
+
+      {/* Invitation history */}
+      <div className="rounded-lg border border-[var(--line)] bg-surface-v2">
+        <div className="px-4 py-3 border-b border-[var(--raised)]">
+          <h3 className="text-sm font-semibold text-[var(--ink)]">Sent invitations</h3>
+        </div>
+        {histLoading ? (
+          <div className="px-4 py-4 text-xs text-[var(--ink3)]">Loading…</div>
+        ) : history.length === 0 ? (
+          <div className="px-4 py-6 text-xs text-[var(--ink3)] text-center">No partner invitations sent yet. Invite a lender, offtaker, or carbon fund above and each one appears here with its acceptance status.</div>
+        ) : (
+          <table className="w-full text-xs">
+            <thead className="bg-[var(--raised)] text-[var(--ink3)]">
+              <tr>
+                <th className="text-left px-4 py-2">Role</th>
+                <th className="text-left px-4 py-2">Email / org</th>
+                <th className="text-left px-4 py-2">Status</th>
+                <th className="text-left px-4 py-2">Expires</th>
+                <th className="px-4 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {historyView.map((inv: any) => (
+                <tr key={inv.id} className="border-t border-[var(--raised)]">
+                  <td className="px-4 py-2 font-medium capitalize">{(inv.role || '').replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-2 text-[var(--ink3)]">{inv.email || inv.organization || '—'}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                      inv.status === 'accepted' ? 'bg-[var(--moss-tint)] text-[var(--moss-deep)]' :
+                      inv.status === 'pending'  ? 'bg-[var(--petrol-tint)] text-[var(--petrol)]' :
+                      'bg-[var(--raised)] text-[var(--ink3)]'
+                    }`}>{inv.status}</span>
+                  </td>
+                  <td className="px-4 py-2 text-[var(--ink3)]">{inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
+                  <td className="px-4 py-2 text-right">
+                    {inv.status === 'pending' && inv.token && (
+                      <button type="button"
+                        onClick={() => copyUrl(`/register?token=${inv.token}`)}
+                        className="text-[10px] uppercase tracking-wide font-bold text-[var(--petrol)] hover:underline"
+                      >
+                        Copy link
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}

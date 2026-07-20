@@ -145,6 +145,7 @@ export type EventType =
   | 'block_trade.reported' | 'block_trade.confirmed' | 'block_trade.published' | 'block_trade.bust'
   | 'surveillance.alert_raised' | 'surveillance.alert_reviewed' | 'surveillance.alert_reported'
   | 'market.halted' | 'market.resumed'
+  | 'auth.maintenance_enabled' | 'auth.maintenance_lifted'
   | 'mm.obligation_awarded' | 'mm.performance_recorded'
   | 'clearing.fund_created' | 'clearing.contribution_posted' | 'clearing.loss_event_executed'
   // ─── Grid L5 (constraints, dispatch, ancillary, frequency, wheeling, blackstart) ─

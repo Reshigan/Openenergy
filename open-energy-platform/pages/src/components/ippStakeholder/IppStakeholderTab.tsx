@@ -11,7 +11,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 
@@ -97,12 +97,12 @@ const TIER_COLOR: Record<StakeholderTier, string> = {
   strategic_ally: 'bg-purple-100 text-purple-800',
   key_player:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   keep_satisfied: 'bg-amber-100 text-amber-700',
-  keep_informed:  'bg-[#eef2f7] text-[#2d3748]',
-  monitor:        'bg-[#eef2f7] text-[#6b7685]',
+  keep_informed:  'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
+  monitor:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
 };
 
 const STATUS_COLOR: Record<StakeholderStatus, string> = {
-  identified:        'bg-[#eef2f7] text-[#2d3748]',
+  identified:        'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
   analyzed:          'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   classified:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   engagement_planned:'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -111,13 +111,13 @@ const STATUS_COLOR: Record<StakeholderStatus, string> = {
   supportive:        'bg-emerald-100 text-emerald-800',
   champion:          'bg-green-100 text-green-800',
   resistant:         'bg-red-100 text-red-800',
-  disengaged:        'bg-[#eef2f7] text-[#3d4756]',
+  disengaged:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   escalated:         'bg-red-200 text-red-900',
-  archived:          'bg-[#e8ecf0] text-[#9aa5b4]',
+  archived:          'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #9aa5b4)]',
 };
 
 const ENGAGEMENT_LEVEL_COLOR: Record<string, string> = {
-  unaware:    'bg-[#eef2f7] text-[#3d4756]',
+  unaware:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   resistant:  'bg-red-100 text-red-700',
   neutral:    'bg-yellow-50 text-yellow-700',
   supportive: 'bg-emerald-50 text-emerald-700',
@@ -219,12 +219,21 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    if (filterTier && r.stakeholder_tier !== filterTier) return false;
-    if (filterType && r.stakeholder_type !== filterType) return false;
-    return true;
-  }), [rows, filterStatus, filterTier, filterType]);
+  const filtered = useMemo(() => {
+    const term = (s: StakeholderStatus) => s === 'archived' ? 1 : 0;
+    // primary view: active first, then high-power-resistant, then breached, then most overdue engagement first
+    return rows.filter(r => {
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      if (filterTier && r.stakeholder_tier !== filterTier) return false;
+      if (filterType && r.stakeholder_type !== filterType) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (a.is_high_power_resistant_live !== b.is_high_power_resistant_live) return a.is_high_power_resistant_live ? -1 : 1;
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      return (a.sla_remaining_hours_live ?? Infinity) - (b.sla_remaining_hours_live ?? Infinity);
+    });
+  }, [rows, filterStatus, filterTier, filterType]);
 
   async function handleAction(action: string) {
     if (!selected) return;
@@ -325,13 +334,13 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
           <option value="">All types</option>
           {TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
         </select>
-        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} stakeholders</span>
+        <span className="text-xs text-[var(--ink-2, #9aa5b4)] ml-auto">{filtered.length} stakeholders</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-[#c2873a] text-white rounded px-3 py-1 hover:bg-[#a3702f]" onClick={() => setShowCreate(true)}>
             + Add stakeholder
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[var(--s2, #eef2f7)]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -340,38 +349,38 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-[#9aa5b4]">Loading stakeholder register…</div>}
+      {loading && <div className="text-xs text-[var(--ink-2, #9aa5b4)]">Loading stakeholder register…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
+        <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle, #dde4ec)]">
           <table className="w-full text-xs">
-            <thead className="bg-[#f8fafc]">
+            <thead className="bg-[var(--s1, #f8fafc)]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">ID</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Name / Org</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Type</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">P×I×U</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Engagement</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">ID</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Name / Org</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Type</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">P×I×U</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Engagement</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-[#9aa5b4]">No stakeholders in register</td></tr>
+                <tr><td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-[var(--ink-2, #9aa5b4)]">No stakeholders in register</td></tr>
               )}
               {filtered.map(row => (
-                <tr key={row.id} className="border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer" onClick={() => setSelected(row)}>
-                  <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.id}</td>
+                <tr key={row.id} className="border-t border-[var(--s2, #eef2f7)] hover:bg-[var(--s2, #eef2f7)] cursor-pointer" onClick={() => setSelected(row)}>
+                  <td className="px-3 py-2 font-mono text-[var(--ink-2, #9aa5b4)]">{row.id}</td>
                   <td className="px-3 py-2 max-w-[160px]">
-                    <span className="font-medium text-[#1e2a38] block truncate">{row.stakeholder_name}</span>
-                    {row.organization && <span className="text-[#9aa5b4] truncate block">{row.organization}</span>}
+                    <span className="font-medium text-[var(--ink, #1e2a38)] block truncate">{row.stakeholder_name}</span>
+                    {row.organization && <span className="text-[var(--ink-2, #9aa5b4)] truncate block">{row.organization}</span>}
                   </td>
-                  <td className="px-3 py-2 capitalize text-[#3d4756]">{row.stakeholder_type.replace(/_/g, ' ')}</td>
+                  <td className="px-3 py-2 capitalize text-[var(--ink-2, #3d4756)]">{row.stakeholder_type.replace(/_/g, ' ')}</td>
                   <td className="px-3 py-2">
                     {row.stakeholder_tier && (
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${TIER_COLOR[row.stakeholder_tier]}`}>
@@ -379,7 +388,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 font-mono text-[#2d3748]">
+                  <td className="px-3 py-2 font-mono text-[var(--ink, #2d3748)]">
                     {row.power_score && row.interest_score && row.urgency_score
                       ? <span className="font-bold">{row.power_score}×{row.interest_score}×{row.urgency_score}={row.engagement_score}</span>
                       : '—'}
@@ -404,7 +413,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
                         breached={!!row.sla_breached}
                         compact
                       />
-                    ) : <span className="text-[#9aa5b4]">—</span>}
+                    ) : <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
@@ -431,7 +440,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setSelected(null); setActionResult(null); }}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -446,16 +455,16 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
                   {!!selected.floor_ep4_required && <span className="px-1 py-0.5 rounded text-[10px] bg-orange-100 text-orange-700">EP4</span>}
                   {!!selected.is_reportable && <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>}
                 </div>
-                <h3 className="font-semibold text-[#0f1c2e]">{selected.stakeholder_name}</h3>
-                {selected.organization && <p className="text-xs text-[#6b7685]">{selected.organization}</p>}
-                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
+                <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">{selected.stakeholder_name}</h3>
+                {selected.organization && <p className="text-xs text-[var(--ink-2, #6b7685)]">{selected.organization}</p>}
+                <p className="text-xs text-[var(--ink-2, #9aa5b4)] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
               </div>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state progress */}
-            <div className="mb-4 px-3 py-3 bg-[#f8fafc] rounded-lg">
-              <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide mb-2">Engagement progress</p>
+            <div className="mb-4 px-3 py-3 bg-[var(--s1, #f8fafc)] rounded-lg">
+              <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase tracking-wide mb-2">Engagement progress</p>
               <ChainStateBar
                 allStates={MAIN_STATES}
                 currentState={selected.chain_status}
@@ -482,9 +491,9 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
               <ScoreBadge label="Interest" value={selected.interest_score} color="blue" />
               <ScoreBadge label="Urgency" value={selected.urgency_score} color="amber" />
               {selected.engagement_score && (
-                <div className="flex-1 bg-[#f8fafc] rounded-lg px-3 py-2 text-center">
-                  <p className="text-[10px] text-[#9aa5b4] uppercase">P×I×U score</p>
-                  <p className="text-xl font-bold text-[#1e2a38]">{selected.engagement_score}</p>
+                <div className="flex-1 bg-[var(--s1, #f8fafc)] rounded-lg px-3 py-2 text-center">
+                  <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase">P×I×U score</p>
+                  <p className="text-xl font-bold text-[var(--ink, #1e2a38)]">{selected.engagement_score}</p>
                 </div>
               )}
             </div>
@@ -557,7 +566,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
 
             {!readOnly && (
               <div>
-                <p className="text-xs font-medium text-[#6b7685] mb-2">Available actions</p>
+                <p className="text-xs font-medium text-[var(--ink-2, #6b7685)] mb-2">Available actions</p>
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label, danger }) => (
                     <button type="button"
@@ -572,7 +581,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {ACTIONS[selected.chain_status]?.length === 0 && (
-                    <p className="text-xs text-[#9aa5b4]">No actions — terminal state.</p>
+                    <p className="text-xs text-[var(--ink-2, #9aa5b4)]">No actions — terminal state.</p>
                   )}
                 </div>
               </div>
@@ -584,10 +593,10 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
       {/* Create modal */}
       {showCreate && !readOnly && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-[#0f1c2e]">Add stakeholder</h3>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">Add stakeholder</h3>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             <div className="space-y-3">
@@ -619,25 +628,25 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
               <div className="grid grid-cols-3 gap-3">
                 <FormField label={`Power (P${newPower})`}>
                   <input type="range" min={1} max={5} value={newPower} onChange={e => setNewPower(Number(e.target.value))} className="w-full" />
-                  <p className="text-[10px] text-[#9aa5b4] mt-0.5">{['Minimal','Low','Medium','High','Very high'][newPower-1]}</p>
+                  <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] mt-0.5">{['Minimal','Low','Medium','High','Very high'][newPower-1]}</p>
                 </FormField>
                 <FormField label={`Interest (I${newInterest})`}>
                   <input type="range" min={1} max={5} value={newInterest} onChange={e => setNewInterest(Number(e.target.value))} className="w-full" />
-                  <p className="text-[10px] text-[#9aa5b4] mt-0.5">{['Minimal','Low','Medium','High','Very high'][newInterest-1]}</p>
+                  <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] mt-0.5">{['Minimal','Low','Medium','High','Very high'][newInterest-1]}</p>
                 </FormField>
                 <FormField label={`Urgency (U${newUrgency})`}>
                   <input type="range" min={1} max={5} value={newUrgency} onChange={e => setNewUrgency(Number(e.target.value))} className="w-full" />
-                  <p className="text-[10px] text-[#9aa5b4] mt-0.5">{['Minimal','Low','Medium','High','Very high'][newUrgency-1]}</p>
+                  <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] mt-0.5">{['Minimal','Low','Medium','High','Very high'][newUrgency-1]}</p>
                 </FormField>
               </div>
               {/* Live tier preview */}
-              <div className="bg-[#f8fafc] rounded p-2 flex items-center justify-between">
+              <div className="bg-[var(--s1, #f8fafc)] rounded p-2 flex items-center justify-between">
                 <span className="text-xs font-medium">Tier preview:</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${TIER_COLOR[previewTier]}`}>
                   {TIER_LABEL[previewTier]}
                 </span>
-                <span className="text-xs text-[#6b7685]">P×I×U = {newPower * newInterest * newUrgency}</span>
-                <span className="text-xs text-[#6b7685]">SLA: {SLA_HOURS_BY_TIER[previewTier]}h</span>
+                <span className="text-xs text-[var(--ink-2, #6b7685)]">P×I×U = {newPower * newInterest * newUrgency}</span>
+                <span className="text-xs text-[var(--ink-2, #6b7685)]">SLA: {SLA_HOURS_BY_TIER[previewTier]}h</span>
               </div>
               <FormField label="Communication plan">
                 <textarea className="w-full text-sm border rounded px-2 py-1.5 resize-none" rows={3} value={newPlan} onChange={e => setNewPlan(e.target.value)} placeholder="Describe engagement strategy..." />
@@ -661,7 +670,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
             {error && <div className="text-xs text-red-600 mt-3">{error}</div>}
 
             <div className="flex justify-end gap-2 mt-4">
-              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[var(--s2, #eef2f7)]" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="button"
                 className="text-xs bg-[#c2873a] text-white rounded px-3 py-1.5 hover:bg-[#a3702f] disabled:opacity-50"
                 disabled={!newName || !newProject || createLoading}
@@ -678,10 +687,10 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[var(--ink, #2d3748)]';
   return (
-    <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
-      <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>
+    <div className="bg-surface-v2 rounded-lg border border-[var(--border-subtle, #dde4ec)] p-3">
+      <p className="text-[10px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-bold mt-0.5 ${cls}`}>{value}</p>
     </div>
   );
@@ -694,8 +703,8 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide">{label}</p>
-      <p className="text-xs text-[#2d3748]">{value}</p>
+      <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-[var(--ink, #2d3748)]">{value}</p>
     </div>
   );
 }
@@ -714,7 +723,7 @@ function ScoreBadge({ label, value, color }: { label: string; value: number | nu
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#3d4756] mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[var(--ink-2, #3d4756)] mb-1">{label}</label>
       {children}
     </div>
   );

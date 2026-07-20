@@ -25,11 +25,11 @@ export type SlaCountdownProps = {
 type SlaZone = 'breached' | 'critical' | 'warning' | 'low' | 'ok';
 
 const ZONE_COLORS: Record<SlaZone, { bar: string; bg: string; text: string }> = {
-  breached: { bar: '#dc2626', bg: '#fef2f2', text: '#dc2626' },
-  critical: { bar: '#dc2626', bg: '#fef2f2', text: '#dc2626' },
+  breached: { bar: 'var(--bad, #dc2626)', bg: '#fef2f2', text: 'var(--bad, #dc2626)' },
+  critical: { bar: 'var(--bad, #dc2626)', bg: '#fef2f2', text: 'var(--bad, #dc2626)' },
   warning:  { bar: '#d97706', bg: '#fffbeb', text: '#d97706' },
   low:      { bar: '#d97706', bg: '#fffbeb', text: '#d97706' },
-  ok:       { bar: '#16a34a', bg: '#f0fdf4', text: '#16a34a' },
+  ok:       { bar: 'var(--good, #16a34a)', bg: '#f0fdf4', text: 'var(--good, #16a34a)' },
 };
 
 const PULSE_STYLE_ID = 'sla-pulse-keyframes';
@@ -111,7 +111,7 @@ export function SlaCountdown({
           width: 60,
           height: barHeightPx,
           borderRadius: barBorderRadius,
-          backgroundColor: '#e5e7eb',
+          backgroundColor: 'var(--border-subtle, #e5e7eb)',
           overflow: 'hidden',
           display: 'inline-block',
           verticalAlign: 'middle',
@@ -147,7 +147,7 @@ export function SlaCountdown({
         style={{
           position: 'relative',
           height: barHeightPx,
-          backgroundColor: '#e5e7eb',
+          backgroundColor: 'var(--border-subtle, #e5e7eb)',
           borderRadius: barBorderRadius,
           overflow: 'hidden',
         }}
@@ -206,7 +206,7 @@ export function SlaCountdown({
             style={{
               fontSize: 11,
               fontWeight: 500,
-              color: '#6b7280',
+              color: 'var(--ink-2, #6b7280)',
             }}
           >
             {label}

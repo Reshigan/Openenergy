@@ -41,11 +41,11 @@ export function FileSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white">
-      <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between gap-2">
+    <section className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2">
+      <header className="px-5 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between gap-2">
         <div>
-          <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">{title}</div>
-          {subtitle && <div className="text-[12px] text-[#6b7685] mt-0.5">{subtitle}</div>}
+          <div className="font-display font-semibold text-[14px] text-[var(--ink, #0f1c2e)]">{title}</div>
+          {subtitle && <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-0.5">{subtitle}</div>}
         </div>
         {action}
       </header>
@@ -68,7 +68,7 @@ export function FileTable<TRow extends Record<string, unknown>>({
   if (!rows || rows.length === 0) {
     return (
       <div className="px-5 py-8 text-center">
-        <div className="text-[#6b7685] text-[13px]">{emptyMessage}</div>
+        <div className="text-[var(--ink-2, #6b7685)] text-[13px]">{emptyMessage}</div>
         {emptyAction && <div className="mt-2">{emptyAction}</div>}
       </div>
     );
@@ -76,8 +76,8 @@ export function FileTable<TRow extends Record<string, unknown>>({
   return (
     <div className="overflow-auto">
       <table className="w-full text-[13px]">
-        <thead className="bg-[#fafbfd]">
-          <tr className="text-[11px] uppercase text-[#6b7685]">
+        <thead className="bg-[var(--s1, #fafbfd)]">
+          <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
             {columns.map((c) => (
               <th key={c.key} className={`px-4 py-2 ${c.align === 'right' ? 'text-right' : 'text-left'} ${c.className || ''}`}>
                 {c.label}
@@ -87,14 +87,14 @@ export function FileTable<TRow extends Record<string, unknown>>({
         </thead>
         <tbody>
           {rows.map((row, idx) => (
-            <tr key={(row as { id?: string }).id || idx} className="border-t border-[#eef2f7]">
+            <tr key={(row as { id?: string }).id || idx} className="border-t border-[var(--s2, #eef2f7)]">
               {columns.map((c) => {
                 const raw = (row as Record<string, unknown>)[c.key];
                 const value = c.render ? c.render(row) : raw == null ? '—' : String(raw);
                 const cellClass = [
                   'px-4 py-2',
                   c.align === 'right' ? 'text-right' : '',
-                  c.mono ? 'font-mono text-[11px] text-[#3d4756]' : '',
+                  c.mono ? 'font-mono text-[11px] text-[var(--ink-2, #3d4756)]' : '',
                   c.className || '',
                 ].filter(Boolean).join(' ');
                 return (
@@ -145,7 +145,7 @@ export function fmtPct(n: number | string | null | undefined, decimals = 1): str
 }
 
 export function StatusCell({ value }: { value: unknown }) {
-  if (value == null || value === '') return <span className="text-[#6b7685]">—</span>;
+  if (value == null || value === '') return <span className="text-[var(--ink-2, #6b7685)]">—</span>;
   return <StitchPill status={String(value)} />;
 }
 
@@ -153,7 +153,7 @@ export function LinkCell({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="inline-flex items-center gap-1 text-[#1a5d97] font-semibold hover:underline"
+      className="inline-flex items-center gap-1 text-[var(--info, #1a5d97)] font-semibold hover:underline"
     >
       {label} <OEIcon name="chevron-right" size={12} />
     </a>

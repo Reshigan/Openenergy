@@ -18,9 +18,9 @@ import { OEIcon } from '../OEIcon';
 import { EntityFileShell } from '../file/EntityFileShell';
 import { contractFileTabs, contractHero, type ContractFileData } from '../file/contractFileConfig';
 
-const ACC    = 'oklch(0.46 0.12 230)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
+const ACC    = 'var(--accent, oklch(0.46 0.12 230))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
 
 export function ContractDetail() {
   const { id = '' } = useParams<{ id: string }>();

@@ -6,19 +6,19 @@ import { api } from '../../lib/api';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BG2     = 'oklch(0.93 0.004 250)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.12 230)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
-const GOOD    = 'oklch(0.40 0.16 155)';
-const GOOD_BG = 'oklch(0.95 0.04 155)';
-const WARN    = 'oklch(0.50 0.18 55)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2     = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.12 230))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const GOOD    = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG = 'color-mix(in oklab, var(--good) 15%, var(--s1))';
+const WARN    = 'var(--accent, oklch(0.50 0.18 55))';
 const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -88,11 +88,11 @@ const pct = (v: number) => `${v.toFixed(1)}%`;
 
 const DOMAIN_DOT: Record<string, string> = {
   trading:   'oklch(0.30 0.14 250)',
-  carbon:    'oklch(0.40 0.16 155)',
-  ipp:       'oklch(0.46 0.16 55)',
-  lender:    'oklch(0.46 0.16 280)',
+  carbon:    'var(--good, oklch(0.40 0.16 155))',
+  ipp:       'var(--accent, oklch(0.46 0.16 55))',
+  lender:    'var(--accent, oklch(0.46 0.16 280))',
   offtaker:  'oklch(0.35 0.16 230)',
-  grid:      'oklch(0.48 0.20 20)',
+  grid:      'var(--bad, oklch(0.48 0.20 20))',
   regulator: 'oklch(0.36 0.14 185)',
   support:   'oklch(0.55 0.06 250)',
   esums:     'oklch(0.52 0.18 75)',
@@ -481,7 +481,7 @@ export function NationalDashboard() {
 
         {/* Regulator crossings */}
         <div style={{
-          background: kpis.regulator_crossings_30d > 50 ? 'oklch(0.96 0.05 55)' : BG,
+          background: kpis.regulator_crossings_30d > 50 ? 'color-mix(in oklab, var(--warn) 15%, var(--s1))' : BG,
           border: `1px solid ${kpis.regulator_crossings_30d > 50 ? WARN : BORDER}`,
           borderRadius: 8,
           padding: '12px 16px',

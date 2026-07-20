@@ -61,7 +61,7 @@ export default function SignaturePreview() {
           gap: 8,
           padding: '12px 24px',
           background: '#0a1622',
-          color: '#eef2f7',
+          color: 'var(--s2, #eef2f7)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           flexWrap: 'wrap',
         }}
@@ -77,7 +77,7 @@ export default function SignaturePreview() {
               padding: '6px 12px',
               borderRadius: 999,
               background: r === role ? roleThemes[r].accent : 'transparent',
-              color: r === role ? '#0a1622' : '#eef2f7',
+              color: r === role ? '#0a1622' : 'var(--s2, #eef2f7)',
               border: `1px solid ${roleThemes[r].accent}`,
               fontSize: 12,
               fontWeight: 600,

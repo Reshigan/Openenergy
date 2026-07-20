@@ -199,37 +199,37 @@ interface AdmlEvent {
 }
 
 const STATE_TONE: Record<AdmlStatus, { bg: string; fg: string; label: string }> = {
-  model_proposed:        { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  dataset_bound:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Dataset' },
-  features_engineered:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Features' },
-  train_test_split:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Split' },
-  model_trained:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Trained' },
-  backtest_validated:    { bg: '#fff4d6', fg: '#a06200', label: 'Backtest' },
-  calibrated:            { bg: '#fff4d6', fg: '#a06200', label: 'Calibrated' },
-  shadow_deployed:       { bg: '#fff4d6', fg: '#a06200', label: 'Shadow' },
-  live_ab_active:        { bg: '#daf5e2', fg: '#1f6b3a', label: 'Live A/B' },
-  champion_promoted:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Champion' },
-  retrained:             { bg: '#daf5e2', fg: '#1f6b3a', label: 'Retrained' },
-  archived:              { bg: '#1f5b3a', fg: '#fff',    label: 'Archived' },
-  drift_detected:        { bg: '#fff4d6', fg: '#a06200', label: 'Drift' },
-  rolled_back:           { bg: '#7a0e0e', fg: '#fff',    label: 'Rolled back' },
-  recalled:              { bg: '#7a0e0e', fg: '#fff',    label: 'Recalled' },
-  failover_to_baseline:  { bg: '#fff4d6', fg: '#a06200', label: 'Failover' },
+  model_proposed:        { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Proposed' },
+  dataset_bound:         { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Dataset' },
+  features_engineered:   { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Features' },
+  train_test_split:      { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Split' },
+  model_trained:         { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Trained' },
+  backtest_validated:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Backtest' },
+  calibrated:            { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Calibrated' },
+  shadow_deployed:       { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Shadow' },
+  live_ab_active:        { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Live A/B' },
+  champion_promoted:     { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Champion' },
+  retrained:             { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Retrained' },
+  archived:              { bg: 'var(--good, #1f5b3a)', fg: '#fff',    label: 'Archived' },
+  drift_detected:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Drift' },
+  rolled_back:           { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Rolled back' },
+  recalled:              { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Recalled' },
+  failover_to_baseline:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Failover' },
 };
 
 const TIER_TONE: Record<AdmlTier, { bg: string; fg: string; label: string }> = {
-  single_asset:              { bg: '#e3e7ec', fg: '#557',    label: 'Single asset' },
-  small_fleet:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small fleet' },
-  large_fleet:               { bg: '#daf5e2', fg: '#1f6b3a', label: 'Large fleet' },
-  multi_jurisdiction_fleet:  { bg: '#fff4d6', fg: '#a06200', label: 'Multi-juris.' },
-  fleet_systemic:            { bg: '#7a0e0e', fg: '#fff',    label: 'Systemic' },
+  single_asset:              { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Single asset' },
+  small_fleet:               { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Small fleet' },
+  large_fleet:               { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Large fleet' },
+  multi_jurisdiction_fleet:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Multi-juris.' },
+  fleet_systemic:            { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Systemic' },
 };
 
 const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  green:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const FILTERS_ACTION: Array<{ key: string; label: string }> = [
@@ -635,8 +635,8 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">Anomaly-detection ML model governance</h2>
-          <p className="text-[11px] text-[#4a5568]">
+          <h2 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Anomaly-detection ML model governance</h2>
+          <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
             12-state forward + 4 branch ML BRAIN replacing the heuristic 6-method anomaly ensemble. LSTM AE / Transformer AE / VAE / Isolation Forest / OC-SVM / Prophet residual / baseline heuristic.
             Beats AspenTech Mtell + GE APM + Uptake Fusion + Augury + C3.ai AI/ML + SparkCognition + Petuum + DataRPM.
             INVERTED SLA HOURS (single 24 / small 96 / large 240 / multi-juris. 480 / systemic 720).
@@ -668,7 +668,7 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
       </div>
 
       {/* Drill rail */}
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">
         <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
         <span>Dataset: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.dataset_bound_count}</span></span>
         <span>Features: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.features_count}</span></span>
@@ -677,15 +677,15 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
         <span>Backtest: <span className="font-semibold text-[#a06200]">{kpis.backtest_count}</span></span>
         <span>Calibrated: <span className="font-semibold text-[#a06200]">{kpis.calibrated_count}</span></span>
         <span>Shadow: <span className="font-semibold text-[#a06200]">{kpis.shadow_count}</span></span>
-        <span>Retrained: <span className="font-semibold text-[#1f6b3a]">{kpis.retrained_count}</span></span>
-        <span>Archived: <span className="font-semibold text-[#1f5b3a]">{kpis.archived_count}</span></span>
+        <span>Retrained: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.retrained_count}</span></span>
+        <span>Archived: <span className="font-semibold text-[var(--good, #1f5b3a)]">{kpis.archived_count}</span></span>
         <span>Drift: <span className="font-semibold text-[#a06200]">{kpis.drift_count}</span></span>
         <span>Failover: <span className="font-semibold text-[#a06200]">{kpis.failover_count}</span></span>
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Retrain {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.retrain_within_60d}</span></span>
-        <span>Retrain {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.retrain_within_14d}</span></span>
-        <span>Card exp. {'<'}30d: <span className="font-semibold text-[#9b1f1f]">{kpis.model_card_expiring_30d}</span></span>
+        <span>Retrain {'<'}14d: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.retrain_within_14d}</span></span>
+        <span>Card exp. {'<'}30d: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.model_card_expiring_30d}</span></span>
         <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
         <span>Prognostics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
         <span>Site comm.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w12_bridged_count}</span></span>
@@ -702,7 +702,7 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -719,7 +719,7 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -735,8 +735,8 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#7a0e0e] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--bad, #7a0e0e)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -753,7 +753,7 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -769,8 +769,8 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1f6b3a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--good, #1f6b3a)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -783,11 +783,11 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
       )}
       {!loading && anomalyMlViz(filtered)}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Model #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Family / asset</th>
@@ -816,18 +816,18 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       <div className="text-[11px] font-semibold">{r.model_number}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.model_version ?? '-'}</div>
-                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span> : null}
-                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
-                      {r.floor_at_fleet_systemic_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">SYS</span> : null}
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{r.model_version ?? '-'}</div>
+                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span> : null}
+                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">FILED</span> : null}
+                      {r.floor_at_fleet_systemic_live ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #7a0e0e)]">SYS</span> : null}
                     </td>
                     <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtFamily(r.model_family)}
-                      <div className="text-[10px] text-[#6b7685]">{fmtAssetClass(r.asset_class)}</div>
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{fmtAssetClass(r.asset_class)}</div>
                     </td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
@@ -844,29 +844,29 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
                         {cs.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[11px] font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 text-right tabular-nums text-[11px] font-mono text-[var(--ink, #0c2a4d)]">
                       {scope}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${control >= 100 ? 'text-[#1f5b3a]' : control >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${control >= 100 ? 'text-[var(--good, #1f5b3a)]' : control >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {control}/130
                     </td>
-                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${retrainDays != null && retrainDays < 14 ? 'text-[#9b1f1f] font-semibold' : retrainDays != null && retrainDays < 60 ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${retrainDays != null && retrainDays < 14 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : retrainDays != null && retrainDays < 60 ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {retrainDays != null ? `${retrainDays}d` : '-'}
                     </td>
-                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${cardDays != null && cardDays < 14 ? 'text-[#9b1f1f] font-semibold' : cardDays != null && cardDays < 30 ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${cardDays != null && cardDays < 14 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : cardDays != null && cardDays < 30 ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {cardDays != null ? `${cardDays}d` : '-'}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[#7a0e0e] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[var(--bad, #7a0e0e)] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>
                       {flags}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No models match.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No models match.</td></tr>
               )}
             </tbody>
           </table>
@@ -885,10 +885,10 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -932,10 +932,10 @@ function Drawer({
     const cls = tone === 'primary'
       ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
-        ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
+        ? 'bg-[var(--bad, #7a0e0e)] text-white hover:bg-[var(--bad, #9b1f1f)]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
+          : 'bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]';
     return (
       <button type="button"
         key={action}
@@ -950,22 +950,22 @@ function Drawer({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
-      <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
+      <div className="w-full max-w-3xl overflow-y-auto bg-[var(--s2, #f3f5f9)] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
               {fmtFamily(row.model_family)} {'•'} {fmtAssetClass(row.asset_class)} {'•'} {row.current_tier.replace(/_/g, ' ')}
               {row.assets_covered != null ? <> {'•'} {row.assets_covered}a/{row.jurisdiction_count ?? 0}j{row.safety_critical ? '/SC' : ''}</> : null}
             </div>
-            <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.model_number}</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">{row.model_number}</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               {row.title || 'Anomaly-detection ML model (replaces heuristic ensemble)'}
               {row.model_version ? <> {'•'} v<span className="font-mono">{row.model_version}</span></> : null}
               {row.training_dataset_hash ? <> {'•'} dataset <span className="font-mono text-[10px]">{row.training_dataset_hash.slice(0, 12)}</span></> : null}
               {row.feature_count != null ? <> {'•'} {row.feature_count} features</> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -977,92 +977,92 @@ function Drawer({
         </div>
 
         {/* Performance battery */}
-        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
+        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Precision @ K</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.precision_at_k ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Precision @ K</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.precision_at_k ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Recall @ K</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.recall_at_k ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Recall @ K</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.recall_at_k ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">FPR</div>
-            <div className={`font-mono text-[12px] ${(row.false_positive_rate ?? 0) > 0.05 ? 'text-[#9b1f1f] font-semibold' : (row.false_positive_rate ?? 0) > 0.03 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>{row.false_positive_rate ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">FPR</div>
+            <div className={`font-mono text-[12px] ${(row.false_positive_rate ?? 0) > 0.05 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : (row.false_positive_rate ?? 0) > 0.03 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>{row.false_positive_rate ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Recon p99</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.autoencoder_reconstruction_error_p99 ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Recon p99</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.autoencoder_reconstruction_error_p99 ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Drift PSI</div>
-            <div className={`font-mono text-[12px] ${(row.drift_psi ?? 0) >= 0.25 ? 'text-[#9b1f1f] font-semibold' : (row.drift_psi ?? 0) >= 0.10 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>{row.drift_psi ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Drift PSI</div>
+            <div className={`font-mono text-[12px] ${(row.drift_psi ?? 0) >= 0.25 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : (row.drift_psi ?? 0) >= 0.10 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>{row.drift_psi ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Drift KS</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.drift_ks ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Drift KS</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.drift_ks ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Champ vs Chall.</div>
-            <div className={`font-mono text-[12px] ${(row.champion_vs_challenger_lift ?? 1) > 1.1 ? 'text-[#1f5b3a]' : (row.champion_vs_challenger_lift ?? 1) < 0.95 ? 'text-[#9b1f1f] font-semibold' : 'text-[#0c2a4d]'}`}>{row.champion_vs_challenger_lift ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Champ vs Chall.</div>
+            <div className={`font-mono text-[12px] ${(row.champion_vs_challenger_lift ?? 1) > 1.1 ? 'text-[var(--good, #1f5b3a)]' : (row.champion_vs_challenger_lift ?? 1) < 0.95 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink, #0c2a4d)]'}`}>{row.champion_vs_challenger_lift ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Latency p50</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.inference_latency_p50_ms ?? '-'} ms</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Latency p50</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.inference_latency_p50_ms ?? '-'} ms</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Latency p99</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.inference_latency_p99_ms ?? '-'} ms</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Latency p99</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.inference_latency_p99_ms ?? '-'} ms</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Throughput</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.inference_throughput_per_sec ?? '-'}/s</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Throughput</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.inference_throughput_per_sec ?? '-'}/s</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Heuristic recon. %</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.reconciliation_with_w71_heuristic_pct ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Heuristic recon. %</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.reconciliation_with_w71_heuristic_pct ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">NTT baseline %</div>
-            <div className={`font-mono text-[12px] ${(row.ntt_baseline_comparison_pct ?? 0) >= 30 ? 'text-[#1f5b3a]' : (row.ntt_baseline_comparison_pct ?? 0) < 0 ? 'text-[#9b1f1f] font-semibold' : 'text-[#a06200]'}`}>{row.ntt_baseline_comparison_pct ?? '-'}%</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">NTT baseline %</div>
+            <div className={`font-mono text-[12px] ${(row.ntt_baseline_comparison_pct ?? 0) >= 30 ? 'text-[var(--good, #1f5b3a)]' : (row.ntt_baseline_comparison_pct ?? 0) < 0 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[#a06200]'}`}>{row.ntt_baseline_comparison_pct ?? '-'}%</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Model card</div>
-            <div className={`font-mono text-[12px] ${row.model_card_status === 'published' ? 'text-[#1f5b3a]' : row.model_card_status === 'expired' ? 'text-[#9b1f1f] font-semibold' : row.model_card_status === 'approved' ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>{row.model_card_status ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Model card</div>
+            <div className={`font-mono text-[12px] ${row.model_card_status === 'published' ? 'text-[var(--good, #1f5b3a)]' : row.model_card_status === 'expired' ? 'text-[var(--bad, #9b1f1f)] font-semibold' : row.model_card_status === 'approved' ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>{row.model_card_status ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">ISO 42001</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.iso_42001_compliance_score ?? '-'}/130</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">ISO 42001</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.iso_42001_compliance_score ?? '-'}/130</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">ISO 27001</div>
-            <div className={`font-mono text-[12px] ${row.iso27001_controls_ok ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.iso27001_controls_ok ? 'OK' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">ISO 27001</div>
+            <div className={`font-mono text-[12px] ${row.iso27001_controls_ok ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.iso27001_controls_ok ? 'OK' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">SOC 2 II</div>
-            <div className={`font-mono text-[12px] ${row.soc2_type2_controls_ok ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.soc2_type2_controls_ok ? 'OK' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">SOC 2 II</div>
+            <div className={`font-mono text-[12px] ${row.soc2_type2_controls_ok ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.soc2_type2_controls_ok ? 'OK' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Retrain due</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtDate(row.retrain_due_at)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Retrain due</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtDate(row.retrain_due_at)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Card expiry</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtDate(row.model_card_expiry_at)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Card expiry</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtDate(row.model_card_expiry_at)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Train examples</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.training_examples_count?.toLocaleString() ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Train examples</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.training_examples_count?.toLocaleString() ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Val examples</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.validation_examples_count?.toLocaleString() ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Val examples</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.validation_examples_count?.toLocaleString() ?? '-'}</div>
           </div>
         </div>
 
         {/* Floor flags */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">
             Floor flags ({flags}/5) - FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-FLEET-SYSTEMIC {'≥'}3
           </div>
           <div className="grid grid-cols-5 gap-2">
@@ -1075,8 +1075,8 @@ function Drawer({
         </div>
 
         {/* Bridges */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit mandatory)</div>
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Cross-chain bridges (audit mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
             <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit" />
             <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="Prognostics" />
@@ -1089,7 +1089,7 @@ function Drawer({
         {/* Regulator + reason */}
         {(row.is_reportable_flag || row.regulator_ref || row.regulator_inbox_ref || row.reason_code) && (
           <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-[11px] text-[#7a1f1f]">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#9b1f1f]">Regulator crossing</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--bad, #9b1f1f)]">Regulator crossing</div>
             {row.reason_code && <div>Reason: <span className="font-mono">{row.reason_code}</span></div>}
             {row.regulator_reason_text && <div>Detail: {row.regulator_reason_text}</div>}
             {row.regulator_ref && <div>Filed ref: <span className="font-mono">{row.regulator_ref}</span></div>}
@@ -1100,7 +1100,7 @@ function Drawer({
 
         {/* Action bar */}
         {!regulatorView && !row.is_hard_terminal && (
-          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[#d8dde6] bg-white p-3">
+          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3">
             {nextAction && renderAct(nextAction, ACTION_LABEL[nextAction].split('(')[0].trim(), 'primary')}
             {canDrift && row.chain_status !== 'drift_detected' && renderAct('detect-drift', 'Detect drift', 'amber')}
             {canFailover && renderAct('activate-failover', 'Failover to baseline', 'amber')}
@@ -1110,16 +1110,16 @@ function Drawer({
         )}
 
         {/* Timeline */}
-        <div className="rounded border border-[#d8dde6] bg-white">
-          <div className="border-b border-[#e3e7ec] px-3 py-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Timeline</div>
-          <ol className="divide-y divide-[#e3e7ec]">
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
+          <div className="border-b border-[var(--border-subtle, #e3e7ec)] px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Timeline</div>
+          <ol className="divide-y divide-[var(--border-subtle, #e3e7ec)]">
             {events.length === 0 && (
-              <li className="px-3 py-3 text-[11px] text-[#6b7685]">No events.</li>
+              <li className="px-3 py-3 text-[11px] text-[var(--ink-2, #6b7685)]">No events.</li>
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
                 <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
-                <div className="text-[10px] text-[#4a5568]">
+                <div className="text-[10px] text-[var(--ink-2, #4a5568)]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
@@ -1137,7 +1137,7 @@ function Drawer({
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#7a0e0e] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[var(--bad, #7a0e0e)] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1148,7 +1148,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 function BridgePill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1232,37 +1232,37 @@ function ProposeModal({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
+      <div className="w-full max-w-2xl rounded bg-surface-v2 p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose anomaly-detection ML model</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Propose anomaly-detection ML model</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               Audit bridge mandatory. Tier auto-derived from (assets_covered, jurisdiction_count, safety_critical) with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags.
               Replaces the heuristic 6-method anomaly ensemble.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Model family">
-            <select value={family} onChange={(e) => setFamily(e.target.value as AdmlFamily)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={family} onChange={(e) => setFamily(e.target.value as AdmlFamily)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {FAMILY_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Asset class">
-            <select value={assetClass} onChange={(e) => setAssetClass(e.target.value as AdmlAssetClass)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={assetClass} onChange={(e) => setAssetClass(e.target.value as AdmlAssetClass)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {ASSET_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Model version (semver)">
-            <input value={modelVersion} onChange={(e) => setModelVersion(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
+            <input value={modelVersion} onChange={(e) => setModelVersion(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
           <Field label="Assets covered (fleet scope)">
-            <input value={assetsCovered} onChange={(e) => setAssetsCovered(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="50" />
+            <input value={assetsCovered} onChange={(e) => setAssetsCovered(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="50" />
           </Field>
           <Field label="Jurisdiction count">
-            <input value={jurisdictions} onChange={(e) => setJurisdictions(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1" />
+            <input value={jurisdictions} onChange={(e) => setJurisdictions(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1" />
           </Field>
           <Field label="Safety-critical (national)?">
             <label className="flex items-center gap-2 text-[12px]">
@@ -1271,30 +1271,30 @@ function ProposeModal({
             </label>
           </Field>
           <Field label="Feature count (post-engineering)">
-            <input value={featureCount} onChange={(e) => setFeatureCount(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="48" />
+            <input value={featureCount} onChange={(e) => setFeatureCount(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="48" />
           </Field>
           <Field label="Title">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Eastern Cape wind fleet LSTM autoencoder v1" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="Eastern Cape wind fleet LSTM autoencoder v1" />
           </Field>
           <Field label="Audit block ref (mandatory)">
-            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
+            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
           <Field label="Asset prognostics ref (REPLACES)">
-            <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
+            <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
           </Field>
           <Field label="Site commissioning ref">
-            <input value={w12} onChange={(e) => setW12(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="com-2026-009" />
+            <input value={w12} onChange={(e) => setW12(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="com-2026-009" />
           </Field>
           <Field label="Government filing ref">
-            <input value={w126} onChange={(e) => setW126(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="gfc-2026-0015" />
+            <input value={w126} onChange={(e) => setW126(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="gfc-2026-0015" />
           </Field>
           <Field label="NERSA levy ref">
-            <input value={w74} onChange={(e) => setW74(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="regulator-levy-2026-0011" />
+            <input value={w74} onChange={(e) => setW74(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="regulator-levy-2026-0011" />
           </Field>
         </div>
 
-        <div className="mt-3 rounded border border-[#d8dde6] bg-[#f8fafc] p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Floor flags (FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-FLEET-SYSTEMIC {'≥'}3)</div>
+        <div className="mt-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Floor flags (FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-FLEET-SYSTEMIC {'≥'}3)</div>
           <div className="grid grid-cols-3 gap-2">
             <Checkbox checked={safetyCriticalInf} onChange={setSafetyCriticalInf} label="Safety-critical inference" />
             <Checkbox checked={regReportable} onChange={setRegReportable} label="Regulator-reportable drift" />
@@ -1306,7 +1306,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1.5 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose model</button>
         </div>
       </div>
@@ -1316,7 +1316,7 @@ function ProposeModal({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] text-[#4a5568]">
+    <label className="block text-[11px] text-[var(--ink-2, #4a5568)]">
       <div className="mb-1 text-[10px] uppercase tracking-wider">{label}</div>
       {children}
     </label>

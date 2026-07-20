@@ -101,11 +101,11 @@ export function VaultPanel({
   };
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white">
-      <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
-        <div className="font-display font-semibold text-[14px] text-[#0f1c2e] inline-flex items-center gap-2">
+    <section className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2">
+      <header className="px-5 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
+        <div className="font-display font-semibold text-[14px] text-[var(--ink, #0f1c2e)] inline-flex items-center gap-2">
           <FileText size={14} /> {title}
-          <span className="text-[11px] text-[#6b7685] font-normal">{files.length}</span>
+          <span className="text-[11px] text-[var(--ink-2, #6b7685)] font-normal">{files.length}</span>
         </div>
         <button type="button" onClick={onPick} disabled={uploading}
           className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
@@ -117,25 +117,25 @@ export function VaultPanel({
       <div className="p-3">
         {err && <div className="text-[12px] text-red-700 mb-2">{err}</div>}
         {loading ? (
-          <div className="text-[12px] text-[#6b7685] px-2 py-2">Loading…</div>
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)] px-2 py-2">Loading…</div>
         ) : files.length === 0 ? (
-          <div className="text-[12px] text-[#6b7685] px-2 py-4 text-center">
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)] px-2 py-4 text-center">
             No documents yet. Drop in evidence, signed contracts, certifications.
           </div>
         ) : (
-          <ul className="divide-y divide-[#eef2f7]">
+          <ul className="divide-y divide-[var(--s2, #eef2f7)]">
             {files.map((f) => (
               <li key={f.id} className="flex items-center gap-3 px-2 py-2 text-[12px]">
-                <FileText size={14} className="text-[#6b7685]" />
+                <FileText size={14} className="text-[var(--ink-2, #6b7685)]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[#0f1c2e] truncate">{f.file_name}</div>
-                  <div className="text-[10px] text-[#6b7685]">
+                  <div className="text-[var(--ink, #0f1c2e)] truncate">{f.file_name}</div>
+                  <div className="text-[10px] text-[var(--ink-2, #6b7685)]">
                     {bytes(f.size_bytes)} · uploaded {new Date(f.created_at).toLocaleString()}
                     {f.uploaded_by_name ? ` by ${f.uploaded_by_name}` : ''}
                   </div>
                 </div>
                 <button type="button" onClick={() => download(f)} title="Download" className="p-1.5 hover:bg-[oklch(0.96_0.003_250)] rounded" style={{ color: 'oklch(0.46 0.16 55)' }}><Download size={14} /></button>
-                <button type="button" onClick={() => del(f)} title="Delete" className="p-1.5 text-[#c0392b] hover:bg-[#fde7e9] rounded"><Trash2 size={14} /></button>
+                <button type="button" onClick={() => del(f)} title="Delete" className="p-1.5 text-[var(--bad, #c0392b)] hover:bg-[#fde7e9] rounded"><Trash2 size={14} /></button>
               </li>
             ))}
           </ul>

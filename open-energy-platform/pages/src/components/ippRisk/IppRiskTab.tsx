@@ -10,7 +10,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 
@@ -97,7 +97,7 @@ const TIER_COLOR: Record<RiskTier, string> = {
 };
 
 const STATUS_COLOR: Record<RiskStatus, string> = {
-  identified:       'bg-[#eef2f7] text-[#2d3748]',
+  identified:       'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
   assessed:         'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   quantified:       'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   response_planned: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -107,10 +107,10 @@ const STATUS_COLOR: Record<RiskStatus, string> = {
   responding:       'bg-orange-100 text-orange-800',
   outcome_recorded: 'bg-lime-100 text-lime-700',
   closed:           'bg-emerald-100 text-emerald-800',
-  archived:         'bg-[#eef2f7] text-[#6b7685]',
+  archived:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   escalated:        'bg-red-200 text-red-900',
-  deferred:         'bg-[#eef2f7] text-[#3d4756]',
-  cancelled:        'bg-[#e8ecf0] text-[#6b7685]',
+  deferred:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  cancelled:        'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #6b7685)]',
   overdue_flagged:  'bg-red-50 text-red-600',
 };
 
@@ -155,7 +155,7 @@ const SLA_HOURS_BY_TIER: Record<RiskTier, number> = {
 };
 
 function scoreColor(score: number | null): string {
-  if (!score) return 'text-[#9aa5b4]';
+  if (!score) return 'text-[var(--ink-2, #9aa5b4)]';
   if (score >= 20) return 'text-red-700 font-bold';
   if (score >= 15) return 'text-red-500 font-semibold';
   if (score >= 9) return 'text-orange-600 font-medium';
@@ -206,12 +206,20 @@ export default function IppRiskTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterTier && r.risk_tier !== filterTier) return false;
-    if (filterCat && r.risk_category !== filterCat) return false;
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    return true;
-  }), [rows, filterTier, filterCat, filterStatus]);
+  const filtered = useMemo(() => {
+    const term = (s: RiskStatus) => ['closed', 'archived', 'cancelled'].includes(s) ? 1 : 0;
+    // primary view: open first, then breached, then biggest exposure (risk_score) first
+    return rows.filter(r => {
+      if (filterTier && r.risk_tier !== filterTier) return false;
+      if (filterCat && r.risk_category !== filterCat) return false;
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      return (b.risk_score ?? 0) - (a.risk_score ?? 0);
+    });
+  }, [rows, filterTier, filterCat, filterStatus]);
 
   async function handleAction(action: string) {
     if (!selected) return;
@@ -305,13 +313,13 @@ export default function IppRiskTab({ readOnly = false }: Props) {
             <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
           ))}
         </select>
-        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} risks</span>
+        <span className="text-xs text-[var(--ink-2, #9aa5b4)] ml-auto">{filtered.length} risks</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-[#c2873a] text-white rounded px-3 py-1 hover:bg-[#a3702f]" onClick={() => setShowCreate(true)}>
             + Identify risk
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[var(--s2, #eef2f7)]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -320,36 +328,36 @@ export default function IppRiskTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-[#9aa5b4]">Loading risk register…</div>}
+      {loading && <div className="text-xs text-[var(--ink-2, #9aa5b4)]">Loading risk register…</div>}
 
       {/* Risk table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
+        <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle, #dde4ec)]">
           <table className="w-full text-xs">
-            <thead className="bg-[#f8fafc]">
+            <thead className="bg-[var(--s1, #f8fafc)]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">ID</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">P×I</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Category</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Strategy</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Project</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">ID</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Title</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">P×I</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Category</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Strategy</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Project</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-[#9aa5b4]">No risks in register</td></tr>
+                <tr><td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-[var(--ink-2, #9aa5b4)]">No risks in register</td></tr>
               )}
               {filtered.map(row => (
-                <tr key={row.id} className="border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer" onClick={() => setSelected(row)}>
-                  <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.id}</td>
+                <tr key={row.id} className="border-t border-[var(--s2, #eef2f7)] hover:bg-[var(--s2, #eef2f7)] cursor-pointer" onClick={() => setSelected(row)}>
+                  <td className="px-3 py-2 font-mono text-[var(--ink-2, #9aa5b4)]">{row.id}</td>
                   <td className="px-3 py-2 max-w-[180px]">
-                    <span className="font-medium text-[#1e2a38] truncate block">{row.title}</span>
+                    <span className="font-medium text-[var(--ink, #1e2a38)] truncate block">{row.title}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${TIER_COLOR[row.risk_tier]}`}>
@@ -361,13 +369,13 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                       ? `${row.probability_score}×${row.impact_score}=${row.risk_score}`
                       : '—'}
                   </td>
-                  <td className="px-3 py-2 capitalize text-[#3d4756]">{row.risk_category.replace('_', ' ')}</td>
+                  <td className="px-3 py-2 capitalize text-[var(--ink-2, #3d4756)]">{row.risk_category.replace('_', ' ')}</td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
                       {statusLabel(row.chain_status).text}
                     </span>
                   </td>
-                  <td className="px-3 py-2 capitalize text-[#3d4756]">{row.response_strategy ?? '—'}</td>
+                  <td className="px-3 py-2 capitalize text-[var(--ink-2, #3d4756)]">{row.response_strategy ?? '—'}</td>
                   <td className="px-3 py-2">
                     {row.sla_remaining_hours_live != null ? (
                       <SlaCountdown
@@ -376,7 +384,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                         breached={!!row.sla_breached}
                         compact
                       />
-                    ) : <span className="text-[#9aa5b4]">—</span>}
+                    ) : <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1">
@@ -386,7 +394,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                       {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed" cls="bg-red-200 text-red-800" />}
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-[#6b7685] max-w-[100px] truncate">{row.project_name ?? row.project_id}</td>
+                  <td className="px-3 py-2 text-[var(--ink-2, #6b7685)] max-w-[100px] truncate">{row.project_name ?? row.project_id}</td>
                   {!readOnly && (
                     <td className="px-3 py-2">
                       <button type="button" className="text-xs text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
@@ -402,7 +410,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setSelected(null); setActionResult(null); }}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -415,15 +423,15 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                   {!!selected.is_safety && <span className="px-1 py-0.5 rounded text-[10px] bg-red-100 text-red-700">SAFETY</span>}
                   {!!selected.is_reportable && <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>}
                 </div>
-                <h3 className="font-semibold text-[#0f1c2e]">{selected.title}</h3>
-                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
+                <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">{selected.title}</h3>
+                <p className="text-xs text-[var(--ink-2, #9aa5b4)] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
               </div>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state progress */}
-            <div className="mb-4 px-3 py-3 bg-[#f8fafc] rounded-lg">
-              <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide mb-2">Treatment progress</p>
+            <div className="mb-4 px-3 py-3 bg-[var(--s1, #f8fafc)] rounded-lg">
+              <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase tracking-wide mb-2">Treatment progress</p>
               <ChainStateBar
                 allStates={MAIN_RISK_STATES}
                 currentState={selected.chain_status}
@@ -444,7 +452,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
               </div>
             )}
 
-            {selected.description && <p className="text-sm text-[#3d4756] mb-4">{selected.description}</p>}
+            {selected.description && <p className="text-sm text-[var(--ink-2, #3d4756)] mb-4">{selected.description}</p>}
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <DetailRow label="Category" value={selected.risk_category.replace('_', ' ')} />
@@ -489,7 +497,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
 
             {!readOnly && (
               <div>
-                <p className="text-xs font-medium text-[#6b7685] mb-2">Available actions</p>
+                <p className="text-xs font-medium text-[var(--ink-2, #6b7685)] mb-2">Available actions</p>
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label, danger }) => (
                     <button type="button"
@@ -504,7 +512,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {ACTIONS[selected.chain_status]?.length === 0 && (
-                    <p className="text-xs text-[#9aa5b4]">No actions — terminal state.</p>
+                    <p className="text-xs text-[var(--ink-2, #9aa5b4)]">No actions — terminal state.</p>
                   )}
                 </div>
               </div>
@@ -516,10 +524,10 @@ export default function IppRiskTab({ readOnly = false }: Props) {
       {/* Create modal */}
       {showCreate && !readOnly && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-[#0f1c2e]">Identify new risk</h3>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">Identify new risk</h3>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             <div className="space-y-3">
@@ -544,17 +552,17 @@ export default function IppRiskTab({ readOnly = false }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <FormField label={`Probability (P${newProb})`}>
                   <input type="range" min={1} max={5} value={newProb} onChange={e => setNewProb(Number(e.target.value))} className="w-full" />
-                  <p className="text-[10px] text-[#9aa5b4] mt-0.5">{['Rare','Unlikely','Possible','Likely','Almost certain'][newProb-1]}</p>
+                  <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] mt-0.5">{['Rare','Unlikely','Possible','Likely','Almost certain'][newProb-1]}</p>
                 </FormField>
                 <FormField label={`Impact (I${newImpact})`}>
                   <input type="range" min={1} max={5} value={newImpact} onChange={e => setNewImpact(Number(e.target.value))} className="w-full" />
-                  <p className="text-[10px] text-[#9aa5b4] mt-0.5">{['Negligible','Minor','Moderate','Major','Catastrophic'][newImpact-1]}</p>
+                  <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] mt-0.5">{['Negligible','Minor','Moderate','Major','Catastrophic'][newImpact-1]}</p>
                 </FormField>
               </div>
-              <div className="bg-[#f8fafc] rounded p-2 text-center">
+              <div className="bg-[var(--s1, #f8fafc)] rounded p-2 text-center">
                 <span className="text-xs font-medium">Risk score: </span>
                 <span className={`text-sm font-bold ${scoreColor(newProb * newImpact)}`}>{newProb}×{newImpact}={newProb * newImpact}</span>
-                <span className="text-xs text-[#6b7685] ml-2">({TIER_LABEL[
+                <span className="text-xs text-[var(--ink-2, #6b7685)] ml-2">({TIER_LABEL[
                   newProb * newImpact >= 20 ? 'catastrophic' :
                   newProb * newImpact >= 15 ? 'critical_impact' :
                   newProb * newImpact >= 9 ? 'high_impact' :
@@ -579,7 +587,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
             {error && <div className="text-xs text-red-600 mt-3">{error}</div>}
 
             <div className="flex justify-end gap-2 mt-4">
-              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[var(--s2, #eef2f7)]" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="button"
                 className="text-xs bg-[#c2873a] text-white rounded px-3 py-1.5 hover:bg-[#a3702f] disabled:opacity-50"
                 disabled={!newTitle || !newProject || createLoading}
@@ -596,10 +604,10 @@ export default function IppRiskTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[var(--ink, #2d3748)]';
   return (
-    <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
-      <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>
+    <div className="bg-surface-v2 rounded-lg border border-[var(--border-subtle, #dde4ec)] p-3">
+      <p className="text-[10px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-bold mt-0.5 ${cls}`}>{value}</p>
     </div>
   );
@@ -612,8 +620,8 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide">{label}</p>
-      <p className="text-xs text-[#2d3748] font-mono">{value}</p>
+      <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-[var(--ink, #2d3748)] font-mono">{value}</p>
     </div>
   );
 }
@@ -621,7 +629,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#3d4756] mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[var(--ink-2, #3d4756)] mb-1">{label}</label>
       {children}
     </div>
   );

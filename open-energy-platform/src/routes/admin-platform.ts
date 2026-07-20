@@ -257,6 +257,22 @@ pa.get('/plans', async (c) => {
   return c.json({ success: true, data: rows });
 });
 
+// List each tenant with its active subscription plan — feeds the AdminPlatform
+// "Subscriptions" tab (columns: name / active_plan_id / tier / status). One row
+// per tenant; POST /subscriptions attaches a plan.
+pa.get('/subscriptions', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
+  const rs = await c.env.DB.prepare(
+    `SELECT t.id, t.name, t.tier, t.status,
+            (SELECT plan_id FROM tenant_subscriptions s
+              WHERE s.tenant_id = t.id AND s.status = 'active'
+              ORDER BY s.period_end DESC LIMIT 1) AS active_plan_id
+       FROM tenants t ORDER BY t.created_at DESC LIMIT 500`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
 pa.post('/subscriptions', async (c) => {
   const user = getCurrentUser(c);
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);

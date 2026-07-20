@@ -41,10 +41,10 @@ export function PrintPackButton({ kind, ref: refId, label, className }: Props) {
 
   return (
     <>
-      <button type="button" onClick={open} disabled={busy} className={className || 'h-8 px-3 rounded border border-[#dde4ec] text-[11px] font-semibold inline-flex items-center gap-1 disabled:opacity-50'}>
+      <button type="button" onClick={open} disabled={busy} className={className || 'h-8 px-3 rounded border border-[var(--border-subtle, #dde4ec)] text-[11px] font-semibold inline-flex items-center gap-1 disabled:opacity-50'}>
         <Printer size={12}/> {busy ? 'Building…' : (label || 'Print pack')}
       </button>
-      {err && <span className="ml-2 text-[11px] text-[#c0392b]">{err}</span>}
+      {err && <span className="ml-2 text-[11px] text-[var(--bad, #c0392b)]">{err}</span>}
     </>
   );
 }

@@ -4,7 +4,7 @@
 // Inputs (operator can override every default):
 //   • affected_load_mw — pulled from latest grid_outage_update if present
 //   • duration_hours   — derived from response timeline or operator entry
-//   • spot_price       — fetched from latest VWAP mark via /trading/marks
+//   • spot_price       — fetched from latest VWAP mark via /trader-risk/mark-prices
 //                        (falls back to 1500 R/MWh)
 //
 // Outputs: lost MWh, revenue at risk (R), CO₂-tonne avoided if it's a
@@ -35,11 +35,11 @@ export function OutageImpact({ affectedLoadMw, durationHours, techType }: Props)
   useEffect(() => {
     if (priceFetched) return;
     setPriceFetched(true);
-    api.get('/trading/marks')
+    api.get('/trader-risk/mark-prices')
       .then((r) => {
-        const marks = (r.data?.data?.marks || r.data?.data || []) as Array<{ mark_zar_per_mwh?: number; energy_type?: string }>;
+        const marks = (r.data?.data?.marks || r.data?.data || []) as Array<{ mark_price_zar_mwh?: number; energy_type?: string }>;
         const power = marks.find((m) => (m.energy_type || '').includes('power'));
-        if (power?.mark_zar_per_mwh && power.mark_zar_per_mwh > 0) setPrice(Math.round(power.mark_zar_per_mwh));
+        if (power?.mark_price_zar_mwh && power.mark_price_zar_mwh > 0) setPrice(Math.round(power.mark_price_zar_mwh));
       })
       .catch(() => { /* keep default */ });
   }, [priceFetched]);
@@ -54,9 +54,9 @@ export function OutageImpact({ affectedLoadMw, durationHours, techType }: Props)
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Outage impact calculator</div>
-        <div className="text-[11px] text-[#6b7685]">Lost generation × spot price — adjust inputs to model recovery scenarios</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Outage impact calculator</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Lost generation × spot price — adjust inputs to model recovery scenarios</div>
       </header>
 
       <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
@@ -74,7 +74,7 @@ export function OutageImpact({ affectedLoadMw, durationHours, techType }: Props)
               tone={out.isRenewable ? 'bad' : 'good'} />
       </div>
 
-      <footer className="px-4 py-2 border-t border-[#eef2f7] text-[11px] text-[#6b7685]">
+      <footer className="px-4 py-2 border-t border-[var(--s2, #eef2f7)] text-[11px] text-[var(--ink-2, #6b7685)]">
         Grid emissions factor: {GRID_CO2_T_PER_MWH} tCO₂e/MWh (Eskom system average).
         {' '}{out.isRenewable
           ? 'Renewable outage means dispatchable thermal backfills the gap, so emissions rise.'
@@ -90,13 +90,13 @@ function Field({ label, value, onChange, step, min, max, hint }: {
 }) {
   return (
     <label className="block text-[11px]" title={hint}>
-      <span className="font-medium text-[#3d4756]">{label}</span>
+      <span className="font-medium text-[var(--ink-2, #3d4756)]">{label}</span>
       <input
         type="number"
         value={Number.isFinite(value) ? value : 0}
         min={min} max={max} step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 w-full h-8 px-2 rounded border border-[#dde4ec] text-[12px] font-mono"
+        className="mt-1 w-full h-8 px-2 rounded border border-[var(--border-subtle, #dde4ec)] text-[12px] font-mono"
       />
     </label>
   );
@@ -104,10 +104,10 @@ function Field({ label, value, onChange, step, min, max, hint }: {
 
 function Tile({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: string }) {
   const map: Record<string, string> = {
-    good: 'bg-[#e7f4ea] text-[#1a8a5b]',
+    good: 'bg-[#e7f4ea] text-[var(--good, #1a8a5b)]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
-    bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
+    bad:  'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #c0392b)]',
+    info: 'bg-[var(--s2, #eef2f7)] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded-lg p-3 ${map[tone] || map.info}`}>

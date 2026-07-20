@@ -46,8 +46,8 @@ const fmtZAR = (n: number | null): string =>
   n == null ? 'on application' : 'R' + Math.round(n).toLocaleString('en-ZA');
 
 function ScoreBadge({ score }: { score: number }) {
-  const tone = score >= 75 ? '#15803d' : score >= 50 ? '#b45309' : '#64748b';
-  const bg = score >= 75 ? '#dcfce7' : score >= 50 ? '#fef3c7' : '#f1f5f9';
+  const tone = score >= 75 ? 'var(--good, #15803d)' : score >= 50 ? '#b45309' : 'var(--ink-2, #64748b)';
+  const bg = score >= 75 ? 'color-mix(in oklab, var(--good) 15%, var(--s1))' : score >= 50 ? 'color-mix(in oklab, var(--warn) 15%, var(--s1))' : '#f1f5f9';
   return (
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ color: tone, background: bg }}>
       {score}% fit
@@ -64,7 +64,7 @@ function OfferCard({
       onClick={onToggle}
       className="w-full text-left rounded-lg border p-3 transition-colors"
       style={{
-        borderColor: selected ? 'oklch(0.46 0.16 55)' : '#e2e8f0',
+        borderColor: selected ? 'oklch(0.46 0.16 55)' : 'var(--border-subtle, #e2e8f0)',
         background: selected ? 'oklch(0.97 0.02 55)' : '#fff',
         boxShadow: selected ? '0 0 0 1px oklch(0.46 0.16 55)' : 'none',
       }}
@@ -74,7 +74,7 @@ function OfferCard({
           className="mt-0.5 h-4 w-4 rounded flex items-center justify-center shrink-0"
           style={{
             background: selected ? 'oklch(0.46 0.16 55)' : '#fff',
-            border: selected ? 'none' : '1.5px solid #cbd5e1',
+            border: selected ? 'none' : '1.5px solid var(--border-strong, #cbd5e1)',
           }}
         >
           {selected && <OEIcon name="check" size={11} className="text-white" />}
@@ -161,7 +161,7 @@ export function FundingOptionsPanel({ projectId }: { projectId: string }) {
     <div className="p-4 space-y-4">
       {engagedCount != null && (
         <div className="rounded-lg border p-3 text-[13px] flex items-center gap-2"
-          style={{ borderColor: '#86efac', background: '#f0fdf4', color: '#15803d' }}>
+          style={{ borderColor: '#86efac', background: '#f0fdf4', color: 'var(--good, #15803d)' }}>
           <OEIcon name="check" size={15} />
           Engaged {engagedCount} offer{engagedCount === 1 ? '' : 's'}. Each offeror has a new request in their inbox; track them on the Deal Desk.
         </div>
@@ -196,7 +196,7 @@ export function FundingOptionsPanel({ projectId }: { projectId: string }) {
         </section>
       )}
 
-      <div className="sticky bottom-0 bg-white border-t pt-3 space-y-2">
+      <div className="sticky bottom-0 bg-surface-v2 border-t pt-3 space-y-2">
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}

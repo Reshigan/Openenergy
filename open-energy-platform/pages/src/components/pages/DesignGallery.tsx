@@ -166,14 +166,14 @@ const PERSONAS: Persona[] = [
 ];
 
 const PERSONA_TINT: Record<Persona, { bg: string; fg: string }> = {
-  'IPP':           { bg: '#fef3e6', fg: '#b04e0f' },
-  'Offtaker':      { bg: '#ebf7ef', fg: '#0e6027' },
-  'Lender':        { bg: '#fef0e0', fg: '#8a4b00' },
-  'Carbon Fund':   { bg: '#e7f4ea', fg: '#1a8a5b' },
-  'Grid Operator': { bg: '#d4e7f6', fg: '#1a5d97' },
-  'Regulator':     { bg: '#f3e6f9', fg: '#5d3a7e' },
-  'Trader':        { bg: '#fde7e9', fg: '#a8385c' },
-  'Cross-role':    { bg: '#eef1f4', fg: '#3d4756' },
+  'IPP':           { bg: 'var(--s2, #fef3e6)', fg: '#b04e0f' },
+  'Offtaker':      { bg: 'var(--s2, #ebf7ef)', fg: '#0e6027' },
+  'Lender':        { bg: 'var(--s2, #fef0e0)', fg: '#8a4b00' },
+  'Carbon Fund':   { bg: 'var(--s2, #e7f4ea)', fg: 'var(--good, #1a8a5b)' },
+  'Grid Operator': { bg: 'var(--s2, #d4e7f6)', fg: 'var(--info, #1a5d97)' },
+  'Regulator':     { bg: 'var(--s2, #f3e6f9)', fg: '#5d3a7e' },
+  'Trader':        { bg: 'var(--s2, #fde7e9)', fg: '#a8385c' },
+  'Cross-role':    { bg: 'var(--s2, #eef1f4)', fg: 'var(--ink-2, #3d4756)' },
 };
 
 export function DesignGallery(): React.JSX.Element {
@@ -181,16 +181,16 @@ export function DesignGallery(): React.JSX.Element {
   const visible = filter === 'All' ? SCREENS : SCREENS.filter((s) => s.persona === filter);
 
   return (
-    <div className="min-h-screen pb-16" style={{ background: '#f5f8fb' }}>
-      <header className="border-b" style={{ background: '#fff', borderColor: '#dde4ec' }}>
+    <div className="min-h-screen pb-16" style={{ background: 'var(--s0, #f5f8fb)' }}>
+      <header className="border-b" style={{ background: 'var(--s1, #fff)', borderColor: 'var(--border-subtle, #dde4ec)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-[11px] uppercase tracking-[0.18em] font-mono" style={{ color: '#525a66' }}>
+          <p className="text-[11px] uppercase tracking-[0.18em] font-mono" style={{ color: 'var(--ink-2, #525a66)' }}>
             Design references · Stitch · Consolidated Energy Cockpit
           </p>
-          <h1 className="mt-1 text-[32px] font-bold tracking-tight" style={{ color: '#0f1c2e' }}>
+          <h1 className="mt-1 text-[32px] font-bold tracking-tight" style={{ color: 'var(--ink, #0f1c2e)' }}>
             Design Gallery
           </h1>
-          <p className="mt-1 text-[14px] max-w-2xl" style={{ color: '#3d4756' }}>
+          <p className="mt-1 text-[14px] max-w-2xl" style={{ color: 'var(--ink-2, #3d4756)' }}>
             Hi-fi reference designs from the Stitch &quot;NXT Open Energy Platform&quot; project, paired with the new role
             workbench tabs added in migration 047. Each card shows the design persona, the SPA route it relates to,
             and a thumbnail of the full Stitch mock.
@@ -221,15 +221,15 @@ export function DesignGallery(): React.JSX.Element {
           {visible.map((s) => (
             <article
               key={s.id}
-              className="bg-white rounded-lg border overflow-hidden flex flex-col"
-              style={{ borderColor: '#dde4ec' }}
+              className="bg-[var(--s1,#fff)] rounded-lg border overflow-hidden flex flex-col"
+              style={{ borderColor: 'var(--border-subtle, #dde4ec)' }}
             >
               <a
                 href={s.thumb}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-[#f8fafc] border-b"
-                style={{ borderColor: '#eef2f7', aspectRatio: '16 / 10' }}
+                className="block bg-[var(--s1, #f8fafc)] border-b"
+                style={{ borderColor: 'var(--s2, #eef2f7)', aspectRatio: '16 / 10' }}
               >
                 <img
                   src={s.thumb}
@@ -248,10 +248,10 @@ export function DesignGallery(): React.JSX.Element {
                   >
                     {s.persona}
                   </span>
-                  <code className="text-[10px] font-mono" style={{ color: '#525a66' }}>{s.id.slice(0, 8)}…</code>
+                  <code className="text-[10px] font-mono" style={{ color: 'var(--ink-2, #525a66)' }}>{s.id.slice(0, 8)}…</code>
                 </div>
-                <h2 className="text-[16px] font-semibold leading-tight" style={{ color: '#0f1c2e' }}>{s.title}</h2>
-                <p className="mt-1 text-[12px] leading-snug flex-1" style={{ color: '#525a66' }}>{s.reads}</p>
+                <h2 className="text-[16px] font-semibold leading-tight" style={{ color: 'var(--ink, #0f1c2e)' }}>{s.title}</h2>
+                <p className="mt-1 text-[12px] leading-snug flex-1" style={{ color: 'var(--ink-2, #525a66)' }}>{s.reads}</p>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <Link
                     to={s.route}
@@ -276,12 +276,12 @@ export function DesignGallery(): React.JSX.Element {
         </div>
 
         {visible.length === 0 && (
-          <div className="text-center py-12 text-[14px]" style={{ color: '#525a66' }}>
+          <div className="text-center py-12 text-[14px]" style={{ color: 'var(--ink-2, #525a66)' }}>
             No designs for this persona yet — generate one in Stitch and add it to the gallery.
           </div>
         )}
 
-        <p className="mt-10 text-[12px]" style={{ color: '#525a66' }}>
+        <p className="mt-10 text-[12px]" style={{ color: 'var(--ink-2, #525a66)' }}>
           Designs live in Stitch project <code className="font-mono">2724118800035624930</code> (&quot;NXT Open Energy Platform&quot;).
           Add more via the Stitch MCP tool <code className="font-mono">generate_screen_from_text</code>.
         </p>
@@ -301,7 +301,7 @@ function FilterChip({
     ? { background: tint.fg, color: '#fff', borderColor: tint.fg }
     : active
       ? { background: 'oklch(0.46 0.16 55)', color: '#fff', borderColor: '#c2873a' }
-      : { background: '#fff', color: '#0f1c2e', borderColor: '#dde4ec' };
+      : { background: 'var(--s1, #fff)', color: 'var(--ink, #0f1c2e)', borderColor: 'var(--border-subtle, #dde4ec)' };
   return (
     <button type="button"
       onClick={onClick}

@@ -6,7 +6,7 @@ import {
   statusChipClass,
   STATUS_TONE_CLASS,
   __demo,
-} from '../pages/src/meridian/ease/statusLabel';
+} from '../pages/src/shared/ease/statusLabel';
 
 describe('statusLabel', () => {
   it('passes its own self-check demo', () => {

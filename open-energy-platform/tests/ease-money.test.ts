@@ -1,7 +1,7 @@
 // Ease Kit money/ranking primitive. Pure (the Bucket import is type-only, erased),
 // so it runs in the backend vitest project without pulling the SPA bundle.
 import { describe, it, expect } from 'vitest';
-import { fmtZar, zarCompact, zarMagnitudeClass, atRisk, byAtRisk, __demo } from '../pages/src/meridian/ease/money';
+import { fmtZar, zarCompact, zarMagnitudeClass, atRisk, byAtRisk, __demo } from '../pages/src/shared/ease/money';
 
 describe('ease/money', () => {
   it('formats ZAR in compact magnitude bands', () => {

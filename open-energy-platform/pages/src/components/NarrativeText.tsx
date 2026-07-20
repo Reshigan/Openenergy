@@ -125,14 +125,14 @@ function renderInline(src: string): React.ReactNode[] {
         <code
           key={`c${key++}`}
           className="px-1 py-[1px] rounded font-mono text-[12px]"
-          style={{ background: '#eef0f3', color: '#0f1c2e' }}
+          style={{ background: 'var(--s2, #eef0f3)', color: 'var(--ink, #0f1c2e)' }}
         >
           {m[1]}
         </code>,
       );
     } else if (m[2]) {
       parts.push(
-        <strong key={`b${key++}`} className="font-semibold" style={{ color: '#1a2033' }}>
+        <strong key={`b${key++}`} className="font-semibold" style={{ color: 'var(--ink, #1a2033)' }}>
           {m[2]}
         </strong>,
       );
@@ -200,7 +200,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
 
   if (!text || !text.trim() || tokens.length === 0) {
     return emptyLabel ? (
-      <div className="text-[13px]" style={{ color: '#6b7685' }}>
+      <div className="text-[13px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
         {emptyLabel}
       </div>
     ) : null;
@@ -208,21 +208,21 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
 
   const container =
     tone === 'card'
-      ? 'rounded-md border p-4 bg-white'
+      ? 'rounded-md border p-4 bg-surface-v2'
       : tone === 'bubble'
         ? 'rounded-md p-3'
         : '';
   const containerStyle =
     tone === 'card'
-      ? { borderColor: '#dde4ec' }
+      ? { borderColor: 'var(--border-subtle, #dde4ec)' }
       : tone === 'bubble'
-        ? { background: '#f7f8f9' }
+        ? { background: 'var(--s2, #f7f8f9)' }
         : {};
 
   return (
     <div
       className={`text-[13px] leading-relaxed space-y-2 ${container} ${className || ''}`.trim()}
-      style={{ color: '#0f1c2e', ...containerStyle }}
+      style={{ color: 'var(--ink, #0f1c2e)', ...containerStyle }}
     >
       {tokens.map((tok, idx) => {
         if (tok.type === 'h') {
@@ -233,7 +233,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
               key={idx}
               className={`${size} font-semibold`}
               style={{
-                color: '#1a2033',
+                color: 'var(--ink, #1a2033)',
                 marginTop: idx === 0 ? 0 : 10,
                 marginBottom: 2,
               }}
@@ -272,7 +272,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
             <blockquote
               key={idx}
               className="pl-3 py-1 text-[12.5px] italic"
-              style={{ borderLeft: '3px solid #d0d5dd', color: '#4a4e55' }}
+              style={{ borderLeft: '3px solid var(--border-strong, #d0d5dd)', color: 'var(--ink-2, #4a4e55)' }}
             >
               {renderInline(tok.text)}
             </blockquote>
@@ -283,14 +283,14 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
             <pre
               key={idx}
               className="rounded-md p-3 overflow-x-auto text-[12px] leading-relaxed font-mono"
-              style={{ background: '#f4f5f7', color: '#1a2033' }}
+              style={{ background: 'var(--s2, #f4f5f7)', color: 'var(--ink, #1a2033)' }}
             >
               {tok.text}
             </pre>
           );
         }
         if (tok.type === 'hr') {
-          return <hr key={idx} style={{ borderColor: '#dde4ec', margin: '6px 0' }} />;
+          return <hr key={idx} style={{ borderColor: 'var(--border-subtle, #dde4ec)', margin: '6px 0' }} />;
         }
         return null;
       })}

@@ -138,8 +138,8 @@ function RevenueTicker({ baseToday, blendedTariff, totalMw, availabilityPct }: {
   return (
     <div className="flex items-center gap-3 pr-2">
       <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1a8a5b] opacity-75" />
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#1a8a5b]" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--good, #1a8a5b)] opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--good, #1a8a5b)]" />
       </span>
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wider text-white/70">Generating</div>
@@ -156,14 +156,14 @@ function RevenueTicker({ baseToday, blendedTariff, totalMw, availabilityPct }: {
 function HeroStrip({ kpis }: { kpis: FleetKpis | null }) {
   if (!kpis) return <Skeleton variant="card" rows={1} />;
   return (
-    <div className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
+    <div className="rounded-xl border p-5" style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>O&amp;M · Fleet Overview</div>
-          <h1 className="font-display text-[22px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>
+          <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>O&amp;M · Fleet Overview</div>
+          <h1 className="font-display text-[22px] font-bold tracking-tight mt-0.5" style={{ color: 'var(--ink, oklch(0.15 0.025 250))' }}>
             {kpis.total_sites} sites · {kpis.total_mw.toFixed(1)} MW · ZA portfolio
           </h1>
-          <p className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>
             Real-time asset intelligence — every fault carries a financial price tag.
           </p>
         </div>
@@ -198,18 +198,18 @@ function Kpi({ icon, label, value, sub, tone = 'info' }: {
   icon: React.ReactNode; label: string; value: string; sub?: string; tone?: 'good' | 'warn' | 'bad' | 'info';
 }) {
   const tones: Record<string, string> = {
-    good: 'text-[#1f7a4a]',
-    warn: 'text-[#b45309]',
-    bad:  'text-[#c0392b]',
+    good: 'text-[var(--good, #1f7a4a)]',
+    warn: 'text-[var(--warn, #b45309)]',
+    bad:  'text-[var(--bad, #c0392b)]',
     info: '',
   };
   return (
-    <div className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{icon}{label}</div>
-      <div className={`mt-1 font-mono font-bold text-[18px] ${tones[tone]}`} style={{ fontVariantNumeric: 'tabular-nums', color: tones[tone] ? undefined : 'oklch(0.15 0.025 250)' }}>
+    <div className="rounded-lg p-3" style={{ background: 'var(--s1, oklch(0.96 0.003 250))', border: '1px solid var(--border-subtle, oklch(0.90 0.004 250))' }}>
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>{icon}{label}</div>
+      <div className={`mt-1 font-mono font-bold text-[18px] ${tones[tone]}`} style={{ fontVariantNumeric: 'tabular-nums', color: tones[tone] ? undefined : 'var(--ink, oklch(0.15 0.025 250))' }}>
         {value}
       </div>
-      {sub && <div className="text-[10px] mt-0.5" style={{ color: 'oklch(0.55 0.008 250)' }}>{sub}</div>}
+      {sub && <div className="text-[10px] mt-0.5" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>{sub}</div>}
     </div>
   );
 }
@@ -256,7 +256,7 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
                 <td className="text-right font-mono">{formatZAR(f.hourly_loss_zar)}</td>
                 <td className="text-right font-mono widget-tone-bad-text">{formatZAR(f.total_loss_zar)}</td>
                 <td className="text-right">
-                  <span className="text-[11px] font-semibold text-[#6b7685]">
+                  <span className="text-[11px] font-semibold text-[var(--ink-2, #6b7685)]">
                     {f.status === 'open' ? 'Open' : f.status === 'acknowledged' ? 'Ack' : 'Tracking'}
                   </span>
                 </td>
@@ -287,13 +287,13 @@ function FleetHealthGrid({ sites }: { sites: SiteRow[] }) {
             : s.open_faults > 0 ? 'widget-tone-amber' : 'widget-tone-good';
           return (
             <Link key={s.id} to={`/esums/sites/${s.id}`}
-                  className="rounded-lg border border-[#e2e8f0] p-3 hover:border-[oklch(0.46_0.16_55)] hover:bg-[#f8fafc] transition-colors block">
+                  className="rounded-lg border border-[var(--border-subtle, #e2e8f0)] p-3 hover:border-[oklch(0.46_0.16_55)] hover:bg-[var(--s1, #f8fafc)] transition-colors block">
               <div className="flex items-center gap-2">
                 <Icon size={14} className="text-[oklch(0.46_0.16_55)]" />
-                <span className="text-[12px] font-semibold text-[#0f1c2e] flex-1 min-w-0 truncate">{s.name}</span>
+                <span className="text-[12px] font-semibold text-[var(--ink, #0f1c2e)] flex-1 min-w-0 truncate">{s.name}</span>
                 <span className={`inline-flex w-2 h-2 rounded-full ${tone}`} />
               </div>
-              <div className="mt-1 flex items-center justify-between text-[11px] text-[#6b7685]">
+              <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--ink-2, #6b7685)]">
                 <span>{s.capacity_mw.toFixed(1)} MW · {s.technology}</span>
                 <span className="font-mono">
                   {s.open_faults > 0 ? `${s.open_faults} faults` : 'healthy'}
@@ -340,14 +340,14 @@ function AiBriefing({ briefing }: { briefing: Briefing | null }) {
           </div>
         </div>
       </header>
-      <ul className="divide-y divide-[#eef2f7]">
+      <ul className="divide-y divide-[var(--s2, #eef2f7)]">
         {briefing.insights.slice(0, 6).map((i, idx) => (
           <li key={idx} className="px-4 py-3">
             <div className="flex items-start gap-2">
               <BriefingIcon type={i.type} />
               <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-semibold text-[#0f1c2e]">{i.title}</div>
-                <div className="text-[11px] text-[#6b7685] mt-0.5 line-clamp-2">{i.body}</div>
+                <div className="text-[12px] font-semibold text-[var(--ink, #0f1c2e)]">{i.title}</div>
+                <div className="text-[11px] text-[var(--ink-2, #6b7685)] mt-0.5 line-clamp-2">{i.body}</div>
                 {i.estimated_loss_zar ? (
                   <div className="text-[10px] widget-tone-bad-text font-mono mt-0.5">
                     Est. impact: {formatZAR(i.estimated_loss_zar)}
@@ -368,7 +368,7 @@ function AiBriefing({ briefing }: { briefing: Briefing | null }) {
 
 function BriefingIcon({ type }: { type: Insight['type'] }) {
   const map = {
-    revenue_alert: <Banknote size={14} className="text-[#c0392b] mt-0.5" />,
+    revenue_alert: <Banknote size={14} className="text-[var(--bad, #c0392b)] mt-0.5" />,
     sla_warning:   <Clock    size={14} className="text-[#b04e0f] mt-0.5" />,
     predictive:    <Brain    size={14} className="text-[#6b3a82] mt-0.5" />,
     maintenance:   <Gauge    size={14} className="text-[oklch(0.46_0.16_55)] mt-0.5" />,
@@ -396,19 +396,19 @@ function WoKanban({ wos }: { wos: WoRow[] }) {
           <div className="widget-card-title">Active work orders</div>
           <div className="widget-card-subtitle">Drag-to-reassign in the WO Board · countdown shown for SLA</div>
         </div>
-        <Link to="/ledger/om_work_order" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
+        <Link to="/v2/find?chain_key=om_work_order" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-3">
         {lanes.map((lane) => (
-          <div key={lane.key} className="rounded border border-[#eef2f7] bg-[#fafbfd] p-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685] font-bold mb-2">
+          <div key={lane.key} className="rounded border border-[var(--s2, #eef2f7)] bg-[var(--s1, #fafbfd)] p-2">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)] font-bold mb-2">
               {lane.label} <span className="font-mono">({lane.cards.length})</span>
             </div>
             <div className="space-y-2">
               {lane.cards.slice(0, 5).map((w) => (
                 <WoCard key={w.id} wo={w} />
               ))}
-              {!lane.cards.length && <div className="text-[11px] text-[#6b7685] italic px-1">empty</div>}
+              {!lane.cards.length && <div className="text-[11px] text-[var(--ink-2, #6b7685)] italic px-1">empty</div>}
             </div>
           </div>
         ))}
@@ -428,15 +428,15 @@ function WoCard({ wo }: { wo: WoRow }) {
   const minsLeft = Math.round((new Date(wo.sla_deadline).getTime() - Date.now()) / 60_000);
   const slaTone = minsLeft < 0 ? 'widget-tone-bad-text' : minsLeft < 60 ? 'widget-tone-warn-text' : 'widget-tone-good-text';
   return (
-    <Link to={`/thread/om_work_order/${wo.id}`}
-          className="block rounded bg-white border border-[#e2e8f0] p-2 text-[11px] hover:border-[oklch(0.46_0.16_55)] transition-colors">
+    <Link to={`/v2/t/${wo.id}`}
+          className="block rounded bg-surface-v2 border border-[var(--border-subtle, #e2e8f0)] p-2 text-[11px] hover:border-[oklch(0.46_0.16_55)] transition-colors">
       <div className="flex items-center justify-between gap-1">
-        <span className="font-mono font-semibold text-[#0f1c2e]">{wo.wo_number}</span>
+        <span className="font-mono font-semibold text-[var(--ink, #0f1c2e)]">{wo.wo_number}</span>
         <span className={`inline-flex px-1.5 rounded text-[9px] font-bold uppercase ${PRIO_TONE[wo.priority]}`}>{wo.priority}</span>
       </div>
-      <div className="text-[#6b7685] mt-1 line-clamp-2">{wo.title}</div>
+      <div className="text-[var(--ink-2, #6b7685)] mt-1 line-clamp-2">{wo.title}</div>
       <div className="mt-1 flex items-center justify-between">
-        <span className="text-[10px] inline-flex items-center gap-1 text-[#6b7685]">
+        <span className="text-[10px] inline-flex items-center gap-1 text-[var(--ink-2, #6b7685)]">
           <MapPin size={9} /> {wo.site_name}
         </span>
         <span className={`text-[10px] font-mono font-semibold ${slaTone}`}>

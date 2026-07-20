@@ -77,7 +77,7 @@ export function StitchPage<TId extends string = string>({
   children,
 }: StitchPageProps<TId>) {
   const tabStrip = tabs && tabs.length > 0 ? (
-    <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
+    <nav className="flex flex-wrap items-center gap-1 bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] rounded-lg p-1">
       {tabs.map((t) => {
         const TIcon = t.icon;
         const active = t.id === activeTab;
@@ -86,12 +86,12 @@ export function StitchPage<TId extends string = string>({
             key={t.id}
             onClick={() => onTabChange?.(t.id)}
             className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
-              active ? 'bg-[#c2873a] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+              active ? 'bg-[#c2873a] text-white' : 'text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]'
             }`}
           >
             {TIcon ? <TIcon size={14} /> : null} {t.label}
             {t.badge && (
-              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : ''}`} style={active ? {} : { background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' }}>{t.badge}</span>
+              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : ''}`} style={active ? {} : { background: 'var(--s2, oklch(0.94 0.02 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>{t.badge}</span>
             )}
           </button>
         );
@@ -100,24 +100,24 @@ export function StitchPage<TId extends string = string>({
   ) : null;
 
   return (
-    <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
+    <div className="space-y-0 min-h-screen" style={{ background: 'var(--s0, oklch(0.96 0.003 250))' }}>
       {noHero ? (
         <header className="border-b px-6 lg:px-10 py-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3"
-          style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
+          style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}>
           <div>
             {eyebrowLabel && (
-              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
+              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>
                 {Icon ? <span className="inline mr-1"><Icon size={10} /></span> : null}{eyebrowLabel}
               </div>
             )}
             <h1
               className="mt-0.5 font-display font-bold tracking-tight"
-              style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}
+              style={{ fontSize: 20, color: 'var(--ink, oklch(0.15 0.025 250))' }}
             >
               {title}
             </h1>
             {subtitle && (
-              <p className="text-[12px] mt-0.5 max-w-3xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>
+              <p className="text-[12px] mt-0.5 max-w-3xl" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>{subtitle}</p>
             )}
           </div>
           <div className="flex flex-col lg:flex-row lg:items-end gap-2">
@@ -160,12 +160,12 @@ export function StitchCard({ title, subtitle, action, children, padding = true }
   padding?: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white">
+    <section className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2">
       {(title || subtitle || action) && (
-        <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+        <header className="px-5 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
           <div>
-            {title && <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">{title}</div>}
-            {subtitle && <div className="text-[12px] text-[#6b7685] mt-0.5">{subtitle}</div>}
+            {title && <div className="font-display font-semibold text-[14px] text-[var(--ink, #0f1c2e)]">{title}</div>}
+            {subtitle && <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-0.5">{subtitle}</div>}
           </div>
           {action}
         </header>
@@ -186,18 +186,18 @@ export function StitchKpi({
   hint?: string;
 }) {
   const colour =
-    tone === 'up' ? 'text-[#1a8a5b]' :
-    tone === 'down' ? 'text-[#c0392b]' :
+    tone === 'up' ? 'text-[var(--good, #1a8a5b)]' :
+    tone === 'down' ? 'text-[var(--bad, #c0392b)]' :
     tone === 'warn' ? 'text-[#c97a14]' :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4" title={hint}>
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4" title={hint}>
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+        <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
         {Icon ? <Icon size={14} /> : null}
       </div>
       <div className={`mt-1 text-[22px] font-semibold font-mono ${colour}`}>{value}</div>
-      {sub && <div className="text-[11px] text-[#6b7685] mt-1">{sub}</div>}
+      {sub && <div className="text-[11px] text-[var(--ink-2, #6b7685)] mt-1">{sub}</div>}
     </div>
   );
 }
@@ -207,17 +207,17 @@ export function StitchField({ label, hint, children, required }: {
 }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">
-        {label}{required && <span className="text-[#c0392b] ml-1">*</span>}
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
+        {label}{required && <span className="text-[var(--bad, #c0392b)] ml-1">*</span>}
       </span>
       <div className="mt-1">{children}</div>
-      {hint && <div className="text-[11px] text-[#6b7685] mt-1">{hint}</div>}
+      {hint && <div className="text-[11px] text-[var(--ink-2, #6b7685)] mt-1">{hint}</div>}
     </label>
   );
 }
 
 export function StitchEmpty({ children }: { children: React.ReactNode }) {
-  return <div className="py-8 text-center text-[13px] text-[#6b7685]">{children}</div>;
+  return <div className="py-8 text-center text-[13px] text-[var(--ink-2, #6b7685)]">{children}</div>;
 }
 
 export function StitchPill({ status, label, tone }: {
@@ -230,13 +230,13 @@ export function StitchPill({ status, label, tone }: {
   const auto = status ? statusToTone(status) : 'neutral';
   const t = tone || auto;
   const palette: Record<string, string> = {
-    good: 'bg-[#cdf0dd] text-[#1a8a5b]',
+    good: 'bg-[#cdf0dd] text-[var(--good, #1a8a5b)]',
     warn: 'bg-[#fce5c4] text-[#c97a14]',
-    critical: 'bg-[#fde0db] text-[#c0392b]',
+    critical: 'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #c0392b)]',
     info: '',
-    neutral: 'bg-[#eef2f7] text-[#6b7685]',
+    neutral: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   };
-  const infoStyle = t === 'info' ? { background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' } : {};
+  const infoStyle = t === 'info' ? { background: 'var(--s2, oklch(0.94 0.02 250))', color: 'var(--accent, oklch(0.46 0.16 55))' } : {};
   return (
     <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${palette[t]}`} style={infoStyle}>{text}</span>
   );

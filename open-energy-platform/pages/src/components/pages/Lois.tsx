@@ -4,20 +4,20 @@ import { Mail, Send, Inbox, Loader2, AlertTriangle, ArrowRight } from 'lucide-re
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BG2     = 'oklch(0.93 0.004 250)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 55)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
-const WARN    = 'oklch(0.50 0.18 55)';
-const WARN_BG = 'oklch(0.96 0.05 55)';
-const GOOD    = 'oklch(0.40 0.16 155)';
-const GOOD_BG = 'oklch(0.95 0.04 155)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2     = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const WARN    = 'var(--accent, oklch(0.50 0.18 55))';
+const WARN_BG = 'color-mix(in oklab, var(--warn) 15%, var(--s1))';
+const GOOD    = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG = 'color-mix(in oklab, var(--good) 15%, var(--s1))';
 const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 type LoiRow = {
@@ -38,7 +38,7 @@ type LoiRow = {
 
 const statusMeta: Record<string, { bg: string; color: string; label: string }> = {
   drafted:   { bg: BG2,     color: TX2,  label: 'Drafted' },
-  sent:      { bg: 'oklch(0.93 0.04 240)', color: 'oklch(0.35 0.14 240)', label: 'Awaiting response' },
+  sent:      { bg: 'color-mix(in oklch, var(--info, oklch(0.55 0.15 240)) 14%, var(--s1, oklch(0.93 0.04 240)))', color: 'var(--info, oklch(0.35 0.14 240))', label: 'Awaiting response' },
   signed:    { bg: GOOD_BG, color: GOOD, label: 'Accepted' },
   withdrawn: { bg: BAD_BG,  color: BAD,  label: 'Declined' },
   expired:   { bg: WARN_BG, color: WARN, label: 'Expired' },
@@ -322,12 +322,12 @@ export function Lois() {
 
         {/* Context hint */}
         <div style={{
-          background: 'oklch(0.93 0.04 240)', border: '1px solid oklch(0.85 0.06 240)', borderRadius: 8, padding: '14px 16px',
+          background: 'color-mix(in oklch, var(--info, oklch(0.55 0.15 240)) 14%, var(--s1, oklch(0.93 0.04 240)))', border: '1px solid var(--info, oklch(0.85 0.06 240))', borderRadius: 8, padding: '14px 16px',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'oklch(0.35 0.14 240)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--info, oklch(0.35 0.14 240))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
             HOW IT WORKS
           </div>
-          <p style={{ fontSize: 12, color: 'oklch(0.30 0.10 240)', margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12, color: 'var(--info, oklch(0.30 0.10 240))', margin: 0, lineHeight: 1.6 }}>
             An accepted LOI automatically spawns a draft Term Sheet in your contracts list. Accepting is non-binding until the Term Sheet is countersigned.
           </p>
         </div>

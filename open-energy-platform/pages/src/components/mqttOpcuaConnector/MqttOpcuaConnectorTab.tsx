@@ -178,36 +178,36 @@ interface MocEvent {
 }
 
 const STATE_TONE: Record<MocStatus, { bg: string; fg: string; label: string }> = {
-  connector_proposed:    { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  broker_provisioned:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Broker' },
-  topics_mapped:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Topics' },
-  tls_mutual_configured: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'mTLS' },
-  client_registered:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Client' },
-  publishing_active:     { bg: '#fff4d6', fg: '#a06200', label: 'Publishing' },
-  subscription_validated:{ bg: '#fff4d6', fg: '#a06200', label: 'Subscribed' },
-  companion_spec_bound:  { bg: '#fff4d6', fg: '#a06200', label: 'Companion' },
-  live_streaming:        { bg: '#daf5e2', fg: '#1f6b3a', label: 'Live streaming' },
-  reconciliation_active: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Reconciliation' },
-  archived:              { bg: '#1f5b3a', fg: '#fff',    label: 'Archived' },
-  disconnected:          { bg: '#7a0e0e', fg: '#fff',    label: 'Disconnected' },
-  credential_revoked:    { bg: '#7a0e0e', fg: '#fff',    label: 'Cred revoked' },
-  suspended:             { bg: '#e3e7ec', fg: '#445',    label: 'Suspended' },
-  failover_active:       { bg: '#fff4d6', fg: '#a06200', label: 'Failover' },
+  connector_proposed:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Proposed' },
+  broker_provisioned:    { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Broker' },
+  topics_mapped:         { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Topics' },
+  tls_mutual_configured: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'mTLS' },
+  client_registered:     { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Client' },
+  publishing_active:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Publishing' },
+  subscription_validated:{ bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Subscribed' },
+  companion_spec_bound:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Companion' },
+  live_streaming:        { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Live streaming' },
+  reconciliation_active: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Reconciliation' },
+  archived:              { bg: 'var(--good, #1f5b3a)', fg: '#fff',    label: 'Archived' },
+  disconnected:          { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Disconnected' },
+  credential_revoked:    { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Cred revoked' },
+  suspended:             { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Suspended' },
+  failover_active:       { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Failover' },
 };
 
 const TIER_TONE: Record<MocTier, { bg: string; fg: string; label: string }> = {
-  edge_device:           { bg: '#e3e7ec', fg: '#557',    label: 'Edge device' },
-  small_fleet:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small fleet' },
-  medium_fleet:          { bg: '#daf5e2', fg: '#1f6b3a', label: 'Medium fleet' },
-  large_fleet:           { bg: '#fff4d6', fg: '#a06200', label: 'Large fleet' },
-  national_iot_backbone: { bg: '#7a0e0e', fg: '#fff',    label: 'National IoT backbone' },
+  edge_device:           { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Edge device' },
+  small_fleet:           { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Small fleet' },
+  medium_fleet:          { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Medium fleet' },
+  large_fleet:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Large fleet' },
+  national_iot_backbone: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'National IoT backbone' },
 };
 
 const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  green:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const FILTERS_ACTION: Array<{ key: string; label: string }> = [
@@ -570,8 +570,8 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">MQTT / OPC UA connector</h2>
-          <p className="text-[11px] text-[#4a5568]">
+          <h2 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">MQTT / OPC UA connector</h2>
+          <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
             11-state forward + 4 branch IoT broker bridge - MQTT v5 / MQTT-SN / OPC UA 1.05 / Pub/Sub / Sparkplug B / IEC 61400-25 / IEEE 2030.5 CSIP / SunSpec Modbus
             across PV-industry / energy / battery / inverter / wind companion specs.
             Beats AWS IoT Core + Azure IoT Hub + HiveMQ Enterprise + EMQX + VerneMQ + Kepware KEPServerEX + Matrikon OPC UA Server.
@@ -604,7 +604,7 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
       </div>
 
       {/* Drill rail */}
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">
         <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
         <span>Provisioned: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.provisioned_count}</span></span>
         <span>Topics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.topics_count}</span></span>
@@ -613,13 +613,13 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
         <span>Publishing: <span className="font-semibold text-[#a06200]">{kpis.publishing_count}</span></span>
         <span>Validated: <span className="font-semibold text-[#a06200]">{kpis.validated_count}</span></span>
         <span>Companion: <span className="font-semibold text-[#a06200]">{kpis.companion_count}</span></span>
-        <span>Reconciliation: <span className="font-semibold text-[#1f6b3a]">{kpis.reconciliation_count}</span></span>
-        <span>Archived: <span className="font-semibold text-[#1f5b3a]">{kpis.archived_count}</span></span>
-        <span>Suspended: <span className="font-semibold text-[#6b7685]">{kpis.suspended_count}</span></span>
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+        <span>Reconciliation: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.reconciliation_count}</span></span>
+        <span>Archived: <span className="font-semibold text-[var(--good, #1f5b3a)]">{kpis.archived_count}</span></span>
+        <span>Suspended: <span className="font-semibold text-[var(--ink-2, #6b7685)]">{kpis.suspended_count}</span></span>
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cert {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.certs_expiring_within_60d}</span></span>
-        <span>Cert {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.certs_expiring_within_14d}</span></span>
+        <span>Cert {'<'}14d: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.certs_expiring_within_14d}</span></span>
         <span>Audit chain: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
         <span>SCADA: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w122_bridged_count}</span></span>
         <span>Prognostics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
@@ -636,7 +636,7 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -653,7 +653,7 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -669,8 +669,8 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#7a0e0e] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--bad, #7a0e0e)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -687,7 +687,7 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -703,8 +703,8 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1f6b3a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--good, #1f6b3a)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -716,11 +716,11 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Connector #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Broker</th>
@@ -747,25 +747,25 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       <div className="text-[11px] font-semibold">{r.connector_number}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.peer_id}</div>
-                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span> : null}
-                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
-                      {r.floor_at_national_iot_backbone_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">NAT</span> : null}
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{r.peer_id}</div>
+                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span> : null}
+                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">FILED</span> : null}
+                      {r.floor_at_national_iot_backbone_live ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #7a0e0e)]">NAT</span> : null}
                     </td>
                     <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.broker_name ?? '-'}
-                      {r.endpoint_count != null ? <div className="text-[10px] text-[#6b7685] font-mono">{r.endpoint_count} endpoints</div> : null}
+                      {r.endpoint_count != null ? <div className="text-[10px] text-[var(--ink-2, #6b7685)] font-mono">{r.endpoint_count} endpoints</div> : null}
                     </td>
                     <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtProto(r.protocol)}
                     </td>
                     <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.companion_spec ? <span className="font-mono">{r.companion_spec}</span> : '-'}
-                      {r.companion_spec_version ? <div className="text-[10px] text-[#6b7685] font-mono">{r.companion_spec_version}</div> : null}
+                      {r.companion_spec_version ? <div className="text-[10px] text-[var(--ink-2, #6b7685)] font-mono">{r.companion_spec_version}</div> : null}
                     </td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
@@ -782,23 +782,23 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
                         {cs.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${telemetry >= 100 ? 'text-[#1f5b3a]' : telemetry >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${telemetry >= 100 ? 'text-[var(--good, #1f5b3a)]' : telemetry >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {telemetry}/130
                     </td>
-                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${certDays != null && certDays < 14 ? 'text-[#9b1f1f] font-semibold' : certDays != null && certDays < 60 ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${certDays != null && certDays < 14 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : certDays != null && certDays < 60 ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {certDays != null ? `${certDays}d` : '-'}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[#7a0e0e] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[var(--bad, #7a0e0e)] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>
                       {flags}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No connectors match.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No connectors match.</td></tr>
               )}
             </tbody>
           </table>
@@ -817,10 +817,10 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -866,10 +866,10 @@ function Drawer({
     const cls = tone === 'primary'
       ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
-        ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
+        ? 'bg-[var(--bad, #7a0e0e)] text-white hover:bg-[var(--bad, #9b1f1f)]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
+          : 'bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]';
     return (
       <button type="button"
         key={action}
@@ -885,22 +885,22 @@ function Drawer({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
-      <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
+      <div className="w-full max-w-3xl overflow-y-auto bg-[var(--s2, #f3f5f9)] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
               {fmtProto(row.protocol)} {'•'} {row.current_tier.replace(/_/g, ' ')}
               {row.endpoint_count != null ? <> {'•'} {row.endpoint_count} endpoints</> : null}
               {row.companion_spec ? <> {'•'} {row.companion_spec}</> : null}
             </div>
-            <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.connector_number}</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">{row.connector_number}</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               {row.title || 'MQTT/OPC-UA connector'} {'•'} peer <span className="font-mono">{row.peer_id}</span>
               {row.broker_name ? <> {'•'} {row.broker_name}</> : null}
               {row.endpoint_url ? <> {'•'} <span className="font-mono text-[10px]">{row.endpoint_url}</span></> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -912,60 +912,60 @@ function Drawer({
         </div>
 
         {/* Telemetry battery */}
-        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
+        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Publishers</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.active_publishers ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Publishers</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.active_publishers ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Subscribers</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.active_subscribers ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Subscribers</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.active_subscribers ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Topics</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.subscription_topic_count ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Topics</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.subscription_topic_count ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Retained</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.retained_message_count ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Retained</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.retained_message_count ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Msgs/sec</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.messages_per_second ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Msgs/sec</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.messages_per_second ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">QoS p99</div>
-            <div className={`font-mono text-[12px] ${(row.qos_p99_ms ?? 0) > 150 ? 'text-[#9b1f1f] font-semibold' : (row.qos_p99_ms ?? 0) > 80 ? 'text-[#a06200]' : 'text-[#0c2a4d]'}`}>{row.qos_p99_ms ?? '-'} ms</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">QoS p99</div>
+            <div className={`font-mono text-[12px] ${(row.qos_p99_ms ?? 0) > 150 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : (row.qos_p99_ms ?? 0) > 80 ? 'text-[#a06200]' : 'text-[var(--ink, #0c2a4d)]'}`}>{row.qos_p99_ms ?? '-'} ms</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Payload quality</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.payload_quality_index ?? '-'}/130</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Payload quality</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.payload_quality_index ?? '-'}/130</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Ctrl auth/exec</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.control_commands_authorized_count ?? 0} / {row.control_commands_executed_24h ?? 0}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Ctrl auth/exec</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.control_commands_authorized_count ?? 0} / {row.control_commands_executed_24h ?? 0}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">mTLS cert</div>
-            <div className={`font-mono text-[12px] ${row.tls_cert_valid ? 'text-[#1f5b3a]' : 'text-[#9b1f1f]'}`}>{row.tls_cert_valid ? 'VALID' : 'INVALID'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">mTLS cert</div>
+            <div className={`font-mono text-[12px] ${row.tls_cert_valid ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--bad, #9b1f1f)]'}`}>{row.tls_cert_valid ? 'VALID' : 'INVALID'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">IEC 62443</div>
-            <div className={`font-mono text-[12px] ${row.iec_62443_cipher_ok ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.iec_62443_cipher_ok ? 'OK' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">IEC 62443</div>
+            <div className={`font-mono text-[12px] ${row.iec_62443_cipher_ok ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.iec_62443_cipher_ok ? 'OK' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Protocol</div>
-            <div className={`font-mono text-[12px] ${row.protocol_compliant ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.protocol_compliant ? 'COMPLIANT' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Protocol</div>
+            <div className={`font-mono text-[12px] ${row.protocol_compliant ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.protocol_compliant ? 'COMPLIANT' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Cert expiry</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtDate(row.tls_cert_expiry_at)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Cert expiry</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtDate(row.tls_cert_expiry_at)}</div>
           </div>
         </div>
 
         {/* Floor flags */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">
             Floor flags ({flags}/5) - FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3
           </div>
           <div className="grid grid-cols-5 gap-2">
@@ -978,8 +978,8 @@ function Drawer({
         </div>
 
         {/* Bridges */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit-chain mandatory)</div>
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Cross-chain bridges (audit-chain mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
             <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit chain" />
             <BridgePill on={!!row.bridges_to_w122_scada_connector_live} label="SCADA" />
@@ -992,7 +992,7 @@ function Drawer({
         {/* Regulator + reason */}
         {(row.is_reportable_flag || row.regulator_ref || row.regulator_inbox_ref || row.reason_code) && (
           <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-[11px] text-[#7a1f1f]">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#9b1f1f]">Regulator crossing</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--bad, #9b1f1f)]">Regulator crossing</div>
             {row.reason_code && <div>Reason: <span className="font-mono">{row.reason_code}</span></div>}
             {row.regulator_reason_text && <div>Detail: {row.regulator_reason_text}</div>}
             {row.regulator_ref && <div>Filed ref: <span className="font-mono">{row.regulator_ref}</span></div>}
@@ -1003,7 +1003,7 @@ function Drawer({
 
         {/* Action bar */}
         {!regulatorView && !row.is_hard_terminal && (
-          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[#d8dde6] bg-white p-3">
+          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3">
             {nextAction && renderAct(nextAction, ACTION_LABEL[nextAction].split('(')[0].trim(), 'primary')}
             {canSuspend && row.chain_status !== 'suspended' && renderAct('suspend', 'Suspend', 'amber')}
             {row.chain_status === 'suspended' && renderAct('resume', 'Resume', 'primary')}
@@ -1014,16 +1014,16 @@ function Drawer({
         )}
 
         {/* Timeline */}
-        <div className="rounded border border-[#d8dde6] bg-white">
-          <div className="border-b border-[#e3e7ec] px-3 py-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Timeline</div>
-          <ol className="divide-y divide-[#e3e7ec]">
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
+          <div className="border-b border-[var(--border-subtle, #e3e7ec)] px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Timeline</div>
+          <ol className="divide-y divide-[var(--border-subtle, #e3e7ec)]">
             {events.length === 0 && (
-              <li className="px-3 py-3 text-[11px] text-[#6b7685]">No events.</li>
+              <li className="px-3 py-3 text-[11px] text-[var(--ink-2, #6b7685)]">No events.</li>
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
                 <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
-                <div className="text-[10px] text-[#4a5568]">
+                <div className="text-[10px] text-[var(--ink-2, #4a5568)]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
@@ -1041,7 +1041,7 @@ function Drawer({
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#7a0e0e] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[var(--bad, #7a0e0e)] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1052,7 +1052,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 function BridgePill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1132,66 +1132,66 @@ function ProposeModal({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
+      <div className="w-full max-w-2xl rounded bg-surface-v2 p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose MQTT / OPC UA connector</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Propose MQTT / OPC UA connector</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               Audit-chain bridge mandatory. Tier auto-derived from endpoint_count with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3 flags.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Peer id (IoT counterparty)">
-            <input value={peerId} onChange={(e) => setPeerId(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="kakamas-iot-hub" />
+            <input value={peerId} onChange={(e) => setPeerId(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="kakamas-iot-hub" />
           </Field>
           <Field label="Broker name">
-            <input value={brokerName} onChange={(e) => setBrokerName(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Kakamas IoT broker" />
+            <input value={brokerName} onChange={(e) => setBrokerName(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="Kakamas IoT broker" />
           </Field>
           <Field label="Endpoint count (devices/inverters)">
-            <input value={endpointCount} onChange={(e) => setEndpointCount(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="50" />
+            <input value={endpointCount} onChange={(e) => setEndpointCount(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="50" />
           </Field>
           <Field label="Protocol">
-            <select value={protocol} onChange={(e) => setProtocol(e.target.value as MqttOpcuaProtocol)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={protocol} onChange={(e) => setProtocol(e.target.value as MqttOpcuaProtocol)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {PROTOCOL_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Companion spec">
-            <select value={companionSpec} onChange={(e) => setCompanionSpec(e.target.value as CompanionSpec)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={companionSpec} onChange={(e) => setCompanionSpec(e.target.value as CompanionSpec)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               <option value="">-- none --</option>
               {COMPANION_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Companion spec version">
-            <input value={companionVersion} onChange={(e) => setCompanionVersion(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
+            <input value={companionVersion} onChange={(e) => setCompanionVersion(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
           <Field label="Endpoint URL">
-            <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="mqtts://broker.example.za:8883" />
+            <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="mqtts://broker.example.za:8883" />
           </Field>
           <Field label="Title">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Kakamas inverter fleet MQTT v5 connector" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="Kakamas inverter fleet MQTT v5 connector" />
           </Field>
           <Field label="Audit-chain block ref (mandatory)">
-            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
+            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
           <Field label="SCADA connector ref">
-            <input value={w122} onChange={(e) => setW122(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="scc-2026-0042" />
+            <input value={w122} onChange={(e) => setW122(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="scc-2026-0042" />
           </Field>
           <Field label="Asset prognostics ref">
-            <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-0021" />
+            <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="aprog-2026-0021" />
           </Field>
           <Field label="Reserve activation ref">
-            <input value={w50} onChange={(e) => setW50(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="rsv-act-2026-0011" />
+            <input value={w50} onChange={(e) => setW50(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="rsv-act-2026-0011" />
           </Field>
           <Field label="Cyber incident ref">
-            <input value={w26} onChange={(e) => setW26(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="cyber-2026-0005" />
+            <input value={w26} onChange={(e) => setW26(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="cyber-2026-0005" />
           </Field>
         </div>
 
-        <div className="mt-3 rounded border border-[#d8dde6] bg-[#f8fafc] p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Floor flags (FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3)</div>
+        <div className="mt-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Floor flags (FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3)</div>
           <div className="grid grid-cols-3 gap-2">
             <Checkbox checked={safetyPayload} onChange={setSafetyPayload} label="Critical safety payload" />
             <Checkbox checked={crossBorder} onChange={setCrossBorder} label="Cross-border IoT traffic" />
@@ -1203,7 +1203,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1.5 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose connector</button>
         </div>
       </div>
@@ -1213,7 +1213,7 @@ function ProposeModal({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] text-[#4a5568]">
+    <label className="block text-[11px] text-[var(--ink-2, #4a5568)]">
       <div className="mb-1 text-[10px] uppercase tracking-wider">{label}</div>
       {children}
     </label>

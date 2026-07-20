@@ -14,17 +14,17 @@ import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
 // ── design tokens (mockup-b) ─────────────────────────────────────────────
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type Status = 'pending' | 'delivered' | 'shortfall' | 'cured' | 'take_or_pay';
@@ -205,7 +205,7 @@ function renderDetail(row: ObligationRow, verifications: VerificationRow[]): Rea
                 <span style={{ color: TX3, minWidth: 90 }}>{dv.submitted_at?.slice(0, 10)}</span>
                 <span style={{ color: TX1, fontFamily: MONO, minWidth: 80 }}>{Math.round(dv.reading_mwh)} MWh</span>
                 <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{
-                  background: dv.status === 'verified' ? 'oklch(0.95 0.04 155)' : dv.status === 'rejected' ? 'oklch(0.97 0.04 20)' : 'oklch(0.96 0.05 55)',
+                  background: dv.status === 'verified' ? 'color-mix(in oklab, var(--good) 15%, var(--s1))' : dv.status === 'rejected' ? 'color-mix(in oklab, var(--bad) 15%, var(--s1))' : 'color-mix(in oklab, var(--warn) 15%, var(--s1))',
                   color: dv.status === 'verified' ? GOOD : dv.status === 'rejected' ? BAD : WARN,
                 }}>{dv.status}</span>
                 <span style={{ color: TX3, flex: 1 }}>{dv.rejection_reason || dv.notes || ''}</span>
@@ -328,7 +328,7 @@ export function ObligationsTab() {
 
       {err && (
         <div className="mb-3 rounded border px-3 py-2 text-[11px]"
-             style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
+             style={{ background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', borderColor: BAD, color: BAD }}>{err}</div>
       )}
 
       {loading ? (

@@ -1,6 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
+import { Pill as WsPill } from '../launch/WorkstationShell';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ function Sparkline({ points, field, colour }: {
   const W = 480; const H = 80;
   const vals = points.map(p => (p[field] as number | null | undefined) ?? null).filter((v): v is number => v !== null);
   if (vals.length < 2) {
-    return <div className="flex items-center justify-center h-20 text-xs text-[#9aa5b4]">No {field} data in window</div>;
+    return <div className="flex items-center justify-center h-20 text-xs text-[var(--ink-2, #9aa5b4)]">No {field} data in window</div>;
   }
   const min = Math.min(...vals);
   const max = Math.max(...vals);
@@ -109,21 +110,21 @@ function LiveModal({ source, onClose }: { source: DataSource; onClose: () => voi
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+      <div className="bg-surface-v2 rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eef2f7]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--s2, #eef2f7)]">
           <div>
-            <h2 className="text-base font-semibold text-[#0f1c2e]">{source.label} — Live data</h2>
-            <p className="text-xs text-[#6b7685] mt-0.5">
+            <h2 className="text-base font-semibold text-[var(--ink, #0f1c2e)]">{source.label} — Live data</h2>
+            <p className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">
               {source.source_type} · polling every {source.polling_interval_sec}s · last point {lastTs}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl leading-none">&times;</button>
         </div>
 
         {/* Window selector */}
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-50 bg-[#f8fafc]/60">
-          <span className="text-xs text-[#6b7685] mr-1">Window:</span>
+        <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-50 bg-[var(--s1, #f8fafc)]/60">
+          <span className="text-xs text-[var(--ink-2, #6b7685)] mr-1">Window:</span>
           {[15, 30, 60, 180, 360, 1440].map(m => (
             <button type="button"
               key={m}
@@ -131,13 +132,13 @@ function LiveModal({ source, onClose }: { source: DataSource; onClose: () => voi
               className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                 minutes === m
                   ? 'bg-[#c2873a] text-white'
-                  : 'bg-white border border-[#dde4ec] text-[#3d4756] hover:border-blue-400'
+                  : 'bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] text-[var(--ink-2, #3d4756)] hover:border-blue-400'
               }`}
             >
               {m < 60 ? `${m}m` : m < 1440 ? `${m / 60}h` : '24h'}
             </button>
           ))}
-          <span className="ml-auto text-xs text-[#9aa5b4]">{points.length} points</span>
+          <span className="ml-auto text-xs text-[var(--ink-2, #9aa5b4)]">{points.length} points</span>
         </div>
 
         {/* Charts */}
@@ -149,28 +150,28 @@ function LiveModal({ source, onClose }: { source: DataSource; onClose: () => voi
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded p-3">{live.note}</div>
           )}
           {!error && points.length === 0 && !live?.note && (
-            <div className="text-xs text-[#9aa5b4] text-center py-6">No readings in the selected window. Waiting for next poll…</div>
+            <div className="text-xs text-[var(--ink-2, #9aa5b4)] text-center py-6">No readings in the selected window. Waiting for next poll…</div>
           )}
           {points.length > 0 && (
             <>
               <div>
-                <div className="text-xs font-medium text-[#6b7685] mb-1">AC output (kW)</div>
-                <Sparkline points={points} field="ac_kw" colour="#2563eb" />
+                <div className="text-xs font-medium text-[var(--ink-2, #6b7685)] mb-1">AC output (kW)</div>
+                <Sparkline points={points} field="ac_kw" colour="var(--info, #2563eb)" />
               </div>
               <div>
-                <div className="text-xs font-medium text-[#6b7685] mb-1">DC input (kW)</div>
-                <Sparkline points={points} field="dc_kw" colour="#16a34a" />
+                <div className="text-xs font-medium text-[var(--ink-2, #6b7685)] mb-1">DC input (kW)</div>
+                <Sparkline points={points} field="dc_kw" colour="var(--good, #16a34a)" />
               </div>
               <div>
-                <div className="text-xs font-medium text-[#6b7685] mb-1">Temperature (°C)</div>
+                <div className="text-xs font-medium text-[var(--ink-2, #6b7685)] mb-1">Temperature (°C)</div>
                 <Sparkline points={points} field="temperature_c" colour="#d97706" />
               </div>
             </>
           )}
         </div>
 
-        <div className="px-6 py-3 border-t border-[#eef2f7] flex justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm text-[#3d4756] hover:text-[#0f1c2e]">Close</button>
+        <div className="px-6 py-3 border-t border-[var(--s2, #eef2f7)] flex justify-end">
+          <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm text-[var(--ink-2, #3d4756)] hover:text-[var(--ink, #0f1c2e)]">Close</button>
         </div>
       </div>
     </div>
@@ -201,9 +202,9 @@ function IntervalEditor({ source, onSaved }: { source: DataSource; onSaved: () =
       <input
         type="number" min={5} value={value}
         onChange={e => { setValue(e.target.value); setError(null); }}
-        className="w-20 px-2 py-1 text-xs border border-[#dde4ec] rounded focus:outline-none focus:border-[#c2873a]"
+        className="w-20 px-2 py-1 text-xs border border-[var(--border-subtle, #dde4ec)] rounded focus:outline-none focus:border-[#c2873a]"
       />
-      <span className="text-xs text-[#9aa5b4]">s</span>
+      <span className="text-xs text-[var(--ink-2, #9aa5b4)]">s</span>
       <button type="button"
         onClick={save} disabled={saving}
         className="px-2.5 py-1 text-xs font-medium bg-[#c2873a] text-white rounded hover:bg-[#a3702f] disabled:opacity-50"
@@ -219,14 +220,14 @@ function IntervalEditor({ source, onSaved }: { source: DataSource; onSaved: () =
 
 const STATUS_COLOURS: Record<string, string> = {
   active:   'bg-green-100 text-green-700',
-  inactive: 'bg-[#eef2f7] text-[#6b7685]',
+  inactive: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   error:    'bg-red-100 text-red-600',
   testing:  'bg-yellow-100 text-yellow-700',
 };
 
 function Pill({ status }: { status: string }) {
   return (
-    <span className={`inline-flex px-1.5 py-0.5 rounded text-[11px] font-medium ${STATUS_COLOURS[status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+    <span className={`inline-flex px-1.5 py-0.5 rounded text-[11px] font-medium ${STATUS_COLOURS[status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
       {status}
     </span>
   );
@@ -237,6 +238,7 @@ function Pill({ status }: { status: string }) {
 export function DataSourcesTab() {
   const [sources, setSources] = useState<DataSource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [liveSource, setLiveSource] = useState<DataSource | null>(null);
   const [editingInterval, setEditingInterval] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<{ id: string; msg: string } | null>(null);
@@ -245,7 +247,8 @@ export function DataSourcesTab() {
     try {
       const res = await api.get('/esums/data-sources');
       setSources(res.data ?? res ?? []);
-    } catch { /* swallow */ } finally { setLoading(false); }
+      setError(null);
+    } catch (e: unknown) { setError((e as Error).message || 'Could not load data sources'); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -260,24 +263,56 @@ export function DataSourcesTab() {
     }
   }
 
-  if (loading) return <div className="p-6 text-sm text-[#9aa5b4]">Loading data sources…</div>;
+  if (loading) return <div className="p-6 text-sm text-[var(--ink-2, #9aa5b4)]" aria-busy="true">Loading data sources…</div>;
+  if (error) return <div className="p-6 text-sm text-red-600" role="alert">Could not load data sources — {error}</div>;
   if (sources.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="text-sm text-[#6b7685]">No data sources yet.</p>
-        <p className="text-xs text-[#9aa5b4] mt-1">Add a Modbus TCP, MQTT, REST API or other source from the onboarding wizard.</p>
+        <p className="text-sm text-[var(--ink-2, #6b7685)]">No data sources yet.</p>
+        <p className="text-xs text-[var(--ink-2, #9aa5b4)] mt-1">Add a Modbus TCP, MQTT, REST API or other source from the onboarding wizard.</p>
       </div>
     );
   }
+
+  // ── Journey KPIs: derived client-side from already-fetched rows ──────────────
+  const connected = sources.filter(s => s.status === 'active').length;
+  const errored   = sources.filter(s => s.status === 'error' || !!s.last_error).length;
+  const offline   = sources.length - connected;
+  const attention = sources.filter(s => s.status !== 'active' || !!s.last_error).length;
+  // attention-first: errored, then offline, then active; stable by label
+  const rank = (s: DataSource) => (s.status === 'error' || s.last_error ? 0 : s.status !== 'active' ? 1 : 2);
+  const ordered = [...sources].sort((a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label));
 
   return (
     <>
       {liveSource && <LiveModal source={liveSource} onClose={() => setLiveSource(null)} />}
 
+      <div className="m-4 rounded-lg border border-[var(--s2, #eef2f7)] bg-[var(--s1, #f8fafc)] p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-[var(--ink-2, #6b7685)] uppercase tracking-wide">Connectivity</span>
+          <WsPill tone={attention > 0 ? (errored > 0 ? 'bad' : 'warn') : 'good'}>
+            {attention > 0 ? `${attention} need attention` : 'all connected'}
+          </WsPill>
+        </div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+          {[
+            { k: 'Sources',   v: sources.length },
+            { k: 'Connected', v: connected },
+            { k: 'Offline',   v: offline },
+            { k: 'Errors',    v: errored },
+          ].map(c => (
+            <div key={c.k}>
+              <div className="text-[10.5px] uppercase tracking-wide text-[var(--ink-2, #9aa5b4)]">{c.k}</div>
+              <div className="text-xl font-bold text-[var(--ink, #0f1c2e)]">{c.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#eef2f7] text-xs text-[#6b7685]">
+            <tr className="border-b border-[var(--s2, #eef2f7)] text-xs text-[var(--ink-2, #6b7685)]">
               <th className="px-4 py-2.5 text-left font-medium">Label</th>
               <th className="px-4 py-2.5 text-left font-medium">Protocol</th>
               <th className="px-4 py-2.5 text-left font-medium">Host / Broker</th>
@@ -289,12 +324,12 @@ export function DataSourcesTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {sources.map(src => (
-              <tr key={src.id} className="hover:bg-[#eef2f7]/60 transition-colors">
-                <td className="px-4 py-3 font-medium text-[#0f1c2e]">{src.label}</td>
-                <td className="px-4 py-3 text-[#3d4756]">{src.source_type}</td>
-                <td className="px-4 py-3 text-[#3d4756] text-xs font-mono">{src.host ?? '—'}</td>
-                <td className="px-4 py-3 text-right text-[#3d4756]">{src.port ?? '—'}</td>
+            {ordered.map(src => (
+              <tr key={src.id} className="hover:bg-[var(--s2, #eef2f7)]/60 transition-colors">
+                <td className="px-4 py-3 font-medium text-[var(--ink, #0f1c2e)]">{src.label}</td>
+                <td className="px-4 py-3 text-[var(--ink-2, #3d4756)]">{src.source_type}</td>
+                <td className="px-4 py-3 text-[var(--ink-2, #3d4756)] text-xs font-mono">{src.host ?? '—'}</td>
+                <td className="px-4 py-3 text-right text-[var(--ink-2, #3d4756)]">{src.port ?? '—'}</td>
                 <td className="px-4 py-3">
                   {editingInterval === src.id
                     ? <IntervalEditor source={src} onSaved={() => { setEditingInterval(null); load(); }} />
@@ -309,7 +344,7 @@ export function DataSourcesTab() {
                     )
                   }
                 </td>
-                <td className="px-4 py-3 text-xs text-[#6b7685]">
+                <td className="px-4 py-3 text-xs text-[var(--ink-2, #6b7685)]">
                   {src.last_read_at ? new Date(src.last_read_at).toLocaleTimeString() : '—'}
                 </td>
                 <td className="px-4 py-3">
@@ -331,7 +366,7 @@ export function DataSourcesTab() {
                     </button>
                     <button type="button"
                       onClick={() => runAction(src.id, 'test', 'Test')}
-                      className="px-2.5 py-1 text-xs font-medium text-[#3d4756] bg-[#eef2f7] rounded hover:bg-[#e8ecf0] transition-colors"
+                      className="px-2.5 py-1 text-xs font-medium text-[var(--ink-2, #3d4756)] bg-[var(--s2, #eef2f7)] rounded hover:bg-[var(--border-subtle, #e8ecf0)] transition-colors"
                     >
                       Test
                     </button>
@@ -341,13 +376,13 @@ export function DataSourcesTab() {
                           Activate
                         </button>
                       : <button type="button" onClick={() => runAction(src.id, 'deactivate', 'Deactivate')}
-                          className="px-2.5 py-1 text-xs font-medium text-[#6b7685] bg-[#eef2f7] rounded hover:bg-[#e8ecf0] transition-colors">
+                          className="px-2.5 py-1 text-xs font-medium text-[var(--ink-2, #6b7685)] bg-[var(--s2, #eef2f7)] rounded hover:bg-[var(--border-subtle, #e8ecf0)] transition-colors">
                           Deactivate
                         </button>
                     }
                   </div>
                   {actionResult?.id === src.id && (
-                    <p className="text-[10px] text-[#9aa5b4] text-right mt-1">{actionResult.msg}</p>
+                    <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] text-right mt-1">{actionResult.msg}</p>
                   )}
                 </td>
               </tr>

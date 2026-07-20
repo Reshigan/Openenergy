@@ -229,8 +229,8 @@ export const contractFileTabs: EntityFileTab<ContractFileData>[] = [
           title="Rendered legal text"
           subtitle={data.document.template ? `Template ${data.document.template.code} · v${data.document.template.version}` : 'Fallback contract body.'}
         >
-          <div className="px-5 py-4 max-h-[480px] overflow-auto bg-[#fafbfd] border-t border-[#eef2f7]">
-            <pre className="font-mono text-[12px] text-[#0f1c2e] whitespace-pre-wrap leading-relaxed">
+          <div className="px-5 py-4 max-h-[480px] overflow-auto bg-[var(--s1, #fafbfd)] border-t border-[var(--s2, #eef2f7)]">
+            <pre className="font-mono text-[12px] text-[var(--ink, #0f1c2e)] whitespace-pre-wrap leading-relaxed">
               {data.document.rendered_body}
             </pre>
           </div>
@@ -471,7 +471,7 @@ export const contractFileTabs: EntityFileTab<ContractFileData>[] = [
           {data.linked.project ? (
             <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
               <Kv label="Project" value={
-                <a href={`/projects/${data.linked.project.id}`} className="text-[#1a5d97] font-semibold hover:underline">
+                <a href={`/projects/${data.linked.project.id}`} className="text-[var(--info, #1a5d97)] font-semibold hover:underline">
                   {data.linked.project.project_name}
                 </a>
               } />
@@ -482,7 +482,7 @@ export const contractFileTabs: EntityFileTab<ContractFileData>[] = [
               <Kv label="Location" value={data.linked.project.location || '—'} />
             </div>
           ) : (
-            <div className="px-5 py-8 text-center text-[13px] text-[#6b7685]">No underlying project linked.</div>
+            <div className="px-5 py-8 text-center text-[13px] text-[var(--ink-2, #6b7685)]">No underlying project linked.</div>
           )}
         </FileSection>
 
@@ -492,7 +492,7 @@ export const contractFileTabs: EntityFileTab<ContractFileData>[] = [
             emptyMessage="No LOIs resulted in this contract."
             columns={[
               { key: 'id', label: 'LOI', render: (r: any) => (
-                <a href={`/lois/${r.id}`} className="text-[#1a5d97] font-semibold hover:underline">{r.id}</a>
+                <a href={`/lois/${r.id}`} className="text-[var(--info, #1a5d97)] font-semibold hover:underline">{r.id}</a>
               ) },
               { key: 'annual_mwh', label: 'Annual MWh', align: 'right', mono: true, render: (r: any) => fmtNum(r.annual_mwh) },
               { key: 'blended_price', label: 'Blended price', align: 'right', mono: true, render: (r: any) => fmtZAR(r.blended_price) },
@@ -509,7 +509,7 @@ export const contractFileTabs: EntityFileTab<ContractFileData>[] = [
             emptyMessage="No O&M sites linked to this contract."
             columns={[
               { key: 'name', label: 'Site', render: (r: any) => (
-                <a href={`/esums/sites/${r.id}`} className="text-[#1a5d97] font-semibold hover:underline">{r.name}</a>
+                <a href={`/esums/sites/${r.id}`} className="text-[var(--info, #1a5d97)] font-semibold hover:underline">{r.name}</a>
               ) },
               { key: 'technology', label: 'Tech', render: (r: any) => (r.technology || '').replace(/_/g, ' ') },
               { key: 'capacity_mw', label: 'Capacity', align: 'right', mono: true, render: (r: any) => r.capacity_mw ? `${fmtNum(r.capacity_mw, 1)} MW` : '—' },
@@ -635,17 +635,17 @@ export const contractFileTabs: EntityFileTab<ContractFileData>[] = [
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-2">
-      <dt className="text-[#6b7685]">{label}</dt>
-      <dd className="text-[#0f1c2e] font-medium text-right">{value}</dd>
+      <dt className="text-[var(--ink-2, #6b7685)]">{label}</dt>
+      <dd className="text-[var(--ink, #0f1c2e)] font-medium text-right">{value}</dd>
     </div>
   );
 }
 
 function Kv({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-[#dde4ec] bg-[#fafbfd] p-3">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="mt-1 text-[#0f1c2e] font-semibold leading-tight">{value}</div>
+    <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-[var(--s1, #fafbfd)] p-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
+      <div className="mt-1 text-[var(--ink, #0f1c2e)] font-semibold leading-tight">{value}</div>
     </div>
   );
 }
@@ -655,10 +655,10 @@ function MicroKpi({ label, value, tone }: { label: string; value: React.ReactNod
     tone === 'good' ? '#1f8a4f'
       : tone === 'warn' ? '#b27a00'
       : tone === 'bad' ? '#b3261e'
-      : '#0f1c2e';
+      : 'var(--ink, #0f1c2e)';
   return (
-    <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+    <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: toneColor }}>
         {value}
       </div>

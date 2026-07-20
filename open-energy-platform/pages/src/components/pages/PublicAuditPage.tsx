@@ -12,14 +12,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ShieldCheck, Hash, FileSearch, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 55)';
-const BAD     = 'oklch(0.48 0.20 20)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
 
 type Root = {
   entity_type: string; day: string; event_count: number;
@@ -133,8 +133,8 @@ function RootsTable({ rows, filter, setFilter }: { rows: Root[]; filter: string;
                 <td className="py-2 font-mono">{r.entity_type}</td>
                 <td className="py-2 text-right font-mono">{r.event_count}</td>
                 <td className="py-2 font-mono text-[10px] break-all max-w-md">{r.merkle_root}</td>
-                <td className="py-2 text-center">{r.platform_signature ? <CheckCircle2 size={13} className="inline" style={{ color: 'oklch(0.45 0.15 150)' }}/> : <span style={{ color: BAD }}>—</span>}</td>
-                <td className="py-2 text-center">{r.attestor_signature ? <CheckCircle2 size={13} className="inline" style={{ color: 'oklch(0.45 0.15 150)' }}/> : <span style={{ color: TX3 }}>—</span>}</td>
+                <td className="py-2 text-center">{r.platform_signature ? <CheckCircle2 size={13} className="inline" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}/> : <span style={{ color: BAD }}>—</span>}</td>
+                <td className="py-2 text-center">{r.attestor_signature ? <CheckCircle2 size={13} className="inline" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}/> : <span style={{ color: TX3 }}>—</span>}</td>
               </tr>
             ))}
           </tbody>
@@ -199,7 +199,7 @@ function ProofPanel() {
             <div className="font-mono text-[10px] break-all" style={{ color: TX2 }}>{proof.computed_root}</div>
             <div className="text-[11px] uppercase mt-2" style={{ color: TX3 }}>Published root</div>
             <div className="font-mono text-[10px] break-all" style={{ color: TX2 }}>{proof.published_root || '— not yet published'}</div>
-            <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: proof.matches ? 'oklch(0.45 0.15 150)' : BAD }}>
+            <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: proof.matches ? 'var(--good, oklch(0.45 0.15 150))' : BAD }}>
               {proof.matches ? <CheckCircle2 size={14}/> : <AlertCircle size={14}/>}
               {proof.matches ? 'Computed root matches published root' : 'Mismatch — published root may not be available yet'}
             </div>
@@ -269,14 +269,14 @@ function VerifyPanel() {
       {err && <div className="text-[12px] flex items-center gap-1" style={{ color: BAD }}><AlertCircle size={14}/> {err}</div>}
       {out && (
         <div className="rounded p-3 text-[12px] border" style={out.matches
-          ? { background: 'oklch(0.96 0.05 150)', borderColor: 'oklch(0.75 0.10 150)' }
-          : { background: 'oklch(0.97 0.04 20)', borderColor: 'oklch(0.85 0.08 20)' }}>
-          <div className="inline-flex items-center gap-1 font-semibold" style={{ color: out.matches ? 'oklch(0.45 0.15 150)' : BAD }}>
+          ? { background: 'color-mix(in oklab, var(--good) 15%, var(--s1))', borderColor: 'oklch(0.75 0.10 150)' }
+          : { background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', borderColor: 'oklch(0.85 0.08 20)' }}>
+          <div className="inline-flex items-center gap-1 font-semibold" style={{ color: out.matches ? 'var(--good, oklch(0.45 0.15 150))' : BAD }}>
             {out.matches ? <CheckCircle2 size={14}/> : <AlertCircle size={14}/>}
             {out.matches ? 'Proof valid' : 'Proof invalid'}
           </div>
           {out.signature_valid != null && (
-            <div className="mt-1 inline-flex items-center gap-1 text-[11px]" style={{ color: out.signature_valid ? 'oklch(0.45 0.15 150)' : BAD }}>
+            <div className="mt-1 inline-flex items-center gap-1 text-[11px]" style={{ color: out.signature_valid ? 'var(--good, oklch(0.45 0.15 150))' : BAD }}>
               {out.signature_valid ? 'Platform signature OK' : 'Platform signature invalid'}
             </div>
           )}

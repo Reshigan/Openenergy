@@ -10,6 +10,72 @@ The platform's pitch is **"one shared record of truth — nobody re-keys."** Get
 
 Severity legend: **P1** = data-isolation/security or a claim the product actively makes that is false; **P2** = missing derivation that forces manual re-keying (the "nobody re-keys" gap); **P3** = correctness/UX debt.
 
+## Why it feels like features, not a platform
+
+The most common reaction to a walkthrough is *"the features work, but it doesn't feel cohesive."* That is not a visual-design complaint and it will not be fixed by restyling. Cohesion is a structural property. A platform feels like one thing when four conditions hold. None of them hold here, and each one's absence is already enumerated below as a gap — the list is the diagnosis, this section is the symptom.
+
+**1. One canonical object that everything orbits.** Amazon orbits *the order*: every screen, notification, and role is a view onto it. Open Energy has no single "the transaction" that every role sees the same way. A chain can be started five different ways (Ledger `?compose=1`, Deal Desk, or one of four parallel marketplace surfaces — see gap 11). Thread comes closest to being the shared object, but most chains bypass it entirely. This is the single largest contributor to the incoherent feel.
+
+**2. Data flows along that object instead of being re-keyed onto it.** The honesty note at the foot of this document states the test we accidentally ran: *if the seams were wired, we'd have seeded one feed and watched it propagate. We didn't — we seeded each table.* When the same fact carries a different value on different screens — three price stores (gap 5), the grid emission factor recorded as 950, 0.942, and 0.95 in three places (gap 6), four of seven cross-surface seams absent entirely (gap 3) — the product reads as three applications sharing a nav bar.
+
+**3. A handoff pulls the next role in.** Every real transaction crosses roles: the IPP sells, the offtaker buys, the lender finances, the regulator watches. Gap 10's stubbed kickoff notification means a deal is "done" on one role's screen and invisible on the next role's until that person independently goes looking for it. That produces N disconnected inboxes rather than one object visibly moving between hands.
+
+**4. Home shows your work, not a menu of functions.** Atlas is a function library — tiles indexed by role, then domain, then feature. That is the SAP model: powerful, and incoherent. Horizon is closer, but its lanes are chain-cases rather than tasks with a deadline and a single next action.
+
+**The reframe:** the platform orbits *features*, not *the transaction*. Every gap below is a place where that shows. Fixing cohesion does not require new features — it requires making the deal the centre of gravity: one object, discovered rather than typed in (gap 11), with data flowing along it (gaps 3, 5, 6), handoffs notifying down it (gap 10), and home showing your open transactions rather than the function catalogue. The work is wiring the features that already exist onto one spine.
+
+## Structural findings — what sits underneath the numbered gaps
+
+The fourteen gaps below are seams that don't hold. This section is about why they don't: five properties of the architecture that make each individual seam expensive to wire and easy to unwire again. Wiring a seam without addressing these produces a fix that decays. They are ordered by leverage, not severity.
+
+### S1 — There is no state machine. Status is free text.
+
+Roughly eighty live chain tables each carry their own `status` column ([chain-state.ts:4](../../open-energy-platform/src/utils/chain-state.ts#L4)). The four tokens `draft` / `pending` / `approved` / `submitted` alone appear 360 times as string literals across `src/routes/`. Nothing declares the legal states of a chain, and nothing declares the legal transitions between them.
+
+Consequently the platform infers state rather than knowing it. `isTerminalStatus()` in [chain-state.ts:26-32](../../open-energy-platform/src/utils/chain-state.ts#L26-L32) buckets a status as open-or-terminal by substring-matching it against a 24-token list. The file's own header is candid about the cost: *"~22% of status tokens are context-dependent — `paid`, `issued`, `closed`, `settled`, `rejected`, `withdrawn` are terminal in some chains but intermediate/live in others."* Exact classification exists only for the five chains registered in [chain-terminal-registry.ts:36-40](../../open-energy-platform/src/utils/chain-terminal-registry.ts#L36-L40) (`drawdown`, `loan_default`, `reserve_account`, `levy_assessment`, `carbon_retirement`).
+
+This sits underneath gaps 3 and 10. A handoff notification fires on a state transition; you cannot cascade on a transition that is not a first-class object. Today a transition is a string one route module happened to write into a column.
+
+**Target:** each chain declares `states` and `transitions` alongside its existing `MERIDIAN_CHAINS` entry. A transition is applied through one shared function that validates the edge, writes the row, and emits the event — never by a route module assigning a string.
+
+### S2 — The event log exists, but it is an analytics sink, not the source of truth.
+
+`oe_platform_events` is append-only and is already written on every cascade ([cascade.ts:14](../../open-energy-platform/src/utils/cascade.ts#L14) imports `recordPlatformEvent` from `analytics-sink.ts`). Its readers are `insights.ts`, `metrics-rollup.ts`, and `chain-state.ts`.
+
+So the platform has an event log used for reporting, and eighty tables used as the record. That inversion is the direct cause of the honesty note at the foot of this document: there is no single feed to seed, because no single feed is authoritative. It is also why the same fact carries three values in three places (gaps 5, 6) and why a fan-out can partially commit (gap 12) — each table is written independently, so each can be written wrongly independently.
+
+This is the highest-leverage change available, and it is not a rewrite: the log is already built, already written to, and already carries `chain_key` and `source_chain_status`. What is missing is that writes go to the tables *first* and the log *after*, rather than the log being the commit point and the tables being projections rebuilt from it.
+
+**Target:** the transition (S1) writes one event; the row is a projection. Gaps 3, 5, 6, and 12 mostly cease to exist rather than being fixed one at a time.
+
+### S3 — Tenancy is single-owner. A marketplace transaction has two owners.
+
+[tenant.ts](../../open-energy-platform/src/utils/tenant.ts) resolves exactly one `tenant_id` per resource, reached by joining through whichever of `creator_id`, `counterparty_id`, `participant_id`, or a direct `tenant_id` column that table happens to use. There is no primitive that expresses *"this row is visible to exactly these two parties and to nobody else."*
+
+That is what the three-tier visibility model above is really describing: tier 1 (marketplace) and tier 3 (private book) are both expressible as single-owner predicates, and tier 2 (bilateral) is not expressible at all. Gap 1 therefore is not a set of leaky queries to be patched query-by-query — it is a missing relation. Patching the queries leaves the next bilateral chain to reinvent the leak.
+
+**Target:** a parties-on-transaction relation (transaction id × participant id × role-on-this-transaction), with tier 2 reads scoped by membership in it. This is also what makes Thread a real object rather than a rendering convention.
+
+### S4 — The spine covers seventeen chains. The platform has about eighty.
+
+`MERIDIAN_CHAINS` in [chain-registry-meridian.ts](../../open-energy-platform/src/utils/chain-registry-meridian.ts) has 17 entries. `chain-state.ts` counts roughly 80 live chain tables. So Ledger, Thread, and the Horizon lanes reach about a fifth of the platform; the rest is reachable only as a `/surface/:key` function tile.
+
+Atlas-as-a-function-menu, named as cohesion property 4 above, is therefore not a UI decision that can be undone in the UI. It is the fallback surface for the sixty-odd chains that have nowhere on the spine to live. Registering a chain in `MERIDIAN_CHAINS` is what promotes it from a function to a transaction, and only a fifth have been promoted.
+
+**Target:** registration is a consequence of S1 — a chain that declares its states and emits its transitions has, by construction, everything `MERIDIAN_CHAINS` needs. The 17 becomes 80 as a by-product rather than as 63 pieces of manual work.
+
+### S5 — Money does not move. There is no Escrow.
+
+`wrangler.toml` binds exactly one Durable Object class: `OrderBook` (lines 87, 259). `src/do/` contains exactly one file, `order-book.ts`. `class Escrow`, `class Risk`, and `class Smart` do not exist anywhere under `src/`. (The Durable Objects section of `CLAUDE.md` asserts these classes "exist in code but aren't bound in `wrangler.toml`." That statement is false and should be corrected.)
+
+Settlement therefore writes ledger rows against no custody and no payment rails. This is not a cohesion problem and not a wiring problem — it is the difference between an exchange and a system of record, and it is a product decision rather than a refactor. It is listed here because every roleplayer conversation eventually arrives at it.
+
+**Target:** out of scope for this document. Named so it is not mistaken for something the fourteen gaps below cover.
+
+### Leverage order
+
+S1 and S2 are one change, not two: declare the states, emit the transitions, derive the tables and the screens from the log. S3 follows and unblocks gap 1 at the root. S4 falls out of S1 and S2 once every chain emits. S5 is a separate decision.
+
 ## The interaction model is a marketplace — visibility is three-tier, not binary
 
 The platform is a **marketplace of interactions**: participants (IPP, offtaker, lender, carbon fund, ESCO, trader, grid) discover each other, match, then transact bilaterally. That framing is load-bearing for the isolation gaps below, because **some cross-tenant visibility is the product, not a bug.** A marketplace where you can only see your own rows has nothing to discover.

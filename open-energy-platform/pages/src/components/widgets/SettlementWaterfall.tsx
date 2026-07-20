@@ -91,10 +91,10 @@ export function SettlementWaterfall({ totalAmount, breaks, fees, payments }: Pro
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Settlement waterfall</div>
-          <div className="text-[11px] text-[#6b7685]">Gross → fees → breaks → payments → outstanding</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Settlement waterfall</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Gross → fees → breaks → payments → outstanding</div>
         </div>
         {proposedTotal > 0 && (
           <div className="text-[11px] text-[#b04e0f]">
@@ -105,8 +105,8 @@ export function SettlementWaterfall({ totalAmount, breaks, fees, payments }: Pro
       <div style={{ height: 240 }} className="px-4 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={steps} margin={{ top: 12, right: 16, bottom: 16, left: 0 }}>
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1000).toFixed(0)}k`} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1000).toFixed(0)}k`} />
             <Tooltip
               cursor={{ fill: 'rgba(59, 130, 196, 0.08)' }}
               formatter={(v: any, _name: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]}
@@ -117,24 +117,24 @@ export function SettlementWaterfall({ totalAmount, breaks, fees, payments }: Pro
               {steps.map((s, i) => (
                 <Cell
                   key={i}
-                  fill={s.kind === 'total' ? 'oklch(0.46 0.16 55)' : s.kind === 'add' ? '#b04e0f' : '#1a8a5b'}
+                  fill={s.kind === 'total' ? 'oklch(0.46 0.16 55)' : s.kind === 'add' ? '#b04e0f' : 'var(--good, #1a8a5b)'}
                 />
               ))}
               <LabelList
                 dataKey="delta"
                 position="top"
                 formatter={(v: number) => formatZAR(Math.abs(v))}
-                style={{ fontSize: 10, fill: '#3d4756' }}
+                style={{ fontSize: 10, fill: 'var(--ink-2, #3d4756)' }}
               />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <footer className="px-4 py-2 border-t border-[#eef2f7] grid grid-cols-2 sm:grid-cols-5 gap-3 text-[11px]">
+      <footer className="px-4 py-2 border-t border-[var(--s2, #eef2f7)] grid grid-cols-2 sm:grid-cols-5 gap-3 text-[11px]">
         {steps.map((s) => (
           <div key={s.label}>
-            <div className="text-[#6b7685]">{s.label}</div>
-            <div className={`font-mono font-semibold ${s.kind === 'sub' ? 'text-[#1a8a5b]' : 'text-[#0f1c2e]'}`}>
+            <div className="text-[var(--ink-2, #6b7685)]">{s.label}</div>
+            <div className={`font-mono font-semibold ${s.kind === 'sub' ? 'text-[var(--good, #1a8a5b)]' : 'text-[var(--ink, #0f1c2e)]'}`}>
               {s.delta >= 0 ? '' : '−'}{formatZAR(Math.abs(s.delta))}
             </div>
           </div>

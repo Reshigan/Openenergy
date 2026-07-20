@@ -67,21 +67,22 @@ test('login page boots React and renders the sign-in surface', async ({ page, ba
   expect(real, real.join('\n')).toEqual([]);
 });
 
-test('admin lands on the CEC Horizon board after auth (legacy launch route redirects)', async ({ page, baseURL }) => {
+test('admin lands on the v2 shell after auth (legacy launch route redirects)', async ({ page, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 
   // Seed the token instead of submitting the form — the form submit would
   // consume one rate-limit slot (10/5min/IP) and cascade 429s to later specs.
   await seedToken(page);
-  // /launch/:role is a retired legacy route — the CEC consolidation redirects
-  // every launch/workstation path to the journey cockpit.
+  // /launch/:role is a retired legacy route — it redirects flat into /v2
+  // (see App.tsx, distinct from bare /launch which runs the real
+  // onboarding-state check before landing on /onboard or /v2).
   await page.goto(`${baseURL}/launch/admin`, { waitUntil: 'load' });
 
-  // Redirect lands on Horizon; the board + single CEC header chrome render.
-  await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
-  await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
-  await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
+  // Redirect lands on the v2 shell.
+  await page.waitForURL('**/v2', { timeout: 15_000 });
+  await expect(page.locator('nav.v2-nav')).toBeVisible({ timeout: 25_000 });
+  await expect(page.locator('.v2-brand')).toBeVisible();
 
   // No runtime page errors during the full navigation flow.
   const real = errors.filter((e) => !isBenign(e));
@@ -97,9 +98,11 @@ test('SPA router serves /projects route (auth-guarded redirect)', async ({ page,
   const r = await page.goto(`${baseURL}/projects`, { waitUntil: 'load' });
   expect(r?.status()).toBe(200);
   await page.waitForLoadState('domcontentloaded');
-  // SPA either renders projects (if already authed) or bounces to /login.
-  // Both prove the bundle and router are healthy.
-  await expect.poll(() => page.url(), { timeout: 5_000 }).toMatch(/\/(projects|login|cockpit)/);
+  // SPA either renders projects momentarily, bounces to /login (unauthed),
+  // or (if somehow authed) redirects on into /v2 — /projects itself now
+  // redirects to /v2 for authed sessions. All three prove the bundle and
+  // router are healthy.
+  await expect.poll(() => page.url(), { timeout: 5_000 }).toMatch(/\/(projects|login|v2)/);
 });
 
 test('the SPA serves the LTM logo as a real image (not the SPA fallback)', async ({ request, baseURL }) => {

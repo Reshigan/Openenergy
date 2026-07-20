@@ -12,7 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 
@@ -91,7 +91,7 @@ const TIER_COLOR: Record<ImpactTier, string> = {
   critical_impact: 'bg-red-100 text-red-800',
   high_impact:     'bg-orange-100 text-orange-700',
   medium_impact:   'bg-amber-100 text-amber-700',
-  low_impact:      'bg-[#eef2f7] text-[#3d4756]',
+  low_impact:      'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
 };
 
 const TIER_LABEL: Record<ImpactTier, string> = {
@@ -108,7 +108,7 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<LessonStatus, string> = {
-  captured:              'bg-[#eef2f7] text-[#2d3748]',
+  captured:              'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
   categorized:           'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   root_cause_analyzed:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   impact_assessed:       'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -117,10 +117,10 @@ const STATUS_COLOR: Record<LessonStatus, string> = {
   approved:              'bg-teal-100 text-teal-700',
   disseminated:          'bg-green-100 text-green-800',
   applied:               'bg-emerald-100 text-emerald-800',
-  archived:              'bg-[#e8ecf0] text-[#9aa5b4]',
+  archived:              'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #9aa5b4)]',
   rejected:              'bg-red-100 text-red-700',
   deferred:              'bg-yellow-100 text-yellow-700',
-  duplicate:             'bg-[#eef2f7] text-[#6b7685]',
+  duplicate:             'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
 };
 
 const ACTIONS: Record<LessonStatus, Array<{ action: string; label: string; danger?: boolean }>> = {
@@ -227,13 +227,23 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filterStatus && r.chain_status !== filterStatus) return false;
-    if (filterTier && r.impact_tier !== filterTier) return false;
-    if (filterType && r.lesson_type !== filterType) return false;
-    if (filterCategory && r.lesson_category !== filterCategory) return false;
-    return true;
-  }), [rows, filterStatus, filterTier, filterType, filterCategory]);
+  const filtered = useMemo(() => {
+    const term = (s: LessonStatus) => ['archived', 'rejected', 'duplicate'].includes(s) ? 1 : 0;
+    const safety = (r: LessonRow) => (r.lesson_type === 'safety' || !!r.prevents_fatality) ? 0 : 1;
+    // primary view: active first, then safety/fatality-preventing, then breached, then most overdue first
+    return rows.filter(r => {
+      if (filterStatus && r.chain_status !== filterStatus) return false;
+      if (filterTier && r.impact_tier !== filterTier) return false;
+      if (filterType && r.lesson_type !== filterType) return false;
+      if (filterCategory && r.lesson_category !== filterCategory) return false;
+      return true;
+    }).sort((a, b) => {
+      if (term(a.chain_status) !== term(b.chain_status)) return term(a.chain_status) - term(b.chain_status);
+      if (safety(a) !== safety(b)) return safety(a) - safety(b);
+      if (!!a.sla_breached !== !!b.sla_breached) return (b.sla_breached ? 1 : 0) - (a.sla_breached ? 1 : 0);
+      return (a.sla_remaining_hours_live ?? Infinity) - (b.sla_remaining_hours_live ?? Infinity);
+    });
+  }, [rows, filterStatus, filterTier, filterType, filterCategory]);
 
   async function handleAction(action: string) {
     if (!selected) return;
@@ -345,13 +355,13 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
           <option value="">All categories</option>
           {LESSON_CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
         </select>
-        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} lessons</span>
+        <span className="text-xs text-[var(--ink-2, #9aa5b4)] ml-auto">{filtered.length} lessons</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-[#c2873a] text-white rounded px-3 py-1 hover:bg-[#a3702f]" onClick={() => setShowCreate(true)}>
             + Add lesson
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[var(--s2, #eef2f7)]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -360,43 +370,43 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-[#9aa5b4]">Loading lessons learned register…</div>}
+      {loading && <div className="text-xs text-[var(--ink-2, #9aa5b4)]">Loading lessons learned register…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
+        <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle, #dde4ec)]">
           <table className="w-full text-xs">
-            <thead className="bg-[#f8fafc]">
+            <thead className="bg-[var(--s1, #f8fafc)]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">ID</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Category</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Phase</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Type</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">RCA</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">ID</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Title</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Category</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Phase</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Type</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">RCA</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-[#9aa5b4]">No lessons in register</td></tr>
+                <tr><td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-[var(--ink-2, #9aa5b4)]">No lessons in register</td></tr>
               )}
               {filtered.map(row => (
-                <tr key={row.id} className="border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer" onClick={() => setSelected(row)}>
-                  <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.id}</td>
+                <tr key={row.id} className="border-t border-[var(--s2, #eef2f7)] hover:bg-[var(--s2, #eef2f7)] cursor-pointer" onClick={() => setSelected(row)}>
+                  <td className="px-3 py-2 font-mono text-[var(--ink-2, #9aa5b4)]">{row.id}</td>
                   <td className="px-3 py-2 max-w-[180px]">
-                    <span className="font-medium text-[#1e2a38] block truncate">{row.lesson_title}</span>
-                    {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
+                    <span className="font-medium text-[var(--ink, #1e2a38)] block truncate">{row.lesson_title}</span>
+                    {row.project_name && <span className="text-[var(--ink-2, #9aa5b4)] truncate block">{row.project_name}</span>}
                   </td>
-                  <td className="px-3 py-2 capitalize text-[#3d4756]">{row.lesson_category?.replace(/_/g, ' ') ?? '—'}</td>
-                  <td className="px-3 py-2 capitalize text-[#3d4756]">{row.lesson_phase?.replace(/_/g, ' ') ?? '—'}</td>
+                  <td className="px-3 py-2 capitalize text-[var(--ink-2, #3d4756)]">{row.lesson_category?.replace(/_/g, ' ') ?? '—'}</td>
+                  <td className="px-3 py-2 capitalize text-[var(--ink-2, #3d4756)]">{row.lesson_phase?.replace(/_/g, ' ') ?? '—'}</td>
                   <td className="px-3 py-2">
                     {row.lesson_type && (
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${TYPE_COLOR[row.lesson_type] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${TYPE_COLOR[row.lesson_type] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]'}`}>
                         {row.lesson_type}
                       </span>
                     )}
@@ -408,7 +418,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-[#6b7685]">{row.rca_method ? (RCA_LABEL[row.rca_method] ?? row.rca_method) : '—'}</td>
+                  <td className="px-3 py-2 text-[var(--ink-2, #6b7685)]">{row.rca_method ? (RCA_LABEL[row.rca_method] ?? row.rca_method) : '—'}</td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
                       {statusLabel(row.chain_status).text}
@@ -422,7 +432,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                         breached={!!row.sla_breached}
                         compact
                       />
-                    ) : <span className="text-[#9aa5b4]">—</span>}
+                    ) : <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
@@ -450,7 +460,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setSelected(null); setActionResult(null); }}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -469,10 +479,10 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                   </span>
                   {!!selected.is_reportable && <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>}
                 </div>
-                <h3 className="font-semibold text-[#0f1c2e]">{selected.lesson_title}</h3>
-                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
+                <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">{selected.lesson_title}</h3>
+                <p className="text-xs text-[var(--ink-2, #9aa5b4)] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
               </div>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* W135 SIGNATURE warning */}
@@ -487,8 +497,8 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             )}
 
             {/* Chain state progress */}
-            <div className="mb-4 px-3 py-3 bg-[#f8fafc] rounded-lg">
-              <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide mb-2">Lessons lifecycle</p>
+            <div className="mb-4 px-3 py-3 bg-[var(--s1, #f8fafc)] rounded-lg">
+              <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase tracking-wide mb-2">Lessons lifecycle</p>
               <ChainStateBar
                 allStates={MAIN_STATES}
                 currentState={selected.chain_status}
@@ -530,7 +540,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             {/* RCA method badge */}
             {selected.rca_method && selected.rca_method !== 'none' && (
               <div className="mb-3 flex items-center gap-2">
-                <span className="text-[10px] text-[#9aa5b4] uppercase">RCA method:</span>
+                <span className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase">RCA method:</span>
                 <span className="px-2 py-0.5 rounded bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)] text-xs font-medium">{RCA_LABEL[selected.rca_method] ?? selected.rca_method}</span>
               </div>
             )}
@@ -567,7 +577,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
 
             {!readOnly && (
               <div>
-                <p className="text-xs font-medium text-[#6b7685] mb-2">Available actions</p>
+                <p className="text-xs font-medium text-[var(--ink-2, #6b7685)] mb-2">Available actions</p>
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label, danger }) => (
                     <button type="button"
@@ -582,7 +592,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {ACTIONS[selected.chain_status]?.length === 0 && (
-                    <p className="text-xs text-[#9aa5b4]">No actions — terminal state.</p>
+                    <p className="text-xs text-[var(--ink-2, #9aa5b4)]">No actions — terminal state.</p>
                   )}
                 </div>
               </div>
@@ -594,10 +604,10 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
       {/* Create modal */}
       {showCreate && !readOnly && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-[#0f1c2e]">Add lesson learned</h3>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">Add lesson learned</h3>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning in create form */}
@@ -650,12 +660,12 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                 </FormField>
               </div>
               {/* Live SLA preview */}
-              <div className="bg-[#f8fafc] rounded p-2 flex items-center justify-between">
+              <div className="bg-[var(--s1, #f8fafc)] rounded p-2 flex items-center justify-between">
                 <span className="text-xs font-medium">SLA preview (INVERTED):</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${TIER_COLOR[newTier]}`}>
                   {TIER_LABEL[newTier]}
                 </span>
-                <span className="text-xs text-[#6b7685]">{SLA_HOURS_BY_TIER[newTier]}h ({Math.round(SLA_HOURS_BY_TIER[newTier]/24)}d)</span>
+                <span className="text-xs text-[var(--ink-2, #6b7685)]">{SLA_HOURS_BY_TIER[newTier]}h ({Math.round(SLA_HOURS_BY_TIER[newTier]/24)}d)</span>
               </div>
               <FormField label="RCA method">
                 <select className="w-full text-sm border rounded px-2 py-1.5" value={newRcaMethod} onChange={e => setNewRcaMethod(e.target.value)}>
@@ -670,7 +680,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
               </label>
 
               {/* Cross-references */}
-              <p className="text-xs font-medium text-[#6b7685] pt-1">Cross-references</p>
+              <p className="text-xs font-medium text-[var(--ink-2, #6b7685)] pt-1">Cross-references</p>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Issue ref">
                   <input className="w-full text-sm border rounded px-2 py-1.5 font-mono" value={newIssueRef} onChange={e => setNewIssueRef(e.target.value)} placeholder="iss-001" />
@@ -690,7 +700,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
               </div>
 
               {/* Floor flags */}
-              <p className="text-xs font-medium text-[#6b7685] pt-1">Floor flags</p>
+              <p className="text-xs font-medium text-[var(--ink-2, #6b7685)] pt-1">Floor flags</p>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { val: newFloorSafety, set: setNewFloorSafety, label: 'Safety critical (requires safety team review)' },
@@ -710,7 +720,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             {error && <div className="text-xs text-red-600 mt-3">{error}</div>}
 
             <div className="flex justify-end gap-2 mt-4">
-              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[var(--s2, #eef2f7)]" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="button"
                 className="text-xs bg-[#c2873a] text-white rounded px-3 py-1.5 hover:bg-[#a3702f] disabled:opacity-50"
                 disabled={!newTitle || !newProject || !newDescription || createLoading}
@@ -727,10 +737,10 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : color === 'purple' ? 'text-purple-700' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : color === 'purple' ? 'text-purple-700' : 'text-[var(--ink, #2d3748)]';
   return (
-    <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
-      <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>
+    <div className="bg-surface-v2 rounded-lg border border-[var(--border-subtle, #dde4ec)] p-3">
+      <p className="text-[10px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-bold mt-0.5 ${cls}`}>{value}</p>
     </div>
   );
@@ -743,17 +753,17 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide">{label}</p>
-      <p className="text-xs text-[#2d3748] font-mono">{value}</p>
+      <p className="text-[10px] text-[var(--ink-2, #9aa5b4)] uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-[var(--ink, #2d3748)] font-mono">{value}</p>
     </div>
   );
 }
 
-function ContentBlock({ label, content, cls = 'bg-[#f8fafc]' }: { label: string; content: string; cls?: string }) {
+function ContentBlock({ label, content, cls = 'bg-[var(--s1, #f8fafc)]' }: { label: string; content: string; cls?: string }) {
   return (
     <div className={`rounded-lg p-3 ${cls}`}>
-      <p className="text-xs font-medium text-[#3d4756] mb-1">{label}</p>
-      <p className="text-xs text-[#2d3748] whitespace-pre-wrap">{content}</p>
+      <p className="text-xs font-medium text-[var(--ink-2, #3d4756)] mb-1">{label}</p>
+      <p className="text-xs text-[var(--ink, #2d3748)] whitespace-pre-wrap">{content}</p>
     </div>
   );
 }
@@ -761,7 +771,7 @@ function ContentBlock({ label, content, cls = 'bg-[#f8fafc]' }: { label: string;
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#3d4756] mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[var(--ink-2, #3d4756)] mb-1">{label}</label>
       {children}
     </div>
   );

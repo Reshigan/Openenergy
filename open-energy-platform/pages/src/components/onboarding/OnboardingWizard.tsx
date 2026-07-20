@@ -293,7 +293,7 @@ function ProgressDots({ steps, currentStep, accentColor }: { steps: string[]; cu
         const done = i < currentIdx;
         return (
           <div key={s} className="rounded-full transition-all duration-200"
-            style={{ width: active ? 24 : 8, height: 8, backgroundColor: active || done ? accentColor : '#dde3ee', opacity: done ? 0.5 : 1 }} />
+            style={{ width: active ? 24 : 8, height: 8, backgroundColor: active || done ? accentColor : 'var(--border-subtle, #dde3ee)', opacity: done ? 0.5 : 1 }} />
         );
       })}
     </div>
@@ -328,7 +328,7 @@ export function OnboardingWizard() {
         if (completed) {
           // /launch/:role was retired in Phase E (now redirects to Horizon).
           // Send returning, already-onboarded users straight to their workspace.
-          navigate('/cockpit', { replace: true });
+          navigate('/v2', { replace: true });
           return;
         }
         if (serverStep && serverStep !== 'welcome') {
@@ -372,7 +372,7 @@ export function OnboardingWizard() {
         // the Getting-Started card shows (the provisioning cascade writes the
         // manifest async via the queue; the card tolerates it settling).
         await api.post('/onboarding/complete', {});
-        navigate('/cockpit?welcome=1', { replace: true });
+        navigate('/v2?welcome=1', { replace: true });
       } else {
         setStep(next_step);
       }
@@ -401,7 +401,7 @@ export function OnboardingWizard() {
       // Best-effort
     } finally {
       setLoading(false);
-      navigate('/cockpit', { replace: true });
+      navigate('/v2', { replace: true });
     }
   };
 
@@ -409,7 +409,7 @@ export function OnboardingWizard() {
   if (initializing) {
     return (
       <div className="min-h-[100dvh] bg-[#f4f6fa] flex items-center justify-center">
-        <div className="text-[#5b6b85] text-sm">Loading…</div>
+        <div className="text-[var(--ink-2, #5b6b85)] text-sm">Loading…</div>
       </div>
     );
   }
@@ -431,7 +431,7 @@ export function OnboardingWizard() {
   const currentContentIdx = contentSteps.indexOf(step);
 
   return (
-    <div className="min-h-[100dvh] bg-white grid lg:grid-cols-[420px_1fr]">
+    <div className="min-h-[100dvh] bg-surface-v2 grid lg:grid-cols-[420px_1fr]">
       <BrandRail steps={steps} currentStep={step} role={role} />
 
       {/* Right — form panel */}
@@ -452,14 +452,14 @@ export function OnboardingWizard() {
             {/* Step header */}
             {!isWelcome && (
               <div className="mb-7">
-                <div className="text-[11px] font-semibold text-[#5b6b85] uppercase tracking-[0.14em] mb-1.5">
+                <div className="text-[11px] font-semibold text-[var(--ink-2, #5b6b85)] uppercase tracking-[0.14em] mb-1.5">
                   Step {currentContentIdx + 1} of {contentSteps.length}
                 </div>
                 <h2 className="text-[24px] font-bold text-[#0e1726] leading-snug tracking-tight">
                   {stepMeta?.title || step}
                 </h2>
                 {stepMeta?.subtitle && (
-                  <p className="mt-1.5 text-[14px] text-[#5b6b85]">{stepMeta.subtitle}</p>
+                  <p className="mt-1.5 text-[14px] text-[var(--ink-2, #5b6b85)]">{stepMeta.subtitle}</p>
                 )}
               </div>
             )}
@@ -486,7 +486,7 @@ export function OnboardingWizard() {
             <div className="mt-9 flex items-center justify-between">
               <button
                 type="button"
-                className="text-[12px] text-[#5b6b85] hover:text-[#3a4760] underline underline-offset-2 transition-colors"
+                className="text-[12px] text-[var(--ink-2, #5b6b85)] hover:text-[#3a4760] underline underline-offset-2 transition-colors"
                 onClick={() => setConfirmSkip(true)}
                 disabled={loading}
               >
@@ -497,7 +497,7 @@ export function OnboardingWizard() {
                 {!isFirst && (
                   <button
                     type="button"
-                    className="h-10 px-4 rounded-md border border-[#dde3ee] text-[13px] text-[#3a4760] bg-white hover:bg-[#f4f6fa] transition-colors"
+                    className="h-10 px-4 rounded-md border border-[var(--border-subtle, #dde3ee)] text-[13px] text-[#3a4760] bg-surface-v2 hover:bg-[#f4f6fa] transition-colors"
                     onClick={handleBack}
                     disabled={loading}
                   >
@@ -529,17 +529,17 @@ export function OnboardingWizard() {
             role="dialog"
             aria-modal="true"
             aria-label="Skip setup"
-            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+            className="w-full max-w-sm rounded-xl bg-surface-v2 p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[16px] font-semibold text-[#0e1726]">Skip setup?</h3>
-            <p className="mt-2 text-[13px] text-[#5b6b85]">
+            <p className="mt-2 text-[13px] text-[var(--ink-2, #5b6b85)]">
               You can finish it later from your cockpit, but anything entered here will not be saved.
             </p>
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 type="button"
-                className="h-9 px-4 rounded border border-[#dde3ee] text-[13px] text-[#3a4760] bg-white hover:bg-[#f4f6fa] transition-colors"
+                className="h-9 px-4 rounded border border-[var(--border-subtle, #dde3ee)] text-[13px] text-[#3a4760] bg-surface-v2 hover:bg-[#f4f6fa] transition-colors"
                 onClick={() => setConfirmSkip(false)}
                 autoFocus
               >

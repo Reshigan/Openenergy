@@ -12,7 +12,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { Pill } from '../launch/WorkstationShell';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 type Run = {
   id: string;
@@ -75,15 +75,15 @@ export function BillingRunDetailPage() {
     <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-[12px]" style={{ color: '#6b7685' }}>
-            <Link to="/cockpit" className="hover:underline">Admin workstation</Link>
+          <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
+            <Link to="/v2" className="hover:underline">Admin workstation</Link>
             <span>/</span>
-            <span style={{ color: '#0f1c2e', fontWeight: 600 }}>Billing run</span>
+            <span style={{ color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}>Billing run</span>
           </div>
           <h1 className="mt-2 font-display text-[24px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>
             {run.run_type === 'monthly' ? 'Monthly' : run.run_type === 'correction' ? 'Correction' : 'Ad-hoc'} billing · {run.period_start} → {run.period_end}
           </h1>
-          <p className="text-[13px] text-[#3d4756]">
+          <p className="text-[13px] text-[var(--ink-2, #3d4756)]">
             <Pill tone={run.status === 'completed' ? 'good' : run.status === 'failed' ? 'bad' : 'warn'}>
               {statusLabel(run.status).text}
             </Pill>
@@ -92,10 +92,10 @@ export function BillingRunDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/cockpit')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/v2')} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Workstation
           </button>
-          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
         </div>
@@ -116,16 +116,16 @@ export function BillingRunDetailPage() {
       )}
 
       <section>
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>Run timeline</h2>
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-4 space-y-2 text-[13px]">
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-2, #6b7685)' }}>Run timeline</h2>
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 space-y-2 text-[13px]">
           <div className="flex items-center gap-2">
             <Pill tone="info">Created</Pill>
-            <span className="text-[#6b7685]">{new Date(run.created_at).toLocaleString()}</span>
+            <span className="text-[var(--ink-2, #6b7685)]">{new Date(run.created_at).toLocaleString()}</span>
           </div>
           {run.started_at && (
             <div className="flex items-center gap-2">
               <Pill tone="info">Started</Pill>
-              <span className="text-[#6b7685]">{new Date(run.started_at).toLocaleString()}</span>
+              <span className="text-[var(--ink-2, #6b7685)]">{new Date(run.started_at).toLocaleString()}</span>
             </div>
           )}
           {run.completed_at && (
@@ -133,24 +133,24 @@ export function BillingRunDetailPage() {
               <Pill tone={run.status === 'completed' ? 'good' : run.status === 'failed' ? 'bad' : 'warn'}>
                 {run.status === 'completed' ? 'Completed' : run.status === 'failed' ? 'Failed' : 'Stopped'}
               </Pill>
-              <span className="text-[#6b7685]">{new Date(run.completed_at).toLocaleString()}</span>
+              <span className="text-[var(--ink-2, #6b7685)]">{new Date(run.completed_at).toLocaleString()}</span>
             </div>
           )}
         </div>
       </section>
 
       <section>
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-2, #6b7685)' }}>
           Tenant invoices for this period ({tenantInvoices.length})
         </h2>
         {tenantInvoices.length === 0 ? (
-          <div className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">
+          <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 text-[12px] text-[var(--ink-2, #6b7685)]">
             No tenant invoices linked to this period (endpoint may not be exposed yet, or the run hasn't produced invoices).
           </div>
         ) : (
-          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 overflow-hidden">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <thead className="bg-[var(--s1, #f8fafc)] text-left text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
                 <tr>
                   <th className="px-4 py-2">Invoice</th>
                   <th className="px-4 py-2">Tenant</th>
@@ -160,7 +160,7 @@ export function BillingRunDetailPage() {
               </thead>
               <tbody>
                 {tenantInvoices.map(ti => (
-                  <tr key={ti.id} className="border-t border-[#e5ebf2]">
+                  <tr key={ti.id} className="border-t border-[var(--border-subtle, #e5ebf2)]">
                     <td className="px-4 py-2"><span className="font-mono text-[11px]">{ti.invoice_number || ti.id.slice(0, 14)}…</span></td>
                     <td className="px-4 py-2"><span className="font-mono text-[11px]">{(ti.tenant_id || '').slice(0, 14)}…</span></td>
                     <td className="px-4 py-2">{formatZAR(ti.amount_zar || ti.total_amount || 0)}</td>
@@ -178,8 +178,8 @@ export function BillingRunDetailPage() {
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
-      <div className="text-[10px] uppercase tracking-wide text-[#6b7685]">{label}</div>
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+      <div className="text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="mt-1 text-[16px] font-bold">{value}</div>
     </div>
   );

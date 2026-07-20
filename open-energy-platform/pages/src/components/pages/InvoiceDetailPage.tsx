@@ -15,21 +15,21 @@ import { ErrorBanner } from '../ErrorBanner';
 import { Pill } from '../launch/WorkstationShell';
 import { SettlementWaterfall } from '../widgets/SettlementWaterfall';
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BG2     = 'oklch(0.93 0.004 250)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 55)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
-const WARN    = 'oklch(0.50 0.18 55)';
-const WARN_BG = 'oklch(0.96 0.05 55)';
-const GOOD    = 'oklch(0.40 0.16 155)';
-const GOOD_BG = 'oklch(0.95 0.04 155)';
-const INFO_BG = 'oklch(0.95 0.03 250)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2     = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const WARN    = 'var(--accent, oklch(0.50 0.18 55))';
+const WARN_BG = 'color-mix(in oklab, var(--warn) 15%, var(--s1))';
+const GOOD    = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG = 'color-mix(in oklab, var(--good) 15%, var(--s1))';
+const INFO_BG = 'color-mix(in oklab, var(--accent) 15%, var(--s1))';
 const INFO    = 'oklch(0.40 0.10 250)';
 const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
@@ -411,10 +411,10 @@ export function InvoiceDetailPage() {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function KpiCard({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
-  const BG1_  = 'oklch(0.99 0.002 80)';
-  const BORDER_ = 'oklch(0.87 0.006 250)';
-  const TX1_  = 'oklch(0.17 0.010 250)';
-  const TX3_  = 'oklch(0.60 0.007 250)';
+  const BG1_  = 'var(--s1, oklch(0.99 0.002 80))';
+  const BORDER_ = 'var(--border-subtle, oklch(0.87 0.006 250))';
+  const TX1_  = 'var(--ink, oklch(0.17 0.010 250))';
+  const TX3_  = 'var(--ink-2, oklch(0.60 0.007 250))';
   const MONO_ = '"IBM Plex Mono","Fira Code",monospace';
   return (
     <div style={{
@@ -432,9 +432,9 @@ function KpiCard({ label, value, highlight }: { label: string; value: string; hi
 }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-  const BG1_   = 'oklch(0.99 0.002 80)';
-  const BORDER_ = 'oklch(0.87 0.006 250)';
-  const TX2_   = 'oklch(0.40 0.009 250)';
+  const BG1_   = 'var(--s1, oklch(0.99 0.002 80))';
+  const BORDER_ = 'var(--border-subtle, oklch(0.87 0.006 250))';
+  const TX2_   = 'var(--ink-2, oklch(0.40 0.009 250))';
   return (
     <div style={{ background: BG1_, border: `1px solid ${BORDER_}`, borderRadius: 8, padding: '16px 20px', marginBottom: 16, overflow: 'hidden' }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: TX2_, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
@@ -446,8 +446,8 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 function MbTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
-  const BORDER_ = 'oklch(0.87 0.006 250)';
-  const TX2_    = 'oklch(0.40 0.009 250)';
+  const BORDER_ = 'var(--border-subtle, oklch(0.87 0.006 250))';
+  const TX2_    = 'var(--ink-2, oklch(0.40 0.009 250))';
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -468,15 +468,15 @@ function MbTable({ headers, children }: { headers: string[]; children: React.Rea
 }
 
 function EmptyState({ label }: { label: string }) {
-  const TX3_ = 'oklch(0.60 0.007 250)';
+  const TX3_ = 'var(--ink-2, oklch(0.60 0.007 250))';
   return (
     <div style={{ padding: '16px 0', fontSize: 12, color: TX3_, fontStyle: 'italic' }}>{label}</div>
   );
 }
 
 function SummaryRow({ label, value, mono, highlight }: { label: string; value: string; mono?: boolean; highlight?: string }) {
-  const TX2_ = 'oklch(0.40 0.009 250)';
-  const TX3_ = 'oklch(0.60 0.007 250)';
+  const TX2_ = 'var(--ink-2, oklch(0.40 0.009 250))';
+  const TX3_ = 'var(--ink-2, oklch(0.60 0.007 250))';
   const MONO_ = '"IBM Plex Mono","Fira Code",monospace';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>

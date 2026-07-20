@@ -107,10 +107,10 @@ export function ProjectScurve({ milestones, capexZar, startDate, codDate }: Prop
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex flex-wrap items-center justify-between gap-2">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Earned-value S-curve</div>
-          <div className="text-[11px] text-[#6b7685]">Cumulative milestone progress vs plan and capex burn</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Earned-value S-curve</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Cumulative milestone progress vs plan and capex burn</div>
         </div>
         <div className="flex gap-4 text-[11px]">
           <Kpi label="SPI" value={data.spi == null ? '—' : data.spi.toFixed(2)} tone={spiTone} hint="Schedule perf. (earned / planned)" />
@@ -120,13 +120,13 @@ export function ProjectScurve({ milestones, capexZar, startDate, codDate }: Prop
       <div style={{ height: 240 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data.series} margin={{ top: 12, right: 16, bottom: 16, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} unit="%" domain={[0, 100]} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} unit="%" domain={[0, 100]} />
             <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Area isAnimationActive={false}  type="monotone" dataKey="planned" name="Planned %"  stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
-            <Line isAnimationActive={false}  type="monotone" dataKey="earned"  name="Earned %"   stroke="#1a8a5b" strokeWidth={2} dot={false} />
+            <Line isAnimationActive={false}  type="monotone" dataKey="earned"  name="Earned %"   stroke="var(--good, #1a8a5b)" strokeWidth={2} dot={false} />
             <Line isAnimationActive={false}  type="monotone" dataKey="burn"    name="Capex burn %" stroke="#b04e0f" strokeDasharray="4 4" dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
@@ -137,14 +137,14 @@ export function ProjectScurve({ milestones, capexZar, startDate, codDate }: Prop
 
 function Kpi({ label, value, tone, hint }: { label: string; value: string; tone: string; hint: string }) {
   const map: Record<string, string> = {
-    good: 'text-[#1a8a5b]',
+    good: 'text-[var(--good, #1a8a5b)]',
     warn: 'text-[#b04e0f]',
-    bad:  'text-[#c0392b]',
+    bad:  'text-[var(--bad, #c0392b)]',
     info: 'text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-[13px] font-mono font-semibold ${map[tone]}`}>{value}</div>
     </div>
   );

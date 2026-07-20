@@ -81,20 +81,21 @@ export function SuiteHero({ role, eyebrow, title, subtitle, accentFrom, accentTo
     };
   }, [role]);
 
+  // v2 reskin: var(--token, lightFallback) → dark under .v2, light on public pages.
   const toneColor: Record<string, string> = {
-    good: 'oklch(0.55 0.18 145)', warn: 'oklch(0.65 0.18 75)', bad: 'oklch(0.55 0.22 25)', neutral: 'oklch(0.50 0.008 250)',
+    good: 'var(--good, oklch(0.55 0.18 145))', warn: 'var(--warn, oklch(0.65 0.18 75))', bad: 'var(--bad, oklch(0.55 0.22 25))', neutral: 'var(--ink-2, oklch(0.50 0.008 250))',
   };
 
   return (
     <section
       className="border-b px-0 py-4"
-      style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
+      style={{ background: 'var(--s1, oklch(0.99 0.002 80))', borderColor: 'var(--border-subtle, oklch(0.88 0.006 250))' }}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          {eyebrow && <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{eyebrow}</div>}
-          <h2 className="font-display font-bold tracking-tight mt-0.5" style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}>{title}</h2>
-          {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>}
+          {eyebrow && <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>{eyebrow}</div>}
+          <h2 className="font-display font-bold tracking-tight mt-0.5" style={{ fontSize: 20, color: 'var(--ink, oklch(0.15 0.025 250))' }}>{title}</h2>
+          {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'var(--ink-2, oklch(0.45 0.015 250))' }}>{subtitle}</p>}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
@@ -111,14 +112,14 @@ export function SuiteHero({ role, eyebrow, title, subtitle, accentFrom, accentTo
 
 function KpiCell({ kpi, toneColor }: { kpi: Kpi; toneColor: Record<string, string> }) {
   return (
-    <div className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{kpi.label}</div>
-      <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}>
+    <div className="rounded-lg p-3" style={{ background: 'var(--s2, oklch(0.96 0.003 250))', border: '1px solid var(--border-subtle, oklch(0.90 0.004 250))' }}>
+      <div className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>{kpi.label}</div>
+      <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ink, oklch(0.15 0.025 250))' }}>
         {formatValue(kpi.value)}
-        {kpi.unit && <span className="ml-1 text-[12px] font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{kpi.unit}</span>}
+        {kpi.unit && <span className="ml-1 text-[12px] font-semibold" style={{ color: 'var(--ink-2, oklch(0.55 0.008 250))' }}>{kpi.unit}</span>}
       </div>
       {(kpi.trend_value || kpi.footer) && (
-        <div className="text-[10px] mt-0.5" style={{ color: kpi.tone ? toneColor[kpi.tone] : 'oklch(0.55 0.008 250)' }}>
+        <div className="text-[10px] mt-0.5" style={{ color: kpi.tone ? toneColor[kpi.tone] : 'var(--ink-2, oklch(0.55 0.008 250))' }}>
           {kpi.trend_value || kpi.footer}
         </div>
       )}

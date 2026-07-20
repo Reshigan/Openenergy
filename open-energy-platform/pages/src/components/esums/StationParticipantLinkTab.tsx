@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { statusLabel } from '../../meridian/ease/statusLabel';
+import { statusLabel } from '../../shared/ease/statusLabel';
 
 interface StationLink {
   id: string;
@@ -30,7 +30,7 @@ interface LinkKpis {
 // ─── Status meta ─────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  link_proposed:          'bg-[#eef2f7] text-[#3d4756]',
+  link_proposed:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   under_review:           'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   documentation_requested:'bg-amber-100 text-amber-700',
   documentation_submitted:'bg-cyan-100 text-cyan-700',
@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   approved:               'bg-teal-100 text-teal-700',
   link_active:            'bg-green-100 text-green-700',
   link_rejected:          'bg-red-100 text-red-700',
-  link_expired:           'bg-[#eef2f7] text-[#9aa5b4]',
+  link_expired:           'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
   link_suspended:         'bg-yellow-100 text-yellow-800',
 };
 
@@ -179,7 +179,7 @@ function truncate(s: string, n = 24): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 const PAGE_SIZE = 20;
 
@@ -191,15 +191,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -461,7 +461,7 @@ export function StationParticipantLinkTab() {
             <option key={t} value={t}>{LINK_TYPE_LABELS[t] ?? t}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-[#2d3748] cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--ink, #2d3748)] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filterSlaBreached}
@@ -472,7 +472,7 @@ export function StationParticipantLinkTab() {
         </label>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -493,16 +493,16 @@ export function StationParticipantLinkTab() {
           <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New Station Participant Link</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">
                 Station *
-                {stationsLoading && <span className="ml-1 text-[#9aa5b4]">Loading…</span>}
+                {stationsLoading && <span className="ml-1 text-[var(--ink-2, #9aa5b4)]">Loading…</span>}
               </label>
               {stationOptions.length > 0 ? (
                 <select
                   value={formStationId}
                   onChange={e => setFormStationId(e.target.value)}
                   required
-                  className="w-full border rounded px-2 py-1 text-xs bg-white"
+                  className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
                 >
                   <option value="">— Select a station —</option>
                   {stationOptions.map(s => (
@@ -523,12 +523,12 @@ export function StationParticipantLinkTab() {
               )}
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Link Type *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Link Type *</label>
               <select
                 value={formLinkType}
                 onChange={e => setFormLinkType(e.target.value)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {LINK_TYPES.map(t => (
                   <option key={t} value={t}>{LINK_TYPE_LABELS[t]}</option>
@@ -536,16 +536,16 @@ export function StationParticipantLinkTab() {
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-[#3d4756] mb-1">
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">
                 {LINK_TYPE_LABELS[formLinkType] ?? 'Counterparty'} *
-                {participantsLoading && <span className="ml-1 text-[#9aa5b4]">Loading…</span>}
+                {participantsLoading && <span className="ml-1 text-[var(--ink-2, #9aa5b4)]">Loading…</span>}
               </label>
               {participantOptions.length > 0 ? (
                 <select
                   value={formAcceptingId}
                   onChange={e => setFormAcceptingId(e.target.value)}
                   required
-                  className="w-full border rounded px-2 py-1 text-xs bg-white"
+                  className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
                 >
                   <option value="">— Select {LINK_TYPE_LABELS[formLinkType] ?? 'counterparty'} —</option>
                   {participantOptions.map(p => (
@@ -555,7 +555,7 @@ export function StationParticipantLinkTab() {
                   ))}
                 </select>
               ) : (
-                <div className="text-xs text-[#6b7685] italic py-1">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] italic py-1">
                   {participantsLoading
                     ? 'Loading registered counterparties…'
                     : `No registered ${LINK_TYPE_LABELS[formLinkType] ?? 'counterparty'} accounts found on the platform.`}
@@ -563,7 +563,7 @@ export function StationParticipantLinkTab() {
               )}
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Reference ID (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reference ID (optional)</label>
               <input
                 type="text"
                 value={formReferenceId}
@@ -589,7 +589,7 @@ export function StationParticipantLinkTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -606,12 +606,12 @@ export function StationParticipantLinkTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">Station ID</th>
                 <th className="pb-2 pr-3">Link Type</th>
                 <th className="pb-2 pr-3">Initiating Party</th>
@@ -630,37 +630,37 @@ export function StationParticipantLinkTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
+                    className="border-b hover:bg-[var(--s2, #eef2f7)] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
                     <td
-                      className="py-2 pr-3 text-xs font-mono text-[#3d4756] max-w-[140px] truncate"
+                      className="py-2 pr-3 text-xs font-mono text-[var(--ink-2, #3d4756)] max-w-[140px] truncate"
                       title={item.station_id}
                     >
                       {truncate(item.station_id, 20)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${LINK_TYPE_COLORS[item.link_type] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${LINK_TYPE_COLORS[item.link_type] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {LINK_TYPE_LABELS[item.link_type] ?? item.link_type}
                       </span>
                     </td>
                     <td
-                      className="py-2 pr-3 text-xs text-[#2d3748] max-w-[140px] truncate"
+                      className="py-2 pr-3 text-xs text-[var(--ink, #2d3748)] max-w-[140px] truncate"
                       title={item.initiating_participant_id}
                     >
                       {truncate(item.initiating_participant_id, 22)}
                     </td>
                     <td
-                      className="py-2 pr-3 text-xs text-[#2d3748] max-w-[140px] truncate"
+                      className="py-2 pr-3 text-xs text-[var(--ink, #2d3748)] max-w-[140px] truncate"
                       title={item.accepting_participant_id}
                     >
                       {truncate(item.accepting_participant_id, 22)}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
-                      {item.reference_id ?? <span className="text-[#9aa5b4]">—</span>}
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
+                      {item.reference_id ?? <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                       {item.sla_breached === 1 && (
@@ -668,7 +668,7 @@ export function StationParticipantLinkTab() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -676,7 +676,7 @@ export function StationParticipantLinkTab() {
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
+                        <span className="text-[var(--border-subtle, #e8ecf0)] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -697,7 +697,7 @@ export function StationParticipantLinkTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No station participant links found
                   </td>
                 </tr>
@@ -713,15 +713,15 @@ export function StationParticipantLinkTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -731,20 +731,20 @@ export function StationParticipantLinkTab() {
       {/* ─── Detail drawer ─────────────────────────────────────────────────── */}
       {detailItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }} className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
-          <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
+          <div className="bg-surface-v2 h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-[#1e2a38]">
+                <div className="text-sm font-semibold text-[var(--ink, #1e2a38)]">
                   Station Participant Link
                 </div>
-                <div className="text-xs text-[#6b7685] mt-0.5">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">
                   {LINK_TYPE_LABELS[detailItem.link_type] ?? detailItem.link_type}
                   {detailItem.reference_id && <> &nbsp;&middot;&nbsp; {detailItem.reference_id}</>}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
+                className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink, #2d3748)] text-lg leading-none"
               >
                 &times;
               </button>
@@ -753,10 +753,10 @@ export function StationParticipantLinkTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${LINK_TYPE_COLORS[detailItem.link_type] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${LINK_TYPE_COLORS[detailItem.link_type] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {LINK_TYPE_LABELS[detailItem.link_type] ?? detailItem.link_type}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -770,52 +770,52 @@ export function StationParticipantLinkTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div className="col-span-2">
-                  <div className="text-[#9aa5b4] mb-0.5">Station ID</div>
-                  <div className="font-mono text-[#2d3748] break-all">{detailItem.station_id}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Station ID</div>
+                  <div className="font-mono text-[var(--ink, #2d3748)] break-all">{detailItem.station_id}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-[#9aa5b4] mb-0.5">Initiating Participant</div>
-                  <div className="font-mono text-[#2d3748] break-all">{detailItem.initiating_participant_id}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Initiating Participant</div>
+                  <div className="font-mono text-[var(--ink, #2d3748)] break-all">{detailItem.initiating_participant_id}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-[#9aa5b4] mb-0.5">Accepting Participant</div>
-                  <div className="font-mono text-[#2d3748] break-all">{detailItem.accepting_participant_id}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Accepting Participant</div>
+                  <div className="font-mono text-[var(--ink, #2d3748)] break-all">{detailItem.accepting_participant_id}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Reference ID</div>
-                  <div className="text-[#1e2a38]">{detailItem.reference_id ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Reference ID</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.reference_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[var(--ink, #1e2a38)]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Regulator Notified</div>
-                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[#9aa5b4]'}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Regulator Notified</div>
+                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[var(--ink-2, #9aa5b4)]'}>
                     {detailItem.regulator_notified === 1 ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Actor</div>
-                  <div className="text-[#2d3748] break-all">{detailItem.actor_id ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Actor</div>
+                  <div className="text-[var(--ink, #2d3748)] break-all">{detailItem.actor_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Created</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Updated</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
-                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[var(--ink, #2d3748)] bg-[var(--s1, #f8fafc)] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -824,7 +824,7 @@ export function StationParticipantLinkTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[var(--ink, #2d3748)] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
@@ -839,7 +839,7 @@ export function StationParticipantLinkTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-[#9aa5b4] italic">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] italic">
                     This link is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -852,9 +852,9 @@ export function StationParticipantLinkTab() {
       {/* ─── Action modal ──────────────────────────────────────────────────── */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Station Participant Link Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">Station Participant Link Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {LINK_TYPE_LABELS[actionItem.link_type] ?? actionItem.link_type}
               {actionItem.reference_id && <> &mdash; {actionItem.reference_id}</>}
               {' '}—{' '}
@@ -862,11 +862,11 @@ export function StationParticipantLinkTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -875,7 +875,7 @@ export function StationParticipantLinkTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -894,7 +894,7 @@ export function StationParticipantLinkTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

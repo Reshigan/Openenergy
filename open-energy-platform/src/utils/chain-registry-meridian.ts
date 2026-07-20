@@ -13089,7 +13089,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
 
   {
     key: 'ipp_aud', wave: 189, table: 'oe_ipp_annual_audits', title: 'Annual audit',
-    refCol: 'participant_id', titleCol: 'project_id', quantumCol: 'annual_revenue_zar',
+    refCol: 'project_id', titleCol: 'project_id', quantumCol: 'annual_revenue_zar',
     statusCol: 'chain_status', deadlineCol: 'sla_deadline',
     terminal: ['audit_completed', 'audit_qualified', 'audit_lapsed'],
     counterpartyCol: 'actor_party', lanes: { ipp_developer: 'regulatory_risk' },

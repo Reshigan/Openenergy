@@ -89,35 +89,35 @@ export function ThreadPanel({
   };
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white">
-      <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center gap-2">
+    <section className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2">
+      <header className="px-5 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center gap-2">
         <MessageSquare size={14} />
-        <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">{title}</div>
-        <span className="text-[11px] text-[#6b7685] font-normal">{threads.length}</span>
+        <div className="font-display font-semibold text-[14px] text-[var(--ink, #0f1c2e)]">{title}</div>
+        <span className="text-[11px] text-[var(--ink-2, #6b7685)] font-normal">{threads.length}</span>
       </header>
       <div className="p-4 space-y-3">
         {err && <div className="text-[12px] text-red-700">{err}</div>}
         {loading ? (
-          <div className="text-[12px] text-[#6b7685]">Loading…</div>
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>
         ) : threads.length === 0 ? (
-          <div className="text-[12px] text-[#6b7685] py-2">No comments yet. Tag teammates with @name.</div>
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)] py-2">No comments yet. Tag teammates with @name.</div>
         ) : (
           <ul className="space-y-3">
             {threads.map((t) => (
               <li key={t.id} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[11px] flex-shrink-0" style={{ background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[11px] flex-shrink-0" style={{ background: 'var(--s2, oklch(0.94 0.02 250))', color: 'var(--accent, oklch(0.46 0.16 55))' }}>
                   {initials(t.author_name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px]">
-                    <span className="font-semibold text-[#0f1c2e]">{t.author_name || 'Unknown'}</span>
-                    {t.author_role && <span className="ml-2 text-[10px] text-[#6b7685] uppercase">{t.author_role}</span>}
-                    <span className="ml-2 text-[10px] text-[#6b7685]">{new Date(t.created_at).toLocaleString()}</span>
+                    <span className="font-semibold text-[var(--ink, #0f1c2e)]">{t.author_name || 'Unknown'}</span>
+                    {t.author_role && <span className="ml-2 text-[10px] text-[var(--ink-2, #6b7685)] uppercase">{t.author_role}</span>}
+                    <span className="ml-2 text-[10px] text-[var(--ink-2, #6b7685)]">{new Date(t.created_at).toLocaleString()}</span>
                   </div>
-                  <div className="text-[13px] text-[#3d4756] whitespace-pre-wrap mt-0.5">{t.content}</div>
+                  <div className="text-[13px] text-[var(--ink-2, #3d4756)] whitespace-pre-wrap mt-0.5">{t.content}</div>
                 </div>
                 {currentParticipantId && t.participant_id === currentParticipantId && (
-                  <button type="button" onClick={() => del(t.id)} title="Delete" className="p-1 text-[#6b7685] hover:text-[#c0392b]">
+                  <button type="button" onClick={() => del(t.id)} title="Delete" className="p-1 text-[var(--ink-2, #6b7685)] hover:text-[var(--bad, #c0392b)]">
                     <Trash2 size={12} />
                   </button>
                 )}
@@ -125,7 +125,7 @@ export function ThreadPanel({
             ))}
           </ul>
         )}
-        <div className="pt-2 border-t border-[#eef2f7]">
+        <div className="pt-2 border-t border-[var(--s2, #eef2f7)]">
           <textarea
             ref={taRef}
             value={draft}
@@ -133,7 +133,7 @@ export function ThreadPanel({
             onKeyDown={onKey}
             rows={2}
             placeholder="Add a comment. ⌘+Enter to post. Tag with @name."
-            className="w-full px-3 py-2 border border-[#dde4ec] rounded-lg text-[12px] resize-none"
+            className="w-full px-3 py-2 border border-[var(--border-subtle, #dde4ec)] rounded-lg text-[12px] resize-none"
           />
           <div className="flex justify-end mt-2">
             <button type="button"

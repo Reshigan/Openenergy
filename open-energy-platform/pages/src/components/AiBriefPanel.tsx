@@ -66,12 +66,12 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
 
   return (
     <section
-      className="rounded-xl border bg-white overflow-hidden"
-      style={{ borderColor: '#dde4ec' }}
+      className="rounded-xl border bg-surface-v2 overflow-hidden"
+      style={{ borderColor: 'var(--border-subtle, #dde4ec)' }}
     >
       <header
         className="px-5 py-3.5 border-b flex items-center justify-between gap-3"
-        style={{ borderColor: '#e5ebf2' }}
+        style={{ borderColor: 'var(--border-subtle, #e5ebf2)' }}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div
@@ -81,10 +81,10 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
             <Sparkles size={18} />
           </div>
           <div className="leading-tight min-w-0">
-            <h2 className="text-[14px] font-semibold" style={{ color: '#0f1c2e' }}>
+            <h2 className="text-[14px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>
               AI briefing — {role.replace('_', ' ')}
             </h2>
-            <p className="text-[12px] truncate" style={{ color: '#6b7685' }}>
+            <p className="text-[12px] truncate" style={{ color: 'var(--ink-2, #6b7685)' }}>
               Prioritised actions drawn from your live workbench data.
               {brief?.fallback ? ' (Deterministic fallback — AI binding unavailable.)' : ''}
             </p>
@@ -95,7 +95,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
             <button type="button"
               onClick={() => setOpen((v) => !v)}
               className="h-8 w-8 rounded-md border flex items-center justify-center"
-              style={{ borderColor: '#d0d5dd', color: '#6b7685' }}
+              style={{ borderColor: 'var(--border-strong, #d0d5dd)', color: 'var(--ink-2, #6b7685)' }}
               aria-label={open ? 'Collapse brief' : 'Expand brief'}
             >
               {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -116,7 +116,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
       {error && (
         <div
           className="px-5 py-3 text-[13px] inline-flex items-center gap-2"
-          style={{ background: '#ffebee', color: '#c0392b' }}
+          style={{ background: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, #ffebee))', color: 'var(--bad, #c0392b)' }}
         >
           <AlertTriangle size={14} /> {error}
         </div>
@@ -125,7 +125,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
       {open && brief && (
         <div className="p-5 space-y-4">
           {brief.text && (
-            <div className="rounded-md p-3" style={{ background: '#f7f8f9' }}>
+            <div className="rounded-md p-3" style={{ background: 'var(--s2, #f7f8f9)' }}>
               <NarrativeText text={brief.text} />
             </div>
           )}
@@ -134,7 +134,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
             <div>
               <h3
                 className="text-[11px] uppercase tracking-wider mb-2"
-                style={{ color: '#6b7685' }}
+                style={{ color: 'var(--ink-2, #6b7685)' }}
               >
                 Prioritised actions ({actions.length})
               </h3>
@@ -143,19 +143,19 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
                   <li
                     key={i}
                     className="rounded-lg border p-3 flex items-start gap-3"
-                    style={{ borderColor: '#dde4ec' }}
+                    style={{ borderColor: 'var(--border-subtle, #dde4ec)' }}
                   >
                     <PriorityDot priority={a.priority} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold" style={{ color: '#0f1c2e' }}>
+                      <div className="text-[13px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>
                         {a.title || 'Action'}
                       </div>
                       {a.rationale && (
-                        <p className="text-[12px] mt-0.5" style={{ color: '#6b7685' }}>
+                        <p className="text-[12px] mt-0.5" style={{ color: 'var(--ink-2, #6b7685)' }}>
                           {a.rationale}
                         </p>
                       )}
-                      <div className="text-[11px] mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5" style={{ color: '#6b7685' }}>
+                      <div className="text-[11px] mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5" style={{ color: 'var(--ink-2, #6b7685)' }}>
                         {a.entity_type && a.entity_id && (
                           <span>{a.entity_type} · {a.entity_id}</span>
                         )}
@@ -181,10 +181,10 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
 }
 
 function PriorityDot({ priority }: { priority?: string }) {
-  const color = priority === 'urgent' ? '#c0392b'
+  const color = priority === 'urgent' ? 'var(--bad, #c0392b)'
     : priority === 'high' ? '#b04e0f'
     : priority === 'normal' ? 'oklch(0.46 0.16 55)'
-    : '#6b7685';
+    : 'var(--ink-2, #6b7685)';
   return (
     <span
       className="mt-1.5 w-2 h-2 rounded-full shrink-0"

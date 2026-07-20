@@ -38,17 +38,17 @@ export function BulkOpsPage() {
       title="Bulk operations"
       subtitle="CSV import / export and bulk update across whitelisted entities."
     >
-      {err && <div className="text-[12px] mb-3" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
+      {err && <div className="text-[12px] mb-3" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       <div className="flex flex-wrap gap-2 mb-4">
         {entities.map((e) => (
           <button type="button" key={e.key} onClick={() => setActive(e.key)}
             className="h-8 px-3 rounded text-[12px] font-semibold"
             style={active === e.key
-              ? { background: 'oklch(0.46 0.16 55)', color: '#fff' }
-              : { border: '1px solid oklch(0.87 0.006 250)', color: 'oklch(0.17 0.010 250)', background: 'oklch(0.99 0.002 80)' }
+              ? { background: 'var(--accent, oklch(0.46 0.16 55))', color: '#fff' }
+              : { border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))', color: 'var(--ink, oklch(0.17 0.010 250))', background: 'var(--s1, oklch(0.99 0.002 80))' }
             }>{e.key}</button>
         ))}
-        {entities.length === 0 && <div className="text-[12px]" style={{ color: 'oklch(0.40 0.009 250)' }}>No entities visible to your role.</div>}
+        {entities.length === 0 && <div className="text-[12px]" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>No entities visible to your role.</div>}
       </div>
       {def && <EntityPanel def={def}/>}
     </StitchPage>
@@ -59,11 +59,11 @@ function EntityPanel({ def }: { def: Entity }) {
   return (
     <div className="space-y-4">
       <div className="widget-card p-4">
-        <div className="text-[13px] font-semibold mb-1" style={{ color: 'oklch(0.17 0.010 250)' }}>Schema</div>
+        <div className="text-[13px] font-semibold mb-1" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>Schema</div>
         <dl className="text-[12px] grid grid-cols-1 md:grid-cols-3 gap-2">
-          <div><dt style={{ color: 'oklch(0.40 0.009 250)' }}>Table</dt><dd className="font-mono">{def.table}</dd></div>
-          <div><dt style={{ color: 'oklch(0.40 0.009 250)' }}>Exportable</dt><dd className="font-mono">{def.select_columns.join(', ')}</dd></div>
-          <div><dt style={{ color: 'oklch(0.40 0.009 250)' }}>Writable</dt><dd className="font-mono">{def.writable_columns.join(', ') || '—'}</dd></div>
+          <div><dt style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Table</dt><dd className="font-mono">{def.table}</dd></div>
+          <div><dt style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Exportable</dt><dd className="font-mono">{def.select_columns.join(', ')}</dd></div>
+          <div><dt style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Writable</dt><dd className="font-mono">{def.writable_columns.join(', ') || '—'}</dd></div>
         </dl>
       </div>
       <ExportPanel def={def}/>
@@ -93,15 +93,15 @@ function ExportPanel({ def }: { def: Entity }) {
   };
   return (
     <div className="widget-card p-4">
-      <div className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1" style={{ color: 'oklch(0.17 0.010 250)' }}><Download size={13}/> Export CSV</div>
+      <div className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}><Download size={13}/> Export CSV</div>
       <div className="flex items-center gap-2 flex-wrap">
-        <label className="text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>Row limit
+        <label className="text-[11px] font-semibold" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Row limit
           <input type="number" min={1} max={10000} className="ml-2 h-8 px-2 rounded text-[12px] w-24 font-mono"
-                 style={{ border: '1px solid oklch(0.87 0.006 250)' }}
+                 style={{ border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' }}
                  value={limit} onChange={(e) => setLimit(Number(e.target.value))}/>
         </label>
         <button type="button" onClick={download} className="h-8 px-3 rounded text-white text-[12px] font-semibold"
-                style={{ background: 'oklch(0.46 0.16 55)' }}>Download</button>
+                style={{ background: 'var(--accent, oklch(0.46 0.16 55))' }}>Download</button>
       </div>
     </div>
   );
@@ -131,19 +131,19 @@ function ImportPanel({ def }: { def: Entity }) {
 
   return (
     <div className="widget-card p-4">
-      <div className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1" style={{ color: 'oklch(0.17 0.010 250)' }}><Upload size={13}/> Import CSV</div>
-      <div className="text-[11px] mb-2" style={{ color: 'oklch(0.40 0.009 250)' }}>Required header columns: {def.import_columns.join(', ')}</div>
+      <div className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}><Upload size={13}/> Import CSV</div>
+      <div className="text-[11px] mb-2" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Required header columns: {def.import_columns.join(', ')}</div>
       <input ref={fileRef} type="file" accept=".csv,text/csv,text/plain" className="text-[12px]"/>
       <button type="button" disabled={busy} onClick={submit} className="ml-2 h-8 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50"
-              style={{ background: 'oklch(0.46 0.16 55)' }}>
+              style={{ background: 'var(--accent, oklch(0.46 0.16 55))' }}>
         {busy ? 'Importing…' : 'Import'}
       </button>
-      {err && <div className="text-[12px] mt-2" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
+      {err && <div className="text-[12px] mt-2" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       {result && (
-        <div className="text-[12px] mt-2" style={{ color: 'oklch(0.17 0.010 250)' }}>
-          <CheckCircle2 size={13} className="inline mr-1" style={{ color: 'oklch(0.45 0.15 150)' }}/>
+        <div className="text-[12px] mt-2" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}>
+          <CheckCircle2 size={13} className="inline mr-1" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}/>
           Received {result.received}, inserted {result.inserted}, failed {result.failed}.
-          {result.errors.length > 0 && <ul className="mt-1 list-disc list-inside" style={{ color: 'oklch(0.48 0.20 20)' }}>{result.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}</ul>}
+          {result.errors.length > 0 && <ul className="mt-1 list-disc list-inside" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}>{result.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}</ul>}
         </div>
       )}
     </div>
@@ -175,27 +175,27 @@ function UpdatePanel({ def }: { def: Entity }) {
 
   return (
     <div className="widget-card p-4">
-      <div className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1" style={{ color: 'oklch(0.17 0.010 250)' }}><Edit3 size={13}/> Bulk update</div>
-      <div className="text-[11px] mb-2" style={{ color: 'oklch(0.40 0.009 250)' }}>Apply the same patch to every listed id. Writable columns only.</div>
-      <label className="block text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>IDs (comma or newline separated)
+      <div className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1" style={{ color: 'var(--ink, oklch(0.17 0.010 250))' }}><Edit3 size={13}/> Bulk update</div>
+      <div className="text-[11px] mb-2" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>Apply the same patch to every listed id. Writable columns only.</div>
+      <label className="block text-[11px] font-semibold" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>IDs (comma or newline separated)
         <textarea rows={3} className="mt-1 w-full p-2 rounded text-[12px] font-mono"
-               style={{ border: '1px solid oklch(0.87 0.006 250)' }}
+               style={{ border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' }}
                value={ids} onChange={(e) => setIds(e.target.value)}/>
       </label>
       <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
         {def.writable_columns.map((c) => (
-          <label key={c} className="text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>
+          <label key={c} className="text-[11px] font-semibold" style={{ color: 'var(--ink-2, oklch(0.40 0.009 250))' }}>
             {c}
             <input className="mt-1 w-full h-8 px-2 rounded text-[12px]"
-                   style={{ border: '1px solid oklch(0.87 0.006 250)' }}
+                   style={{ border: '1px solid var(--border-subtle, oklch(0.87 0.006 250))' }}
                    value={patch[c] || ''} onChange={(e) => setPatch({ ...patch, [c]: e.target.value })}/>
           </label>
         ))}
       </div>
-      {err && <div className="text-[12px] mt-2" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
-      {ack && <div className="text-[12px] mt-2" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
+      {err && <div className="text-[12px] mt-2" style={{ color: 'var(--bad, oklch(0.48 0.20 20))' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
+      {ack && <div className="text-[12px] mt-2" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
       <button type="button" disabled={busy} onClick={submit} className="mt-2 h-8 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50"
-              style={{ background: 'oklch(0.46 0.16 55)' }}>
+              style={{ background: 'var(--accent, oklch(0.46 0.16 55))' }}>
         {busy ? 'Updating…' : 'Apply'}
       </button>
     </div>

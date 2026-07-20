@@ -61,17 +61,17 @@ import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 import { faultMlViz } from '../mlGovViz';
 
 // OKLCH tokens
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type FfmlStatus =
@@ -733,7 +733,7 @@ function renderDetail(row: FfmlRow): React.ReactNode {
 
       {/* Regulator crossing */}
       {(row.is_reportable_flag || row.regulator_ref || row.regulator_inbox_ref || row.reason_code) && (
-        <div style={{ marginBottom: 12, background: 'oklch(0.97 0.01 20)', border: `1px solid oklch(0.80 0.05 20)`, borderRadius: 6, padding: 12, color: BAD, fontSize: 11 }}>
+        <div style={{ marginBottom: 12, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', border: `1px solid oklch(0.80 0.05 20)`, borderRadius: 6, padding: 12, color: BAD, fontSize: 11 }}>
           <div style={{ marginBottom: 6, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', color: BAD }}>Regulator crossing</div>
           {row.reason_code && <div>Reason: <span style={{ fontFamily: MONO }}>{row.reason_code}</span></div>}
           {row.regulator_reason_text && <div>Detail: {row.regulator_reason_text}</div>}
@@ -1039,7 +1039,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       ))}
 
       {err && (
-        <div style={{ marginBottom: 12, background: 'oklch(0.97 0.01 20)', border: `1px solid oklch(0.80 0.05 20)`, borderRadius: 6, padding: '8px 12px', fontSize: 12, color: BAD }}>{err}</div>
+        <div style={{ marginBottom: 12, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', border: `1px solid oklch(0.80 0.05 20)`, borderRadius: 6, padding: '8px 12px', fontSize: 12, color: BAD }}>{err}</div>
       )}
 
       {!loading && faultMlViz(filtered)}

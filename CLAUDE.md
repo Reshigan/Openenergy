@@ -66,7 +66,7 @@ Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 
 ### Durable Objects
 
-`OrderBook` in [src/do/order-book.ts](open-energy-platform/src/do/) is the only DO currently bound. One instance per shard (energy_type × delivery_day) — `deriveShardKey()` in `utils/matching.ts` does the routing. Other DO classes (Risk, Smart, Escrow) exist in code but aren't bound in `wrangler.toml`.
+`OrderBook` in [src/do/order-book.ts](open-energy-platform/src/do/) is the only DO currently bound. One instance per shard (energy_type × delivery_day) — `deriveShardKey()` in `utils/matching.ts` does the routing. It is also the only DO class that exists: `src/do/` contains `order-book.ts` and nothing else. No Escrow, Risk, or Smart DO is implemented — settlement writes ledger rows against no custody and no payment rails.
 
 ### Migrations
 

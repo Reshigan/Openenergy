@@ -10,6 +10,7 @@ import './cascade-rules'; // Layer A — registers all cascade rules at boot
 import { logger } from './utils/logger';
 import { mountRoutes } from './routes/mount-routes';
 import { runAllSweeps } from './utils/sweep-runner';
+import { v2TimerSweep, v2NightlySeal } from './routes/v2';
 import { runDealSweep } from './routes/deals';
 import { processCascadeQueueBatch, fireCascade } from './utils/cascade';
 
@@ -260,6 +261,8 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // OrderBook depth snapshots — persist every active shard's book to D1 so the
       // surveillance plane has fresh depth. No-op when ORDER_BOOK binding is absent.
       await safe('orderbook_depth_snapshots', () => snapshotAllOrderBooks(env));
+      // v2 event-log engine: fire due SLA / time-bar timers (v2_timers).
+      await safe('v2_timer_sweep', () => v2TimerSweep(env));
       break;
 
     case '0 * * * *':
@@ -378,6 +381,8 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('merkle_roots', () => buildDailyMerkleRoots(env as never, yesterday));
       // Margin-call cycle — escalate overdue oe_margin_calls past their deadline.
       await safe('margin_call_cycle', () => runMarginCallCycle(env));
+      // v2 event-log engine: seal the day's events under a merkle root.
+      await safe('v2_nightly_seal', () => v2NightlySeal(env));
       break;
 
     case '35 0 * * *':

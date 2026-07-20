@@ -49,11 +49,11 @@ interface DisputeRow {
 }
 
 const STATUS_TONE: Record<Status, { bg: string; fg: string; label: string }> = {
-  open: { bg: '#f0f3f7', fg: '#445566', label: 'Open' },
-  disputed: { bg: '#fff4d6', fg: '#a06200', label: 'Disputed' },
-  reconciled: { bg: '#e0ecff', fg: '#1f4b9b', label: 'Reconciled' },
-  paid: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Paid' },
-  escalated: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Escalated' },
+  open: { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: 'Open' },
+  disputed: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Disputed' },
+  reconciled: { bg: '#e0ecff', fg: 'var(--info)', label: 'Reconciled' },
+  paid: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Paid' },
+  escalated: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Escalated' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -66,12 +66,12 @@ const FILTERS: Array<{ key: string; label: string }> = [
 ];
 
 function msUntil(deadline: string | null): { bg: string; fg: string; label: string } {
-  if (!deadline) return { bg: '#f0f3f7', fg: '#445566', label: '—' };
+  if (!deadline) return { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: '—' };
   const due = new Date(deadline).getTime();
   const now = Date.now();
   const ms = due - now;
-  if (ms < 0) return { bg: '#fde0e0', fg: '#9b1f1f', label: `Overdue ${humanise(-ms)}` };
-  return { bg: '#daf5e2', fg: '#1f6b3a', label: `In ${humanise(ms)}` };
+  if (ms < 0) return { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: `Overdue ${humanise(-ms)}` };
+  return { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: `In ${humanise(ms)}` };
 }
 
 function humanise(ms: number): string {
@@ -84,10 +84,10 @@ function humanise(ms: number): string {
 
 function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-2, #7a8a9a)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -158,7 +158,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
 
   return (
     <div data-testid="grid-wheeling-charges-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Wheeling charges</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 0 }}>Wheeling charges</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         {scope === 'offtaker'
           ? 'Monthly wheeling charges billed to you against active wheeling agreements. Raise a dispute within 14 days; unresolved disputes escalate to the regulator inbox automatically.'
@@ -182,9 +182,9 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
             data-testid={`grid-wheeling-charges-filter-${f.key}`}
             onClick={() => setFilter(f.key)}
             style={{
-              padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
-              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
+              padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : 'var(--s2, #fff)',
+              color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -192,15 +192,15 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
       </div>
 
       {error && (
-        <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      <div data-testid="grid-wheeling-charges-table" style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
+      <div data-testid="grid-wheeling-charges-table" style={{ marginTop: 14, background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
+            <tr style={{ background: 'var(--s1, #f6f8fb)', textAlign: 'left', color: '#557' }}>
               <th style={{ padding: '8px 12px' }}>Period</th>
               <th style={{ padding: '8px 12px' }}>Agreement</th>
               <th style={{ padding: '8px 12px' }}>Transmission MWh</th>
@@ -211,7 +211,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#7a8a9a' }}>
+              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--ink-2, #7a8a9a)' }}>
                 {loading ? 'Loading…' : 'No wheeling charges in this view.'}
               </td></tr>
             )}
@@ -223,7 +223,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
                   key={r.id}
                   data-testid={`grid-wheeling-charges-row-${r.id}`}
                   onClick={() => openDrill(r)}
-                  style={{ borderTop: '1px solid #eef1f5', cursor: 'pointer' }}
+                  style={{ borderTop: '1px solid var(--border-subtle, #eef1f5)', cursor: 'pointer' }}
                 >
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.period_month}</td>
                   <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>{r.agreement_id}</td>
@@ -250,8 +250,8 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
         <div
           data-testid="grid-wheeling-charges-drill"
           style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 520, background: '#fff',
-            borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 520, background: 'var(--s1, #fff)',
+            borderLeft: '1px solid var(--border-subtle, #e3e7ec)', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
             zIndex: 50, padding: 20, overflowY: 'auto',
           }}
         >
@@ -284,10 +284,10 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
 
           <h4 style={{ marginTop: 18, fontSize: 13, color: '#557' }}>Disputes</h4>
           <div data-testid="grid-wheeling-charges-disputes">
-            {drillDisputes.length === 0 && <div style={{ fontSize: 12, color: '#7a8a9a' }}>No disputes raised.</div>}
+            {drillDisputes.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-2, #7a8a9a)' }}>No disputes raised.</div>}
             {drillDisputes.map((d) => (
-              <div key={d.id} style={{ marginTop: 8, padding: 10, background: '#f6f8fb', borderRadius: 6 }}>
-                <div style={{ fontSize: 12, color: '#0f1c2e', fontWeight: 600 }}>
+              <div key={d.id} style={{ marginTop: 8, padding: 10, background: 'var(--s1, #f6f8fb)', borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}>
                   {d.status.toUpperCase()} · raised {new Date(d.raised_at).toLocaleDateString()}
                 </div>
                 <div style={{ fontSize: 12, marginTop: 4 }}>{d.dispute_reason}</div>
@@ -295,7 +295,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
                   <div style={{ fontSize: 12, marginTop: 4, color: '#557' }}>Claimed: R{Math.round(d.claimed_amount_zar).toLocaleString()}</div>
                 )}
                 {d.resolution_amount_zar != null && (
-                  <div style={{ fontSize: 12, marginTop: 4, color: '#1f6b3a' }}>Resolved at R{Math.round(d.resolution_amount_zar).toLocaleString()}</div>
+                  <div style={{ fontSize: 12, marginTop: 4, color: 'var(--good, #1f6b3a)' }}>Resolved at R{Math.round(d.resolution_amount_zar).toLocaleString()}</div>
                 )}
                 {d.status === 'open' && (
                   <button
@@ -332,7 +332,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
                   const amt = prompt('Paid amount (ZAR)?', String(drillRow.total_zar));
                   if (amt) void act('pay', { paid_amount_zar: Number(amt) }, drillRow.id);
                 }}
-                style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Mark paid</button>
             )}
           </div>

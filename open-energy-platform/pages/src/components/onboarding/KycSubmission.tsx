@@ -22,8 +22,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { statusLabel } from '../../meridian/ease/statusLabel';
-import '../../meridian/meridian.css';
+import { statusLabel } from '../../shared/ease/statusLabel';
+import '../../shared/surfaces.css';
 
 // Accept only the document formats the reviewers can open, and cap pre-upload size
 // so a too-large file fails with a clear message instead of a silent backend 413.
@@ -400,7 +400,7 @@ export function KycSubmission() {
       )}
 
       {/* Returning users land here from the Getting-Started gate; offer a way back. */}
-      <button type="button" className="mer-kyc-back" onClick={() => navigate('/cockpit')}>
+      <button type="button" className="mer-kyc-back" onClick={() => navigate('/v2')}>
         Back to workspace
       </button>
     </div>

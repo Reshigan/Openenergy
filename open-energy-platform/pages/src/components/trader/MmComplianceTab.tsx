@@ -50,16 +50,16 @@ interface PerformanceRow {
 }
 
 const BREACH_TONE: Record<BreachStatus, { bg: string; fg: string; label: string }> = {
-  none: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Compliant' },
-  warning: { bg: '#fff4d6', fg: '#a06200', label: 'Warning' },
-  breach: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Breach' },
+  none: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Compliant' },
+  warning: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Warning' },
+  breach: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Breach' },
   escalated: { bg: '#3a0f0f', fg: '#ffd6d6', label: 'Escalated' },
 };
 
 const PERF_TONE: Record<NonNullable<ComplianceStatus>, { bg: string; fg: string; label: string }> = {
-  compliant: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Compliant' },
-  miss: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Miss' },
-  excused: { bg: '#e0ecff', fg: '#1f4b9b', label: 'Excused' },
+  compliant: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Compliant' },
+  miss: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Miss' },
+  excused: { bg: '#e0ecff', fg: 'var(--info)', label: 'Excused' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -73,10 +73,10 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-2, #7a8a9a)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -145,7 +145,7 @@ export function MmComplianceTab() {
 
   return (
     <div data-testid="trader-mm-compliance-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>MM compliance</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 0 }}>MM compliance</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Daily market-maker obligation scoring against the contracted targets. Three consecutive
         misses raise a breach; five trigger escalation to the regulator inbox.
@@ -167,9 +167,9 @@ export function MmComplianceTab() {
             data-testid={`trader-mm-compliance-filter-${f.key}`}
             onClick={() => setFilter(f.key)}
             style={{
-              padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
-              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
+              padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : 'var(--s2, #fff)',
+              color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -177,15 +177,15 @@ export function MmComplianceTab() {
       </div>
 
       {error && (
-        <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      <div data-testid="trader-mm-compliance-table" style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
+      <div data-testid="trader-mm-compliance-table" style={{ marginTop: 14, background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
+            <tr style={{ background: 'var(--s1, #f6f8fb)', textAlign: 'left', color: '#557' }}>
               <th style={{ padding: '8px 12px' }}>Energy</th>
               <th style={{ padding: '8px 12px' }}>Type</th>
               <th style={{ padding: '8px 12px' }}>Targets</th>
@@ -196,7 +196,7 @@ export function MmComplianceTab() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#7a8a9a' }}>
+              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--ink-2, #7a8a9a)' }}>
                 {loading ? 'Loading…' : 'No MM obligations in this view.'}
               </td></tr>
             )}
@@ -207,7 +207,7 @@ export function MmComplianceTab() {
                   key={r.id}
                   data-testid={`trader-mm-compliance-row-${r.id}`}
                   onClick={() => openDrill(r)}
-                  style={{ borderTop: '1px solid #eef1f5', cursor: 'pointer' }}
+                  style={{ borderTop: '1px solid var(--border-subtle, #eef1f5)', cursor: 'pointer' }}
                 >
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.energy_type}</td>
                   <td style={{ padding: '8px 12px' }}>{r.obligation_type}</td>
@@ -238,8 +238,8 @@ export function MmComplianceTab() {
         <div
           data-testid="trader-mm-compliance-drill"
           style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 540, background: '#fff',
-            borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 540, background: 'var(--s1, #fff)',
+            borderLeft: '1px solid var(--border-subtle, #e3e7ec)', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
             zIndex: 50, padding: 20, overflowY: 'auto',
           }}
         >
@@ -259,7 +259,7 @@ export function MmComplianceTab() {
             <div><span style={{ color: '#557' }}>Monthly fee:</span> <strong>R{Number(drillRow.monthly_fee_zar || 0).toLocaleString()}</strong></div>
           </div>
 
-          <div style={{ marginTop: 14, padding: 10, background: '#f6f8fb', borderRadius: 6 }}>
+          <div style={{ marginTop: 14, padding: 10, background: 'var(--s1, #f6f8fb)', borderRadius: 6 }}>
             <div style={{ fontSize: 12, color: '#557' }}>
               <strong>{drillRow.consecutive_misses ?? 0}</strong> consecutive misses ·
               warn at <strong>{drillRow.warning_threshold ?? 1}</strong> ·
@@ -271,7 +271,7 @@ export function MmComplianceTab() {
           <h4 style={{ marginTop: 18, fontSize: 13, color: '#557' }}>Last 30 days</h4>
           <div data-testid="trader-mm-compliance-perfs" style={{ marginTop: 6, maxHeight: 320, overflowY: 'auto' }}>
             {drillPerfs.length === 0 && (
-              <div style={{ fontSize: 12, color: '#7a8a9a' }}>No performance rows yet.</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-2, #7a8a9a)' }}>No performance rows yet.</div>
             )}
             {drillPerfs.map((p) => {
               const tone = p.compliance_status ? PERF_TONE[p.compliance_status] : null;
@@ -279,7 +279,7 @@ export function MmComplianceTab() {
                 <div
                   key={p.id}
                   data-testid={`trader-mm-compliance-perf-${p.id}`}
-                  style={{ padding: '8px 10px', borderBottom: '1px solid #eef1f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle, #eef1f5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                   <div style={{ fontSize: 12 }}>
                     <div style={{ fontWeight: 600 }}>{p.day}</div>

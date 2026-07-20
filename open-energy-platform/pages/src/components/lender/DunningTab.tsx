@@ -34,26 +34,26 @@ interface DunningRow {
 }
 
 const STATUS_TONE: Record<Status, { bg: string; fg: string; label: string }> = {
-  issued: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Issued' },
-  acknowledged: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Acknowledged' },
-  cured: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Cured' },
-  overdue: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Overdue' },
-  withdrawn: { bg: '#f0f3f7', fg: '#445566', label: 'Withdrawn' },
-  escalated: { bg: '#ffe5cc', fg: '#a04200', label: 'Escalated' },
+  issued: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Issued' },
+  acknowledged: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Acknowledged' },
+  cured: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Cured' },
+  overdue: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Overdue' },
+  withdrawn: { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: 'Withdrawn' },
+  escalated: { bg: '#ffe5cc', fg: 'var(--warn)', label: 'Escalated' },
 };
 
 const CYCLE_TONE: Record<number, { bg: string; fg: string }> = {
   1: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
-  2: { bg: '#fff4d6', fg: '#a06200' },
-  3: { bg: '#fde0e0', fg: '#9b1f1f' },
+  2: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: '#a06200' },
+  3: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)' },
 };
 
 function cureTone(deadline: string, status: Status): { bg: string; fg: string; label: string } {
-  if (status === 'cured' || status === 'withdrawn') return { bg: '#f0f3f7', fg: '#445566', label: new Date(deadline).toLocaleString() };
+  if (status === 'cured' || status === 'withdrawn') return { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: new Date(deadline).toLocaleString() };
   const due = new Date(deadline).getTime();
   const now = Date.now();
-  if (due < now) return { bg: '#fde0e0', fg: '#9b1f1f', label: `Overdue ${msAgo(now - due)}` };
-  return { bg: '#daf5e2', fg: '#1f6b3a', label: `In ${msAgo(due - now)}` };
+  if (due < now) return { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: `Overdue ${msAgo(now - due)}` };
+  return { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: `In ${msAgo(due - now)}` };
 }
 
 function msAgo(ms: number): string {
@@ -136,22 +136,22 @@ export function DunningTab() {
             key={s}
             data-testid={`lender-dunning-filter-${s}`}
             onClick={() => setFilter(s)}
-            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#a8385c] text-white border-[#a8385c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
+            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#a8385c] text-white border-[#a8385c]' : 'bg-surface-v2 text-[var(--ink-2, #445566)] border-[var(--border-subtle, #d8dee6)]'}`}
           >
             {s === 'open' ? 'Open' : s === 'all' ? 'All' : STATUS_TONE[s as Status].label}
           </button>
         ))}
-        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white ml-auto" style={{ color: 'oklch(0.46 0.16 55)' }}>
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[var(--border-subtle, #d8dee6)] bg-surface-v2 ml-auto" style={{ color: 'oklch(0.46 0.16 55)' }}>
           Refresh
         </button>
       </div>
 
-      {error && <div className="rounded-md border border-[#f0c2c0] bg-[#fcebea] text-[#9b1f1f] text-[12px] px-3 py-2">{error}</div>}
-      {loading && <div className="text-[12px] text-[#6b7685]">Loading…</div>}
+      {error && <div className="rounded-md border border-[#f0c2c0] bg-[#fcebea] text-[var(--bad, #9b1f1f)] text-[12px] px-3 py-2">{error}</div>}
+      {loading && <div className="text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>}
 
       {/* Table */}
-      <div data-testid="lender-dunning-table" className="border border-[#e5e9ee] rounded-md overflow-hidden">
-        <div className="grid grid-cols-[70px_1fr_140px_170px_140px] gap-2 px-3 py-2 bg-[#f7f9fb] text-[11px] uppercase font-bold text-[#6b7685]">
+      <div data-testid="lender-dunning-table" className="border border-[var(--border-subtle, #e5e9ee)] rounded-md overflow-hidden">
+        <div className="grid grid-cols-[70px_1fr_140px_170px_140px] gap-2 px-3 py-2 bg-[var(--s1, #f7f9fb)] text-[11px] uppercase font-bold text-[var(--ink-2, #6b7685)]">
           <div>Cycle</div>
           <div>Title</div>
           <div>Status</div>
@@ -159,7 +159,7 @@ export function DunningTab() {
           <div>Issued</div>
         </div>
         {filtered.length === 0 && !loading && (
-          <div className="px-3 py-6 text-center text-[12px] text-[#6b7685]">
+          <div className="px-3 py-6 text-center text-[12px] text-[var(--ink-2, #6b7685)]">
             No dunning notices match this filter.
           </div>
         )}
@@ -172,7 +172,7 @@ export function DunningTab() {
               key={r.id}
               data-testid={`lender-dunning-row-${r.id}`}
               onClick={() => setDrillId(r.id)}
-              className="w-full grid grid-cols-[70px_1fr_140px_170px_140px] gap-2 px-3 py-2 border-t border-[#e5e9ee] text-left text-[12px] hover:bg-[#f7f9fb]"
+              className="w-full grid grid-cols-[70px_1fr_140px_170px_140px] gap-2 px-3 py-2 border-t border-[var(--border-subtle, #e5e9ee)] text-left text-[12px] hover:bg-[var(--s1, #f7f9fb)]"
             >
               <div>
                 <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold" style={{ background: cy.bg, color: cy.fg }}>
@@ -190,7 +190,7 @@ export function DunningTab() {
                   {cure.label}
                 </span>
               </div>
-              <div className="font-mono text-[10px] text-[#6b7685]">
+              <div className="font-mono text-[10px] text-[var(--ink-2, #6b7685)]">
                 {new Date(r.issued_at).toLocaleString()}
               </div>
             </button>
@@ -200,15 +200,15 @@ export function DunningTab() {
 
       {/* Drill-down */}
       {drillRow && (
-        <div data-testid="lender-dunning-drill" className="border border-[#a8385c] rounded-md p-4 bg-[#f7f9fb] space-y-3">
+        <div data-testid="lender-dunning-drill" className="border border-[#a8385c] rounded-md p-4 bg-[var(--s1, #f7f9fb)] space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-[11px] uppercase font-bold text-[#6b7685]">
+              <div className="text-[11px] uppercase font-bold text-[var(--ink-2, #6b7685)]">
                 cycle {drillRow.cycle} · {drillRow.trigger_signal} · {drillRow.facility_id}
               </div>
               <div className="text-[14px] font-bold text-[#a8385c]">{drillRow.title}</div>
             </div>
-            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[var(--ink-2, #6b7685)] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Field label="Status" value={STATUS_TONE[drillRow.status].label} />
@@ -222,7 +222,7 @@ export function DunningTab() {
           {drillRow.body_json && (
             <details className="text-[11px]">
               <summary className="cursor-pointer text-[#a8385c] font-semibold">Notice payload</summary>
-              <pre className="mt-2 p-2 bg-white border border-[#e5e9ee] rounded font-mono text-[10px] overflow-auto whitespace-pre-wrap">
+              <pre className="mt-2 p-2 bg-surface-v2 border border-[var(--border-subtle, #e5e9ee)] rounded font-mono text-[10px] overflow-auto whitespace-pre-wrap">
                 {(() => {
                   try { return JSON.stringify(JSON.parse(drillRow.body_json!), null, 2); }
                   catch { return drillRow.body_json; }
@@ -232,18 +232,18 @@ export function DunningTab() {
           )}
 
           {['issued', 'acknowledged', 'overdue'].includes(drillRow.status) && (
-            <div data-testid="lender-dunning-actions" className="border-t border-[#d8dee6] pt-3 space-y-2">
+            <div data-testid="lender-dunning-actions" className="border-t border-[var(--border-subtle, #d8dee6)] pt-3 space-y-2">
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Optional note"
-                className="w-full h-9 px-3 rounded border border-[#d8dee6] text-[12px]"
+                className="w-full h-9 px-3 rounded border border-[var(--border-subtle, #d8dee6)] text-[12px]"
               />
               <input
                 value={evidence}
                 onChange={(e) => setEvidence(e.target.value)}
                 placeholder="Cure evidence R2 key (required to mark cured)"
-                className="w-full h-9 px-3 rounded border border-[#d8dee6] text-[12px] font-mono"
+                className="w-full h-9 px-3 rounded border border-[var(--border-subtle, #d8dee6)] text-[12px] font-mono"
               />
               <div className="flex gap-2 flex-wrap">
                 {drillRow.status === 'issued' && (
@@ -260,7 +260,7 @@ export function DunningTab() {
                   data-testid="lender-dunning-cure"
                   disabled={busy || !evidence}
                   onClick={() => run('cure', { evidence_r2_key: evidence, note })}
-                  className="h-8 px-3 rounded bg-[#1f6b3a] text-white text-[11px] font-semibold disabled:opacity-50"
+                  className="h-8 px-3 rounded bg-[var(--good, #1f6b3a)] text-white text-[11px] font-semibold disabled:opacity-50"
                 >
                   Mark cured
                 </button>
@@ -268,7 +268,7 @@ export function DunningTab() {
                   data-testid="lender-dunning-withdraw"
                   disabled={busy || !note}
                   onClick={() => run('withdraw', { reason: note })}
-                  className="h-8 px-3 rounded border border-[#d8dee6] bg-white text-[#445566] text-[11px] font-semibold disabled:opacity-50"
+                  className="h-8 px-3 rounded border border-[var(--border-subtle, #d8dee6)] bg-surface-v2 text-[var(--ink-2, #445566)] text-[11px] font-semibold disabled:opacity-50"
                 >
                   Withdraw (lender)
                 </button>
@@ -282,10 +282,10 @@ export function DunningTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'good' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'good' ? '#1f6b3a' : '#a8385c';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'good' ? 'var(--good, #1f6b3a)' : '#a8385c';
   return (
-    <div className="bg-white border border-[#e5e9ee] rounded-md p-3">
-      <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
+    <div className="bg-surface-v2 border border-[var(--border-subtle, #e5e9ee)] rounded-md p-3">
+      <div className="text-[10px] uppercase font-bold text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[20px] font-bold" style={{ color }}>{value}</div>
     </div>
   );
@@ -294,7 +294,7 @@ function Kpi({ label, value, tone }: { label: string; value: number | string; to
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
+      <div className="text-[10px] uppercase font-bold text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>{value}</div>
     </div>
   );

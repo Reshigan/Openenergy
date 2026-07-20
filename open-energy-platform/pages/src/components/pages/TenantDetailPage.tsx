@@ -52,28 +52,28 @@ export function TenantDetailPage() {
     <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-[12px]" style={{ color: '#6b7685' }}>
-            <Link to="/cockpit" className="hover:underline">Admin workstation</Link>
+          <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
+            <Link to="/v2" className="hover:underline">Admin workstation</Link>
             <span>/</span>
-            <span style={{ color: '#0f1c2e', fontWeight: 600 }}>Tenant</span>
+            <span style={{ color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}>Tenant</span>
           </div>
           <h1 className="mt-2 font-display text-[24px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>
             {tenant.display_name || tenant.slug || id}
           </h1>
-          <p className="text-[13px] text-[#3d4756]">
+          <p className="text-[13px] text-[var(--ink-2, #3d4756)]">
             <Pill tone="info">slug: {tenant.slug || '—'}</Pill>
             {' '}<Pill tone="neutral">{tenant.participant_count ?? 0} participants</Pill>
             {' '}· created {tenant.created_at ? new Date(tenant.created_at).toLocaleDateString() : '—'}
           </p>
           {tenant.description && (
-            <p className="text-[12px] text-[#6b7685] mt-1 max-w-2xl">{tenant.description}</p>
+            <p className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1 max-w-2xl">{tenant.description}</p>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/cockpit')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/v2')} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Workstation
           </button>
-          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
           <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
@@ -93,8 +93,8 @@ export function TenantDetailPage() {
         {events.length === 0 ? <Empty label="No lifecycle events. Log provisioned / activated / KYC events from here." /> : (
           <Table headers={['When', 'Event', 'Actor', 'Reason']}>
             {events.map(e => (
-              <tr key={e.id} className="border-t border-[#e5ebf2]">
-                <td className="px-4 py-2 text-[11px] text-[#6b7685]">{new Date(e.occurred_at).toLocaleString()}</td>
+              <tr key={e.id} className="border-t border-[var(--border-subtle, #e5ebf2)]">
+                <td className="px-4 py-2 text-[11px] text-[var(--ink-2, #6b7685)]">{new Date(e.occurred_at).toLocaleString()}</td>
                 <td className="px-4 py-2"><Pill tone={e.event_type === 'activated' || e.event_type === 'reactivated' || e.event_type === 'kyc_approved' ? 'good' : e.event_type === 'suspended' || e.event_type === 'offboarded' || e.event_type === 'kyc_rejected' ? 'bad' : 'info'}>{e.event_type.replace(/_/g, ' ')}</Pill></td>
                 <td className="px-4 py-2"><span className="font-mono text-[11px]">{(e.actor_id || '').slice(0, 12)}…</span></td>
                 <td className="px-4 py-2 text-[11px]"><span className="block truncate max-w-md" title={e.reason || ''}>{e.reason || '—'}</span></td>
@@ -108,12 +108,12 @@ export function TenantDetailPage() {
         {flags.length === 0 ? <Empty label="No tenant-scoped flag overrides." /> : (
           <Table headers={['Flag', 'Was', 'Now', 'Reason', 'When']}>
             {flags.map(f => (
-              <tr key={f.id} className="border-t border-[#e5ebf2]">
+              <tr key={f.id} className="border-t border-[var(--border-subtle, #e5ebf2)]">
                 <td className="px-4 py-2"><span className="font-mono text-[11px]">{f.flag_key}</span></td>
                 <td className="px-4 py-2">{f.previous_value || '—'}</td>
                 <td className="px-4 py-2">{f.new_value}</td>
                 <td className="px-4 py-2 text-[11px]"><span className="block truncate max-w-md" title={f.reason || ''}>{f.reason || '—'}</span></td>
-                <td className="px-4 py-2 text-[11px] text-[#6b7685]">{new Date(f.occurred_at).toLocaleString()}</td>
+                <td className="px-4 py-2 text-[11px] text-[var(--ink-2, #6b7685)]">{new Date(f.occurred_at).toLocaleString()}</td>
               </tr>
             ))}
           </Table>
@@ -152,8 +152,8 @@ export function TenantDetailPage() {
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
-      <div className="text-[10px] uppercase tracking-wide text-[#6b7685]">{label}</div>
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+      <div className="text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="mt-1 text-[16px] font-bold">{value}</div>
     </div>
   );
@@ -162,7 +162,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>{title}</h2>
+      <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-2, #6b7685)' }}>{title}</h2>
       {children}
     </section>
   );
@@ -170,9 +170,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Table({ headers, children }: { headers: string[]; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 overflow-hidden">
       <table className="w-full text-[13px]">
-        <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+        <thead className="bg-[var(--s1, #f8fafc)] text-left text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
           <tr>{headers.map(h => <th key={h} className="px-4 py-2">{h}</th>)}</tr>
         </thead>
         <tbody>{children}</tbody>
@@ -182,5 +182,5 @@ function Table({ headers, children }: { headers: string[]; children: React.React
 }
 
 function Empty({ label }: { label: string }) {
-  return <div className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">{label}</div>;
+  return <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 text-[12px] text-[var(--ink-2, #6b7685)]">{label}</div>;
 }

@@ -55,23 +55,23 @@ export function ScenarioBuilderModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} data-testid="scenario-builder">
-        <div className="p-5 border-b border-[#e5ebf2]">
-          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Build scenario</h3>
-          <p className="text-[12px] text-[#6b7685] mt-1">Pick factors, set % shocks, save. If "Run now" is checked we'll re-mark this portfolio against the scenario immediately.</p>
+      <div className="bg-surface-v2 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} data-testid="scenario-builder">
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)]">
+          <h3 className="text-[16px] font-semibold text-[var(--ink, #0f1c2e)]">Build scenario</h3>
+          <p className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1">Pick factors, set % shocks, save. If "Run now" is checked we'll re-mark this portfolio against the scenario immediately.</p>
         </div>
         <div className="p-5 space-y-4 text-[13px]">
           <div>
-            <label className="block text-[11px] uppercase tracking-wider text-[#6b7685] mb-1">Name</label>
+            <label className="block text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)] mb-1">Name</label>
             <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 px-2 border border-[#dbe4ee] rounded" placeholder="e.g. Eskom Tariff +25%" data-testid="scenario-name" />
           </div>
           <div>
-            <label className="block text-[11px] uppercase tracking-wider text-[#6b7685] mb-1">Description (optional)</label>
+            <label className="block text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)] mb-1">Description (optional)</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="w-full px-2 py-1 border border-[#dbe4ee] rounded" />
           </div>
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-[11px] uppercase tracking-wider text-[#6b7685]">Factor shocks</label>
+              <label className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Factor shocks</label>
               <button type="button" onClick={addRow} className="text-[11px] px-2 py-1 bg-[#f4f7fb] rounded border border-[#dbe4ee]" data-testid="scenario-add-row">+ Add</button>
             </div>
             <div className="space-y-2">
@@ -98,7 +98,7 @@ export function ScenarioBuilderModal({
           </label>
           {err && <div className="text-red-700 text-[12px]">{err}</div>}
         </div>
-        <div className="px-5 py-3 border-t border-[#e5ebf2] flex justify-end gap-2">
+        <div className="px-5 py-3 border-t border-[var(--border-subtle, #e5ebf2)] flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded border border-[#dbe4ee] text-[12px]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50" data-testid="scenario-save">
             {saving ? 'Saving…' : 'Save scenario'}

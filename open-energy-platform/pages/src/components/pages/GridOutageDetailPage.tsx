@@ -16,20 +16,20 @@ import { ErrorBanner } from '../ErrorBanner';
 import { Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { OutageImpact } from '../widgets/OutageImpact';
 
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
-const GOOD_BG= 'oklch(0.95 0.04 155)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const BAD_BG = 'oklch(0.97 0.04 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const WARN_BG= 'oklch(0.96 0.05 55)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG= 'color-mix(in oklab, var(--good) 15%, var(--s1))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const WARN_BG= 'color-mix(in oklab, var(--warn) 15%, var(--s1))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type Response = {
@@ -113,7 +113,7 @@ export function GridOutageDetailPage() {
       <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TX3, marginBottom: 8 }}>
-          <Link to="/cockpit" style={{ color: TX3, textDecoration: 'none' }}>
+          <Link to="/v2" style={{ color: TX3, textDecoration: 'none' }}>
             Grid ops workstation
           </Link>
           <span>/</span>
@@ -307,7 +307,7 @@ export function GridOutageDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             type="button"
-            onClick={() => navigate('/cockpit')}
+            onClick={() => navigate('/v2')}
             style={{
               background: 'transparent',
               color: ACC,

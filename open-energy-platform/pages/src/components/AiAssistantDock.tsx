@@ -136,7 +136,7 @@ export function AiAssistantDock() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[380px] h-[560px] max-h-[80vh] rounded-xl bg-white border border-[#dde4ec] shadow-2xl flex flex-col"
+    <div className="fixed bottom-4 right-4 z-50 w-[380px] h-[560px] max-h-[80vh] rounded-xl bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] shadow-2xl flex flex-col"
          style={{ boxShadow: '0 12px 32px rgba(15,28,46,0.25)' }}>
       <header className="px-3 py-2 border-b flex items-center gap-2 rounded-t-xl" style={{ background: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.40 0.14 55)' }}>
         <Sparkles size={16} className="text-[#f6c44a]" />
@@ -144,13 +144,13 @@ export function AiAssistantDock() {
           <div className="text-[13px] font-semibold text-white">CEC Assistant</div>
           <div className="text-[10px] text-white/70 capitalize">context: {surfaceFromPath}</div>
         </div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="p-1 rounded text-white/80 hover:text-white hover:bg-[#f8fafc]/15">
+        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="p-1 rounded text-white/80 hover:text-white hover:bg-[var(--s1, #f8fafc)]/15">
           <X size={16} />
         </button>
       </header>
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-2 text-[13px]">
         {messages.length === 0 && (
-          <div className="text-[12px] text-[#6b7685] italic py-2">
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)] italic py-2">
             Hi — ask me anything about your fleet, trades, settlements, or anything else on the platform.
             I can also propose actions which you confirm before they execute.
           </div>
@@ -159,8 +159,8 @@ export function AiAssistantDock() {
           <div key={m.id}>
             <div className={`p-2 rounded-lg max-w-[85%] ${
               m.role === 'user' ? 'ml-auto bg-[#c2873a] text-white' :
-              m.role === 'system' ? 'mx-auto bg-[#eef2f7] text-[#3d4756] text-[11px]' :
-              'bg-[#f8fafc] border border-[#eef2f7] text-[#0f1c2e]'
+              m.role === 'system' ? 'mx-auto bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)] text-[11px]' :
+              'bg-[var(--s1, #f8fafc)] border border-[var(--s2, #eef2f7)] text-[var(--ink, #0f1c2e)]'
             }`}>
               <div className="whitespace-pre-wrap leading-snug">{m.content}</div>
             </div>
@@ -169,14 +169,14 @@ export function AiAssistantDock() {
                 {proposed[m.id].map((a) => (
                   <li key={a.id} className="rounded-lg bg-[#f8fbff] p-2" style={{ border: '1px solid oklch(0.46 0.16 55)' }}>
                     <div className="text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>{a.tool}</div>
-                    <pre className="text-[10px] mt-1 text-[#3d4756] whitespace-pre-wrap">{JSON.stringify(a.params, null, 2)}</pre>
+                    <pre className="text-[10px] mt-1 text-[var(--ink-2, #3d4756)] whitespace-pre-wrap">{JSON.stringify(a.params, null, 2)}</pre>
                     <div className="mt-1 flex gap-1">
                       <button type="button" onClick={() => acceptAction(m.id, a)}
-                              className="h-7 px-2 rounded bg-[#1a8a5b] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+                              className="h-7 px-2 rounded bg-[var(--good, #1a8a5b)] text-white text-[11px] font-semibold inline-flex items-center gap-1">
                         <CheckCircle size={12} /> Confirm + execute
                       </button>
                       <button type="button" onClick={() => setProposed((p) => ({ ...p, [m.id]: p[m.id].filter((x) => x.id !== a.id) }))}
-                              className="h-7 px-2 rounded bg-white border border-[#dde4ec] text-[#c0392b] text-[11px] font-semibold">
+                              className="h-7 px-2 rounded bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] text-[var(--bad, #c0392b)] text-[11px] font-semibold">
                         Dismiss
                       </button>
                     </div>
@@ -187,17 +187,17 @@ export function AiAssistantDock() {
           </div>
         ))}
         {busy && (
-          <div className="bg-[#f8fafc] border border-[#eef2f7] rounded-lg p-2 inline-flex items-center gap-2 text-[12px] text-[#6b7685]">
+          <div className="bg-[var(--s1, #f8fafc)] border border-[var(--s2, #eef2f7)] rounded-lg p-2 inline-flex items-center gap-2 text-[12px] text-[var(--ink-2, #6b7685)]">
             <Loader2 size={14} className="animate-spin" /> Thinking…
           </div>
         )}
       </div>
-      <div className="border-t border-[#eef2f7] p-2 flex gap-1">
+      <div className="border-t border-[var(--s2, #eef2f7)] p-2 flex gap-1">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} disabled={busy}
                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
                aria-label="Ask the AI assistant"
                placeholder="Ask anything…"
-               className="flex-1 h-9 px-3 rounded border border-[#dde4ec] text-[13px]" />
+               className="flex-1 h-9 px-3 rounded border border-[var(--border-subtle, #dde4ec)] text-[13px]" />
         <button type="button" aria-label="Send" onClick={send} disabled={busy || !draft.trim()}
                 className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
           <Send size={14} />

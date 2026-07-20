@@ -186,6 +186,20 @@ auth.post('/login', async (c) => {
   const mfaCode: string | undefined = typeof body?.mfa_code === 'string' ? body.mfa_code : undefined;
   const ip = clientIp(c);
 
+  // Login maintenance mode (src/routes/admin-maintenance.ts). Admin keeps an
+  // escape hatch so the switch can never lock out the only role that can lift it.
+  const maintenance = await c.env.KV?.get('auth:maintenance');
+  if (maintenance) {
+    const isAdminEmail = await c.env.DB.prepare(
+      `SELECT role FROM participants WHERE email = ? AND role = 'admin'`
+    ).bind(email).first();
+    if (!isAdminEmail) {
+      let reason = 'Scheduled maintenance. Please try again shortly.';
+      try { reason = JSON.parse((await c.env.KV?.get('auth:maintenance:meta')) || '{}').reason || reason; } catch { /* keep default */ }
+      return c.json({ success: false, error: reason, code: 'MAINTENANCE_MODE' }, 503);
+    }
+  }
+
   const lockout = await isLockedOut(c.env.DB, email, ip);
   if (lockout.locked) {
     return c.json({

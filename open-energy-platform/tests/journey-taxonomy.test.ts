@@ -1,7 +1,7 @@
 // Journey taxonomy — the zero-orphan guarantee: every reachable domain for every
 // role lands in a journey, so no tool is stranded outside the journey workspace.
 import { describe, it, expect } from 'vitest';
-import { getJourneys, journeyCoversAllDomains } from '../pages/src/meridian/journeys';
+import { getJourneys, journeyCoversAllDomains } from '../pages/src/v2/journeys';
 import { getRoleConfig } from '../pages/src/ux-alternatives/launchpad-nav/roleData';
 
 const ROLES = [

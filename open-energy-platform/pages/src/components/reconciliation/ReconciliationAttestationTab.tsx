@@ -211,37 +211,37 @@ interface RattEvent {
 }
 
 const STATE_TONE: Record<RattStatus, { bg: string; fg: string; label: string }> = {
-  attestation_proposed:          { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  scope_defined:                 { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Scope defined' },
-  feeds_ingested:                { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Feeds ingested' },
-  blocks_paired:                 { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Blocks paired' },
-  variance_computed:             { bg: '#fff4d6', fg: '#a06200', label: 'Variance computed' },
-  break_classified:              { bg: '#fff4d6', fg: '#a06200', label: 'Break classified' },
-  root_cause_logged:             { bg: '#fff4d6', fg: '#a06200', label: 'Root cause logged' },
-  remediation_proposed:          { bg: '#fff4d6', fg: '#a06200', label: 'Remediation proposed' },
-  counter_party_signoff:         { bg: '#daf5e2', fg: '#1f6b3a', label: 'Counter-party sign-off' },
-  independent_review:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Independent review' },
-  attestation_signed:            { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Attestation signed' },
-  archived:                      { bg: '#1f5b3a', fg: '#fff',    label: 'Archived' },
-  rejected:                      { bg: '#7a0e0e', fg: '#fff',    label: 'Rejected' },
-  suspended:                     { bg: '#e3e7ec', fg: '#445',    label: 'Suspended' },
-  restated:                      { bg: '#fff4d6', fg: '#a06200', label: 'Restated' },
-  escalated_to_audit_committee:  { bg: '#7a0e0e', fg: '#fff',    label: 'Escalated to AC' },
+  attestation_proposed:          { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Proposed' },
+  scope_defined:                 { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Scope defined' },
+  feeds_ingested:                { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Feeds ingested' },
+  blocks_paired:                 { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Blocks paired' },
+  variance_computed:             { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Variance computed' },
+  break_classified:              { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Break classified' },
+  root_cause_logged:             { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Root cause logged' },
+  remediation_proposed:          { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Remediation proposed' },
+  counter_party_signoff:         { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Counter-party sign-off' },
+  independent_review:            { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Independent review' },
+  attestation_signed:            { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Attestation signed' },
+  archived:                      { bg: 'var(--good, #1f5b3a)', fg: '#fff',    label: 'Archived' },
+  rejected:                      { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Rejected' },
+  suspended:                     { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Suspended' },
+  restated:                      { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Restated' },
+  escalated_to_audit_committee:  { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Escalated to AC' },
 };
 
 const TIER_TONE: Record<RattTier, { bg: string; fg: string; label: string }> = {
-  daily_tactical:        { bg: '#e3e7ec', fg: '#557',    label: 'Daily' },
-  weekly_management:     { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Weekly' },
-  monthly_management:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Monthly' },
-  quarterly_attestation: { bg: '#fff4d6', fg: '#a06200', label: 'Quarterly' },
-  annual_audit:          { bg: '#7a0e0e', fg: '#fff',    label: 'Annual audit' },
+  daily_tactical:        { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Daily' },
+  weekly_management:     { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Weekly' },
+  monthly_management:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Monthly' },
+  quarterly_attestation: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Quarterly' },
+  annual_audit:          { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Annual audit' },
 };
 
 const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  green:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const FILTERS_ACTION: Array<{ key: string; label: string }> = [
@@ -631,8 +631,8 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.17 0.010 250)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">Reconciliation attestation</h2>
-          <p className="text-[11px] text-[#4a5568]">
+          <h2 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Reconciliation attestation</h2>
+          <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
             12-state ICFR attestation chain reconciling SAP S/4HANA, Oracle Fusion, SAGE 300, Workday, STRATE,
             SWIFT MT940, NERSA/IPPO/DMRE inboxes, bank statements against published audit-chain blocks.
             INVERTED SLA HOURS (daily 24h / weekly 96h / monthly 168h / quarterly 360h / annual 720h).
@@ -663,7 +663,7 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
       </div>
 
       {/* Drill rail */}
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">
         <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.proposed_count}</span></span>
         <span>Scope: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.scope_count}</span></span>
         <span>Feeds: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.feeds_count}</span></span>
@@ -672,11 +672,11 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
         <span>Break: <span className="font-semibold text-[#a06200]">{kpis.break_count}</span></span>
         <span>Root cause: <span className="font-semibold text-[#a06200]">{kpis.root_cause_count}</span></span>
         <span>Remediation: <span className="font-semibold text-[#a06200]">{kpis.remediation_count}</span></span>
-        <span>Sign-off: <span className="font-semibold text-[#1f6b3a]">{kpis.signoff_count}</span></span>
-        <span>Review: <span className="font-semibold text-[#1f6b3a]">{kpis.review_count}</span></span>
-        <span>Suspended: <span className="font-semibold text-[#6b7685]">{kpis.suspended_count}</span></span>
+        <span>Sign-off: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.signoff_count}</span></span>
+        <span>Review: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.review_count}</span></span>
+        <span>Suspended: <span className="font-semibold text-[var(--ink-2, #6b7685)]">{kpis.suspended_count}</span></span>
         <span>Restated: <span className="font-semibold text-[#a06200]">{kpis.restated_count}</span></span>
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Completeness avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.completeness_avg}/140</span></span>
         <span>ICFR avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.icfr_avg}/140</span></span>
         <span>Variance avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.variance_avg}/140</span></span>
@@ -699,7 +699,7 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -716,7 +716,7 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -732,8 +732,8 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#7a0e0e] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--bad, #7a0e0e)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -745,11 +745,11 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Attestation #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Cadence</th>
@@ -776,14 +776,14 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       <div className="text-[11px] font-semibold">{r.attestation_number}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.period_label}</div>
-                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
-                      {r.cfo_attestation_signed ? <span className="ml-1 text-[9px] font-semibold text-[#1f5b3a]">CFO</span> : null}
-                      {r.audit_committee_briefed ? <span className="ml-1 text-[9px] font-semibold text-[#1f5b3a]">AC</span> : null}
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{r.period_label}</div>
+                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span>}
+                      {r.cfo_attestation_signed ? <span className="ml-1 text-[9px] font-semibold text-[var(--good, #1f5b3a)]">CFO</span> : null}
+                      {r.audit_committee_briefed ? <span className="ml-1 text-[9px] font-semibold text-[var(--good, #1f5b3a)]">AC</span> : null}
                     </td>
                     <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.17 0.010 250)' }}>{r.cadence.replace(/_/g, ' ')}</td>
                     <td className="px-3 py-2">
@@ -801,26 +801,26 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
                         {cs.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${icfr >= 100 ? 'text-[#1f5b3a]' : icfr >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${icfr >= 100 ? 'text-[var(--good, #1f5b3a)]' : icfr >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {icfr}/140
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${varianceIdx >= 100 ? 'text-[#1f5b3a]' : varianceIdx >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${varianceIdx >= 100 ? 'text-[var(--good, #1f5b3a)]' : varianceIdx >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {varianceIdx}/140
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${varZar > (r.materiality_threshold_zar ?? 0) ? 'text-[#9b1f1f] font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${varZar > (r.materiality_threshold_zar ?? 0) ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {fmtZar(varZar)}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 2 ? 'text-[#9b1f1f] font-semibold' : flags === 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 2 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : flags === 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>
                       {flags}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-[#4a5568]">No attestations match.</td></tr>
+                <tr><td colSpan={10} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No attestations match.</td></tr>
               )}
             </tbody>
           </table>
@@ -839,10 +839,10 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -882,10 +882,10 @@ function Drawer({
     const cls = tone === 'primary'
       ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
-        ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
+        ? 'bg-[var(--bad, #7a0e0e)] text-white hover:bg-[var(--bad, #9b1f1f)]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
+          : 'bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]';
     const plainStyle = tone === 'plain' ? { color: 'oklch(0.17 0.010 250)' } : undefined;
     return (
       <button type="button"
@@ -902,19 +902,19 @@ function Drawer({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
-      <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
+      <div className="w-full max-w-3xl overflow-y-auto bg-[var(--s2, #f3f5f9)] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">{row.cadence.replace(/_/g, ' ')} {'•'} {row.current_tier.replace(/_/g, ' ')}</div>
-            <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.attestation_number}</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{row.cadence.replace(/_/g, ' ')} {'•'} {row.current_tier.replace(/_/g, ' ')}</div>
+            <h3 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">{row.attestation_number}</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               {row.title || 'Reconciliation attestation'} {'•'} {row.period_label}
               {row.period_start && row.period_end && (
                 <> {'•'} {row.period_start} {'→'} {row.period_end}</>
               )}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.17 0.010 250)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.17 0.010 250)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -926,61 +926,61 @@ function Drawer({
         </div>
 
         {/* Variance ZAR ledger */}
-        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
+        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Total variance</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtZar(row.total_variance_zar)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Total variance</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtZar(row.total_variance_zar)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Materiality</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtZar(row.materiality_threshold_zar)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Materiality</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtZar(row.materiality_threshold_zar)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Explained</div>
-            <div className="font-mono text-[12px] text-[#1f5b3a]">{fmtZar(row.net_variance_explained_zar)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Explained</div>
+            <div className="font-mono text-[12px] text-[var(--good, #1f5b3a)]">{fmtZar(row.net_variance_explained_zar)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Unresolved</div>
-            <div className={`font-mono text-[12px] ${(row.unresolved_variance_zar ?? 0) > 0 ? 'text-[#9b1f1f] font-semibold' : 'text-[#1f5b3a]'}`}>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Unresolved</div>
+            <div className={`font-mono text-[12px] ${(row.unresolved_variance_zar ?? 0) > 0 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--good, #1f5b3a)]'}`}>
               {fmtZar(row.unresolved_variance_zar)}
             </div>
           </div>
         </div>
 
         {/* Bridges + flags */}
-        <div className="mb-3 grid grid-cols-2 gap-3 rounded border border-[#d8dde6] bg-white p-3">
+        <div className="mb-3 grid grid-cols-2 gap-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3">
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">Bridges</div>
-            <ul className="space-y-0.5 text-[11px] text-[#4a5568]">
-              <li>Audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Bridges</div>
+            <ul className="space-y-0.5 text-[11px] text-[var(--ink-2, #4a5568)]">
+              <li>Audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[var(--good, #1f5b3a)] font-semibold' : 'text-[var(--bad, #9b1f1f)] font-semibold'}>
                 {row.bridges_to_w118_audit_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}
               </span></li>
-              <li>Regulator export: <span className={row.bridges_to_w119_regulator_export_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
+              <li>Regulator export: <span className={row.bridges_to_w119_regulator_export_chain_live ? 'text-[var(--good, #1f5b3a)] font-semibold' : 'text-[var(--bad, #9b1f1f)] font-semibold'}>
                 {row.bridges_to_w119_regulator_export_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}
               </span></li>
-              <li>EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
-              <li>Doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
-              <li>Submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
-              <li>RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
-              <li>Change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
+              <li>EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
+              <li>RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
             </ul>
           </div>
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">Floor flags ({row.floor_flag_count_live ?? 0})</div>
-            <ul className="space-y-0.5 text-[11px] text-[#4a5568]">
-              <li>Material variance unresolved: <span className={row.material_variance_unresolved ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.material_variance_unresolved ? 'YES' : 'no'}</span></li>
-              <li>External auditor request active: <span className={row.external_auditor_request_active ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.external_auditor_request_active ? 'YES' : 'no'}</span></li>
-              <li>Regulator audit in progress: <span className={row.regulator_audit_in_progress ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.regulator_audit_in_progress ? 'YES' : 'no'}</span></li>
-              <li>Cross-border feed break: <span className={row.cross_border_feed_break ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.cross_border_feed_break ? 'YES' : 'no'}</span></li>
-              <li>ICFR deficiency suspected: <span className={row.icfr_deficiency_suspected ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.icfr_deficiency_suspected ? 'YES' : 'no'}</span></li>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Floor flags ({row.floor_flag_count_live ?? 0})</div>
+            <ul className="space-y-0.5 text-[11px] text-[var(--ink-2, #4a5568)]">
+              <li>Material variance unresolved: <span className={row.material_variance_unresolved ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.material_variance_unresolved ? 'YES' : 'no'}</span></li>
+              <li>External auditor request active: <span className={row.external_auditor_request_active ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.external_auditor_request_active ? 'YES' : 'no'}</span></li>
+              <li>Regulator audit in progress: <span className={row.regulator_audit_in_progress ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.regulator_audit_in_progress ? 'YES' : 'no'}</span></li>
+              <li>Cross-border feed break: <span className={row.cross_border_feed_break ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.cross_border_feed_break ? 'YES' : 'no'}</span></li>
+              <li>ICFR deficiency suspected: <span className={row.icfr_deficiency_suspected ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.icfr_deficiency_suspected ? 'YES' : 'no'}</span></li>
             </ul>
-            <div className="mt-2 text-[10px] text-[#6b7685]">Feeds: <span className="font-mono" style={{ color: 'oklch(0.17 0.010 250)' }}>{row.feeds_paired_count}/{row.feeds_in_scope}</span> paired {'•'} {row.feeds_paired_pct}%</div>
-            {row.feed_sources_csv && <div className="mt-1 text-[10px] text-[#6b7685] break-all">{row.feed_sources_csv}</div>}
+            <div className="mt-2 text-[10px] text-[var(--ink-2, #6b7685)]">Feeds: <span className="font-mono" style={{ color: 'oklch(0.17 0.010 250)' }}>{row.feeds_paired_count}/{row.feeds_in_scope}</span> paired {'•'} {row.feeds_paired_pct}%</div>
+            {row.feed_sources_csv && <div className="mt-1 text-[10px] text-[var(--ink-2, #6b7685)] break-all">{row.feed_sources_csv}</div>}
           </div>
         </div>
 
         {/* Timestamps */}
-        <div className="mb-3 grid grid-cols-2 gap-2 rounded border border-[#d8dde6] bg-white p-3 text-[11px] text-[#4a5568]">
+        <div className="mb-3 grid grid-cols-2 gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px] text-[var(--ink-2, #4a5568)]">
           <div>Proposed: {fmtDate(row.attestation_proposed_at)}</div>
           <div>Scope defined: {fmtDate(row.scope_defined_at)}</div>
           <div>Feeds ingested: {fmtDate(row.feeds_ingested_at)}</div>
@@ -993,7 +993,7 @@ function Drawer({
           <div>Independent review: {fmtDate(row.independent_review_at)}</div>
           <div>Attestation signed: {fmtDate(row.attestation_signed_at)}</div>
           <div>Archived: {fmtDate(row.archived_at)}</div>
-          {row.regulator_crossed_at && <div>Regulator crossed: <span className="font-semibold text-[#9b1f1f]">{fmtDate(row.regulator_crossed_at)}</span></div>}
+          {row.regulator_crossed_at && <div>Regulator crossed: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{fmtDate(row.regulator_crossed_at)}</span></div>}
           {row.regulator_inbox_ref && <div>Regulator inbox: <span className="font-mono text-[10px]">{row.regulator_inbox_ref}</span></div>}
           {row.regulator_ref && <div>Regulator ref: <span className="font-mono text-[10px]">{row.regulator_ref}</span></div>}
           {row.external_auditor_firm && <div>External auditor: <span className="font-mono text-[10px]">{row.external_auditor_firm}</span></div>}
@@ -1010,24 +1010,24 @@ function Drawer({
         </div>
 
         {/* Event log */}
-        <div className="rounded border border-[#d8dde6] bg-white">
-          <div className="border-b border-[#e3e7ec] px-3 py-2 text-[11px] font-semibold text-[#0c2a4d]">Event log ({events.length})</div>
-          <ul className="divide-y divide-[#e3e7ec] text-[11px]">
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
+          <div className="border-b border-[var(--border-subtle, #e3e7ec)] px-3 py-2 text-[11px] font-semibold text-[var(--ink, #0c2a4d)]">Event log ({events.length})</div>
+          <ul className="divide-y divide-[var(--border-subtle, #e3e7ec)] text-[11px]">
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono" style={{ color: 'oklch(0.17 0.010 250)' }}>{e.event_type}</span>
-                  <span className="text-[#6b7685]">{fmtDate(e.created_at)}</span>
+                  <span className="text-[var(--ink-2, #6b7685)]">{fmtDate(e.created_at)}</span>
                 </div>
-                <div className="text-[#4a5568]">
+                <div className="text-[var(--ink-2, #4a5568)]">
                   {e.from_status} {'→'} {e.to_status}
                   {e.from_tier && e.to_tier && e.from_tier !== e.to_tier ? ` ${'•'} ${e.from_tier} → ${e.to_tier}` : ''}
                 </div>
-                {e.notes && <div className="text-[#6b7685]">{e.notes}</div>}
+                {e.notes && <div className="text-[var(--ink-2, #6b7685)]">{e.notes}</div>}
               </li>
             ))}
             {events.length === 0 && (
-              <li className="px-3 py-3 text-center text-[#6b7685]">No events yet.</li>
+              <li className="px-3 py-3 text-center text-[var(--ink-2, #6b7685)]">No events yet.</li>
             )}
           </ul>
         </div>
@@ -1077,12 +1077,12 @@ function ProposeModal({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded bg-white p-4 shadow-lg">
-        <h3 className="mb-3 text-base font-semibold text-[#0c2a4d]">Propose reconciliation attestation</h3>
+      <div className="w-full max-w-lg rounded bg-surface-v2 p-4 shadow-lg">
+        <h3 className="mb-3 text-base font-semibold text-[var(--ink, #0c2a4d)]">Propose reconciliation attestation</h3>
         <div className="space-y-2 text-[12px]">
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Cadence (INVERTED SLA: bigger = more time)</div>
-            <select value={cadence} onChange={(e) => setCadence(e.target.value as RattCadence)} className="w-full rounded border border-[#d8dde6] px-2 py-1">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Cadence (INVERTED SLA: bigger = more time)</div>
+            <select value={cadence} onChange={(e) => setCadence(e.target.value as RattCadence)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1">
               <option value="daily_tactical">Daily tactical (24h)</option>
               <option value="weekly_management">Weekly management (96h)</option>
               <option value="monthly_management">Monthly management (168h)</option>
@@ -1091,39 +1091,39 @@ function ProposeModal({
             </select>
           </label>
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Period label (e.g. 2026-Q1, 2026-04, 2026-W21)</div>
-            <input value={periodLabel} onChange={(e) => setPeriodLabel(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Period label (e.g. 2026-Q1, 2026-04, 2026-W21)</div>
+            <input value={periodLabel} onChange={(e) => setPeriodLabel(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
           </label>
           <div className="grid grid-cols-2 gap-2">
             <label>
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Period start</div>
-              <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+              <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Period start</div>
+              <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
             </label>
             <label>
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Period end</div>
-              <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+              <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Period end</div>
+              <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
             </label>
           </div>
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Title</div>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Title</div>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
           </label>
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Reason code</div>
-            <input value={reasonCode} onChange={(e) => setReasonCode(e.target.value)} placeholder="e.g. quarterly_icfr_routine" className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Reason code</div>
+            <input value={reasonCode} onChange={(e) => setReasonCode(e.target.value)} placeholder="e.g. quarterly_icfr_routine" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
           </label>
           <div className="grid grid-cols-2 gap-2">
             <label>
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">External auditor firm</div>
-              <input value={externalFirm} onChange={(e) => setExternalFirm(e.target.value)} placeholder="e.g. PwC South Africa" className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+              <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">External auditor firm</div>
+              <input value={externalFirm} onChange={(e) => setExternalFirm(e.target.value)} placeholder="e.g. PwC South Africa" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
             </label>
             <label>
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Engagement ref</div>
-              <input value={externalRef} onChange={(e) => setExternalRef(e.target.value)} placeholder="e.g. ENG-2026-OE-Q1" className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+              <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Engagement ref</div>
+              <input value={externalRef} onChange={(e) => setExternalRef(e.target.value)} placeholder="e.g. ENG-2026-OE-Q1" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
             </label>
           </div>
-          <div className="rounded border border-[#d8dde6] bg-[#f8fafc] p-2">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">
+          <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] p-2">
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
               Floor flags ({'≥'}1 lifts to quarterly; {'≥'}2 lifts to annual)
             </div>
             <label className="flex items-center gap-2"><input type="checkbox" checked={flagMaterial} onChange={(e) => setFlagMaterial(e.target.checked)} /> Material variance unresolved</label>
@@ -1134,7 +1134,7 @@ function ProposeModal({
           </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.17 0.010 250)' }}>Cancel</button>
+          <button type="button" onClick={onClose} className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.17 0.010 250)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose</button>
         </div>
       </div>

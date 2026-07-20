@@ -1,9 +1,11 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
-import { MeridianFrame } from './meridian/MeridianFrame';
+import { Shell } from './v2/Shell';
+import { SurfaceBoundary } from './shared/SurfaceBoundary';
+import './v2/surface-skin.css';
 
 // Page components — all lazy so each route only pays for its chunk on first visit.
 const DesignGallery         = React.lazy(() => import('./components/pages/DesignGallery').then(m => ({ default: m.DesignGallery })));
@@ -29,37 +31,13 @@ const BillingRunDetailPage  = React.lazy(() => import('./components/pages/Billin
 const SignaturePreview       = React.lazy(() => import('./components/signature/__preview__/SignaturePreview'));
 const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeedShell').then(m => ({ default: m.ActivityFeedShell })));
 
-// Meridian redesign — full-canvas pages with their own chrome (no Layout wrapper).
-const ThreadPage            = React.lazy(() => import('./meridian/ThreadPage'));
-const AtlasPage             = React.lazy(() => import('./meridian/AtlasPage'));
-const NewPage               = React.lazy(() => import('./meridian/NewPage'));
-const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
-const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
-const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
-const JourneyCockpit        = React.lazy(() => import('./meridian/JourneyCockpit'));
+// v2 generative frontend — chains-as-data, own chrome (Shell). Four surfaces.
+const V2Home                = React.lazy(() => import('./v2/Home'));
+const V2Transaction         = React.lazy(() => import('./v2/Transaction'));
+const V2Find                = React.lazy(() => import('./v2/Find'));
+const V2Trade               = React.lazy(() => import('./v2/Trade'));
+const V2Surface             = React.lazy(() => import('./v2/Surface'));
 
-// The cockpit is the post-login home; if it throws at runtime, show a graceful
-// fallback with an escape to the (still-live) classic Horizon board rather than
-// blanking the app for everyone.
-class CockpitBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() {
-    if (this.state.failed) {
-      return (
-        <div className="mer mer-error" role="alert" style={{ padding: 32 }}>
-          <p>Your workspace hit an error loading.</p>
-          <div className="mer-error-acts">
-            <button type="button" className="btn ghost" onClick={() => location.reload()}>Reload</button>
-            <Link to="/cockpit" className="btn pri">Back to your cockpit</Link>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 const KycSubmission         = React.lazy(() => import('./components/onboarding/KycSubmission').then(m => ({ default: m.KycSubmission })));
 
 // Core page components
@@ -100,6 +78,7 @@ const ComplianceAdminPage   = React.lazy(() => import('./components/pages/Compli
 const DepthOpsPage          = React.lazy(() => import('./components/pages/DepthOpsPage').then(m => ({ default: m.DepthOpsPage })));
 const OpsL5Page             = React.lazy(() => import('./components/pages/OpsL5Page').then(m => ({ default: m.OpsL5Page })));
 const PublicLegalPage       = React.lazy(() => import('./components/pages/PublicLegalPage').then(m => ({ default: m.PublicLegalPage })));
+const WelcomePage           = React.lazy(() => import('./components/pages/WelcomePage').then(m => ({ default: m.WelcomePage })));
 const PublicAuditPage       = React.lazy(() => import('./components/pages/PublicAuditPage').then(m => ({ default: m.PublicAuditPage })));
 const PlatformAdminConsolePage = React.lazy(() => import('./components/pages/PlatformAdminConsolePage').then(m => ({ default: m.PlatformAdminConsolePage })));
 const DocumentsPage         = React.lazy(() => import('./components/pages/DocumentsPage').then(m => ({ default: m.DocumentsPage })));
@@ -170,6 +149,14 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
 }
 
 // Protected Route Wrapper
+// Root: signed-in users go to their cockpit, everyone else lands on the public
+// marketing page (instead of being bounced to /login).
+function RootLanding() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Navigate to={user ? '/v2' : '/welcome'} replace />;
+}
+
 function ProtectedRoute({ children }: { children?: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -205,10 +192,19 @@ function PrototypeGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Layout — all authenticated pages wear the single CEC (Meridian) chrome via MeridianFrame.
-// AppShell retired and deleted; MeridianFrame is the single authed-page chrome.
+// Layout — all authenticated pages wear the v2 dark chrome via <Shell>, wrapped
+// in the `.v2-surface` skin (surface-skin.css) so the shared WorkstationShell
+// primitives resolve onto the dark v2 token system. This is what makes every
+// legacy authed route actually BE v2 instead of the old Meridian frame with v2
+// painted on top. Mirrors v2/Surface.tsx's non-title wrapping.
 function Layout({ children }: { children: ReactNode }) {
-  return <MeridianFrame>{children}</MeridianFrame>;
+  return (
+    <Shell>
+      <div className="v2-surface">
+        <SurfaceBoundary>{children}</SurfaceBoundary>
+      </div>
+    </Shell>
+  );
 }
 
 // AppShellLayout — alias kept so workstation routes compile without touching each line
@@ -221,7 +217,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
 
 // SSO Landing Page — invoked by backend callback redirect. Reads the token
 // bundle from the URL fragment, stashes it via AuthContext, and navigates to
-// the `return_to` path (default: /cockpit).
+// the `return_to` path (default: /v2).
 function SsoLanding() {
   const { acceptSsoTokens } = useAuth();
   const navigate = useNavigate();
@@ -232,7 +228,7 @@ function SsoLanding() {
     const params = new URLSearchParams(frag);
     const token = params.get('token');
     const refresh_token = params.get('refresh_token') || undefined;
-    const returnTo = params.get('return_to') || '/cockpit';
+    const returnTo = params.get('return_to') || '/v2';
     if (!token) {
       setError('Missing SSO token. Please try signing in again.');
       const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
@@ -574,11 +570,11 @@ function LaunchRedirect() {
         if (!completed) {
           navigate('/onboard', { replace: true });
         } else {
-          navigate('/cockpit', { replace: true });
+          navigate('/v2', { replace: true });
         }
       })
       .catch(() => {
-        navigate('/cockpit', { replace: true });
+        navigate('/v2', { replace: true });
       });
   }, [user, navigate, logout]);
 
@@ -587,6 +583,24 @@ function LaunchRedirect() {
       <span className="text-sm" style={{ color: 'oklch(0.40 0.009 250)' }}>Loading…</span>
     </div>
   );
+}
+
+// /thread/:chainKey/:id retired — v2 Transaction resolves chain_key from the id.
+function ThreadRedirect() {
+  const { id = '' } = useParams();
+  return <Navigate to={`/v2/t/${id}`} replace />;
+}
+
+// /ledger/:chainKey retired — v2 Find is the chain-scoped list surface.
+function LedgerRedirect() {
+  const { chainKey = '' } = useParams();
+  return <Navigate to={`/v2/find?chain_key=${encodeURIComponent(chainKey)}`} replace />;
+}
+
+// /surface/:key retired — v2 already renders SURFACE_REGISTRY at /v2/s/:key.
+function SurfaceRedirect() {
+  const { key = '' } = useParams();
+  return <Navigate to={`/v2/s/${encodeURIComponent(key)}`} replace />;
 }
 
 // App Router
@@ -612,54 +626,60 @@ function AppRoutes() {
       <Route path="/settings/security" element={<ProtectedRoute><Layout><Security /></Layout></ProtectedRoute>} />
       {/* KYC self-service submission - live Meridian surface inside the chrome. */}
       <Route path="/kyc" element={<ProtectedRoute><Layout><KycSubmission /></Layout></ProtectedRoute>} />
-      {/* /cockpit and /launch (no role) both resolve to the signed-in user's
-          role-specific board. Cockpit kept as a soft redirect so existing
-          bookmarks keep working — but the Launchpad nav now points to
-          /launch. */}
-      <Route path="/cockpit" element={<ProtectedRoute><CockpitBoundary><JourneyCockpit /></CockpitBoundary></ProtectedRoute>} />
+      {/* /cockpit retired (JourneyCockpit deleted) — soft redirect to v2 so
+          existing bookmarks keep working. */}
+      <Route path="/cockpit" element={<Navigate to="/v2" replace />} />
       <Route path="/feed" element={<ProtectedRoute><AppShellLayout><ActivityFeedShell /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
       {/* /horizon retired (journeys-only UI): the per-role boards folded into the
           journey cockpit; admin's cross-role deep-view lives there as the role switch. */}
-      <Route path="/horizon" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
+      <Route path="/horizon" element={<Navigate to="/v2" replace />} />
+      {/* v2 generative surfaces */}
+      <Route path="/v2" element={<ProtectedRoute><V2Home /></ProtectedRoute>} />
+      <Route path="/v2/find" element={<ProtectedRoute><V2Find /></ProtectedRoute>} />
+      <Route path="/v2/trade" element={<ProtectedRoute><V2Trade /></ProtectedRoute>} />
+      <Route path="/v2/t/:id" element={<ProtectedRoute><V2Transaction /></ProtectedRoute>} />
+      <Route path="/v2/s/:key" element={<ProtectedRoute><V2Surface /></ProtectedRoute>} />
+      {/* /thread/:chainKey/:id retired (ThreadPage deleted) — v2 Transaction
+          resolves chain_key from the id, so only :id survives into /v2/t/:id. */}
+      <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadRedirect /></ProtectedRoute>} />
       {/* Retired browse planes — create is in-journey, search is the ⌘K palette.
          Redirect into the cockpit so old links/bookmarks land on the single plane. */}
-      <Route path="/atlas" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/new" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
-      {/* One parametric route for every non-chain Meridian surface (master-data CRUD,
-          settings, analytics/ML panels, connectors). Resolves SURFACE_REGISTRY by
-          `${role}:${key}`; full-canvas, no Layout/AppShell wrapper. */}
-      <Route path="/surface/:key" element={<ProtectedRoute><MeridianSurfacePage /></ProtectedRoute>} />
-      <Route path="/deals" element={<ProtectedRoute><DealDeskPage /></ProtectedRoute>} />
+      <Route path="/atlas" element={<Navigate to="/v2" replace />} />
+      <Route path="/new" element={<Navigate to="/v2" replace />} />
+      {/* /ledger/:chainKey retired (LedgerPage deleted) — v2 Find is the chain-scoped list. */}
+      <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerRedirect /></ProtectedRoute>} />
+      {/* /surface/:key retired (MeridianSurfacePage deleted) — v2 already renders
+          SURFACE_REGISTRY at /v2/s/:key. */}
+      <Route path="/surface/:key" element={<ProtectedRoute><SurfaceRedirect /></ProtectedRoute>} />
+      <Route path="/deals" element={<Navigate to="/v2/trade" replace />} />
       {/* Meridian cutover — legacy role launchpads redirect to Horizon. The
           launchpad components stay routable at /launch-legacy/:role for
           reference, but their internal nav still targets /launch/* and so
           exits to Horizon on first click; workstation routes are untouched. */}
-      <Route path="/launch/:role" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/launch/:role/:domain" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/launch/:role" element={<Navigate to="/v2" replace />} />
+      <Route path="/launch/:role/:domain" element={<Navigate to="/v2" replace />} />
       <Route path="/launch-legacy/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch-legacy/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
       {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
-      <Route path="/contracts" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/contracts" element={<Navigate to="/v2" replace />} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
-      <Route path="/trading" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/settlement" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/carbon" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/projects" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/trading" element={<Navigate to="/v2" replace />} />
+      <Route path="/settlement" element={<Navigate to="/v2" replace />} />
+      <Route path="/carbon" element={<Navigate to="/v2" replace />} />
+      <Route path="/projects" element={<Navigate to="/v2" replace />} />
       <Route path="/projects/:id" element={<ProtectedRoute><Layout><ProjectDetail /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/lifecycle" element={<ProtectedRoute><Layout><ProjectLifecycle /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
-      <Route path="/grid" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/grid" element={<Navigate to="/v2" replace />} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
       <Route path="/funds/:id" element={<ProtectedRoute><Layout><FundDetail /></Layout></ProtectedRoute>} />
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/modules" element={<ProtectedRoute><Layout><ModulesPage /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/admin" element={<Navigate to="/v2" replace />} />
       <Route path="/dashboard" element={<ProtectedRoute><Layout><NationalDashboard /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
@@ -675,15 +695,15 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><Layout><NotificationsPage /></Layout></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute><Layout><SchedulePage /></Layout></ProtectedRoute>} />
       {/* Legacy suite pages retired → Meridian Horizon. Sub-paths (workout/audit) kept below. */}
-      <Route path="/regulator-suite" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/grid-operator" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/trader-risk" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/lender-suite" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/regulator-suite" element={<Navigate to="/v2" replace />} />
+      <Route path="/grid-operator" element={<Navigate to="/v2" replace />} />
+      <Route path="/trader-risk" element={<Navigate to="/v2" replace />} />
+      <Route path="/lender-suite" element={<Navigate to="/v2" replace />} />
       <Route path="/lender-suite/workout" element={<ProtectedRoute><Layout><LenderWorkoutPage /></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
-      <Route path="/carbon-registry/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/grid-operator/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/carbon-registry/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/grid-operator/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums" element={<Navigate to="/v2" replace />} />
       <Route path="/settings/platform" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Field-tech mobile WO flow — no app chrome by design (fullscreen PWA) */}
       <Route path="/esums/field/wos" element={<ProtectedRoute><LazyWorkbench><EsumsOmFieldWosPage /></LazyWorkbench></ProtectedRoute>} />
@@ -703,21 +723,21 @@ function AppRoutes() {
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/legal" element={<LazyWorkbench><PublicLegalPage /></LazyWorkbench>} />
       <Route path="/audit" element={<LazyWorkbench><PublicAuditPage /></LazyWorkbench>} />
-      <Route path="/esums/faults" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/faults/:id" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/workorders" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/workorders/:id" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/predictions/:id" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/esums/faults" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/faults/:id" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/workorders" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/workorders/:id" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/predictions/:id" element={<Navigate to="/v2" replace />} />
       <Route path="/esums/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/regulator-suite/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/admin-platform/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/support/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/trader-risk/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/ipp-lifecycle/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/offtaker-suite/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/lender-suite/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esco/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/epc/workstation" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/regulator-suite/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/admin-platform/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/support/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/trader-risk/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/ipp-lifecycle/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/offtaker-suite/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/lender-suite/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/esco/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/epc/workstation" element={<Navigate to="/v2" replace />} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />
@@ -728,9 +748,9 @@ function AppRoutes() {
       <Route path="/regulator/licence-actions/:id" element={<ProtectedRoute><Layout><LicenceActionDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/grid-operator/outages/:id" element={<ProtectedRoute><Layout><GridOutageDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/billing-runs/:id" element={<ProtectedRoute><Layout><BillingRunDetailPage /></Layout></ProtectedRoute>} />
-      <Route path="/ipp-lifecycle" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/offtaker-suite" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/carbon-registry" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/ipp-lifecycle" element={<Navigate to="/v2" replace />} />
+      <Route path="/offtaker-suite" element={<Navigate to="/v2" replace />} />
+      <Route path="/carbon-registry" element={<Navigate to="/v2" replace />} />
       <Route path="/admin-platform" element={<ProtectedRoute><Layout><LazyWorkbench><AdminPlatformPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {import.meta.env.DEV ? (
         <Route path="/dev/signature" element={<SignaturePreview />} />
@@ -748,12 +768,10 @@ function AppRoutes() {
         <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/launchpad-nav" element={<LazyWorkbench><LaunchpadNavPrototype /></LazyWorkbench>} />
       </Route>
-      <Route path="/" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/welcome" element={<WelcomePage />} />
+      <Route path="/" element={<RootLanding />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
-    {/* Meridian ⌘K palette — global on every authed page; renders null when
-        there's no signed-in role config. */}
-    <CommandPalette />
     </React.Suspense>
   );
 }

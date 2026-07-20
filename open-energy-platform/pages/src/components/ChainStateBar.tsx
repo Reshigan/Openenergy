@@ -25,9 +25,9 @@ const ACC      = 'oklch(0.46 0.12 230)';   // amber
 const ACC_BG   = 'oklch(0.96 0.02 230)';
 const ACC_BDR  = 'oklch(0.80 0.06 230)';
 const BAD      = 'oklch(0.48 0.20 20)';   // red for branch/terminal
-const TRACK_BG = 'oklch(0.93 0.004 250)';
-const TX3      = 'oklch(0.60 0.007 250)';
-const TX2      = 'oklch(0.40 0.009 250)';
+const TRACK_BG = 'var(--s2, oklch(0.93 0.004 250))';
+const TX3      = 'var(--ink-2, oklch(0.60 0.007 250))';
+const TX2      = 'var(--ink-2, oklch(0.40 0.009 250))';
 
 export function ChainStateBar({
   allStates,
@@ -118,7 +118,7 @@ export function ChainStateBar({
       {/* Branch indicator */}
       {branchStates.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'oklch(0.97 0.04 20)', color: BAD, border: `1px solid oklch(0.88 0.08 20)` }}>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'color-mix(in oklch, var(--bad, oklch(0.55 0.22 25)) 14%, var(--s1, oklch(0.97 0.04 20)))', color: BAD, border: `1px solid var(--bad, oklch(0.88 0.08 20))` }}>
             {branchStates.length === 1 ? '1 branch' : `${branchStates.length} branches`}
           </span>
         </div>

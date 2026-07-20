@@ -6,7 +6,7 @@ const PRIORITY_STYLE: Record<RoleAction['priority'], string> = {
   urgent: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
   high:   'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
   normal: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200',
-  low:    'bg-[#f1f5f9] text-[#6b7685] ring-1 ring-[#e5ebf2]',
+  low:    'bg-[#f1f5f9] text-[var(--ink-2, #6b7685)] ring-1 ring-[var(--border-subtle, #e5ebf2)]',
 };
 
 function ago(iso: string): string {
@@ -49,18 +49,18 @@ export default function IncomingPanel({ onAct, className }: IncomingPanelProps) 
   }, []);
 
   return (
-    <section className={`rounded-xl bg-white border border-[#dde4ec] ${className ?? ''}`}>
-      <header className="flex items-center justify-between px-4 py-2.5 border-b border-[#eef2f7]">
-        <div className="flex items-center gap-2 text-[#0f1c2e]">
+    <section className={`rounded-xl bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] ${className ?? ''}`}>
+      <header className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--s2, #eef2f7)]">
+        <div className="flex items-center gap-2 text-[var(--ink, #0f1c2e)]">
           <Inbox className="h-4 w-4 text-[oklch(0.46_0.16_55)]" aria-hidden />
           <h2 className="text-[13px] font-display font-semibold">Incoming</h2>
           {items.length > 0 && (
-            <span className="text-[11px] rounded-full bg-[#eef2f7] px-2 py-0.5 text-[#3d4756]">{items.length}</span>
+            <span className="text-[11px] rounded-full bg-[var(--s2, #eef2f7)] px-2 py-0.5 text-[var(--ink-2, #3d4756)]">{items.length}</span>
           )}
         </div>
         <button
           type="button" onClick={() => void load()}
-          className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
+          className="rounded-md p-1.5 text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)] hover:bg-[var(--s2, #eef2f7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
           aria-label="Refresh incoming actions"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
@@ -70,14 +70,14 @@ export default function IncomingPanel({ onAct, className }: IncomingPanelProps) 
       <div className="p-3 space-y-2">
         {error && <p className="text-[11px] text-rose-600 px-1">{error}</p>}
         {!loading && !error && items.length === 0 && (
-          <p className="text-[11px] text-[#6b7685] px-1 py-6 text-center">No incoming actions. You're all caught up.</p>
+          <p className="text-[11px] text-[var(--ink-2, #6b7685)] px-1 py-6 text-center">No incoming actions. You're all caught up.</p>
         )}
         {items.map((a) => (
-          <article key={a.id} className="rounded-lg bg-[#f8fafc] border border-[#e5ebf2] p-3">
+          <article key={a.id} className="rounded-lg bg-[var(--s1, #f8fafc)] border border-[var(--border-subtle, #e5ebf2)] p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[13px] text-[#0f1c2e] font-medium leading-snug">{a.title}</p>
-                <p className="mt-0.5 text-[11px] text-[#6b7685]">
+                <p className="text-[13px] text-[var(--ink, #0f1c2e)] font-medium leading-snug">{a.title}</p>
+                <p className="mt-0.5 text-[11px] text-[var(--ink-2, #6b7685)]">
                   {a.source_chain_key ?? a.source_entity_type} · {ago(a.created_at)}
                 </p>
               </div>
@@ -96,13 +96,13 @@ export default function IncomingPanel({ onAct, className }: IncomingPanelProps) 
               )}
               <button
                 type="button" onClick={() => void resolve(a, 'acknowledge')} disabled={busyId === a.id}
-                className="rounded-md text-[11px] text-[#3d4756] hover:bg-[#eef2f7] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
+                className="rounded-md text-[11px] text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
               >
                 Acknowledge
               </button>
               <button
                 type="button" onClick={() => void resolve(a, 'dismiss')} disabled={busyId === a.id}
-                className="rounded-md text-[11px] text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
+                className="rounded-md text-[11px] text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)] hover:bg-[var(--s2, #eef2f7)] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
               >
                 Dismiss
               </button>

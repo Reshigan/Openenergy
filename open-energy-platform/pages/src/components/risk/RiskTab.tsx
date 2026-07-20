@@ -144,33 +144,33 @@ export function RiskTab() {
       {explainSummary && (
         <div className="p-3 rounded-lg border border-[#dbe4ee] bg-[#f7fbff] text-[13px]" data-testid="risk-explain-card">
           <div className="text-[10px] uppercase tracking-wider text-[#5a7090] mb-1">AI · Why this VaR</div>
-          <p className="leading-relaxed text-[#0f1c2e]">{explainSummary}</p>
+          <p className="leading-relaxed text-[var(--ink, #0f1c2e)]">{explainSummary}</p>
         </div>
       )}
 
       {/* 30-day sparkline */}
-      <div className="p-4 bg-white border border-[#e5ebf2] rounded-lg">
-        <div className="text-[11px] uppercase tracking-wider text-[#6b7685] mb-2">VaR 95% — last 30 days</div>
+      <div className="p-4 bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-lg">
+        <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)] mb-2">VaR 95% — last 30 days</div>
         <VarSparkline rows={varHistory} />
       </div>
 
       {/* Factor + scenario tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-[#e5ebf2] rounded-lg" data-testid="risk-factors-card">
-          <div className="px-4 py-2 border-b border-[#e5ebf2] text-[11px] uppercase tracking-wider text-[#6b7685]">
+        <div className="bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-lg" data-testid="risk-factors-card">
+          <div className="px-4 py-2 border-b border-[var(--border-subtle, #e5ebf2)] text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
             Top factor contributors
           </div>
           {drivers.length === 0 ? (
-            <div className="p-4 text-[12px] text-[#6b7685]">Run "AI: explain VaR" to populate.</div>
+            <div className="p-4 text-[12px] text-[var(--ink-2, #6b7685)]">Run "AI: explain VaR" to populate.</div>
           ) : (
             <table className="w-full text-[12px]">
-              <thead className="bg-[#f4f7fb] text-[#6b7685]">
+              <thead className="bg-[#f4f7fb] text-[var(--ink-2, #6b7685)]">
                 <tr><th className="text-left px-3 py-2">Factor</th><th className="text-right px-3 py-2">Gross ZAR</th><th className="text-right px-3 py-2">% gross</th></tr>
               </thead>
               <tbody>
                 {drivers.map((d) => (
                   <tr key={d.factor_id} className="border-t border-[#eef2f6]">
-                    <td className="px-3 py-2"><div className="font-medium">{d.name}</div><div className="text-[10px] text-[#6b7685]">{d.why}</div></td>
+                    <td className="px-3 py-2"><div className="font-medium">{d.name}</div><div className="text-[10px] text-[var(--ink-2, #6b7685)]">{d.why}</div></td>
                     <td className="px-3 py-2 text-right font-mono">{ZAR(d.contribution_zar)}</td>
                     <td className="px-3 py-2 text-right font-mono">{Math.round(d.pct_of_gross * 100)}%</td>
                   </tr>
@@ -180,15 +180,15 @@ export function RiskTab() {
           )}
         </div>
 
-        <div className="bg-white border border-[#e5ebf2] rounded-lg" data-testid="risk-scenarios-card">
-          <div className="px-4 py-2 border-b border-[#e5ebf2] text-[11px] uppercase tracking-wider text-[#6b7685]">
+        <div className="bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-lg" data-testid="risk-scenarios-card">
+          <div className="px-4 py-2 border-b border-[var(--border-subtle, #e5ebf2)] text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
             Scenario results — most adverse first
           </div>
           {scenarioRows.length === 0 ? (
-            <div className="p-4 text-[12px] text-[#6b7685]">No scenarios have run on this portfolio yet — wait for the nightly cron or open a scenario builder.</div>
+            <div className="p-4 text-[12px] text-[var(--ink-2, #6b7685)]">No scenarios have run on this portfolio yet — wait for the nightly cron or open a scenario builder.</div>
           ) : (
             <table className="w-full text-[12px]">
-              <thead className="bg-[#f4f7fb] text-[#6b7685]">
+              <thead className="bg-[#f4f7fb] text-[var(--ink-2, #6b7685)]">
                 <tr><th className="text-left px-3 py-2">Scenario</th><th className="text-right px-3 py-2">P&L impact</th><th className="text-right px-3 py-2">As of</th></tr>
               </thead>
               <tbody>
@@ -198,7 +198,7 @@ export function RiskTab() {
                     <td className={`px-3 py-2 text-right font-mono ${r.pnl_impact_zar < 0 ? 'text-red-700' : 'text-emerald-700'}`}>
                       {signed(r.pnl_impact_zar)}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-[#6b7685]">{r.as_of_date}</td>
+                    <td className="px-3 py-2 text-right font-mono text-[var(--ink-2, #6b7685)]">{r.as_of_date}</td>
                   </tr>
                 ))}
               </tbody>
@@ -233,7 +233,7 @@ function Kpi({ label, value, accent, mono, testId }: { label: string; value: str
 }
 
 function VarSparkline({ rows }: { rows: VarRow[] }) {
-  if (!rows.length) return <div className="text-[12px] text-[#6b7685]">No history yet.</div>;
+  if (!rows.length) return <div className="text-[12px] text-[var(--ink-2, #6b7685)]">No history yet.</div>;
   const values = rows.map((r) => r.var_amount_zar);
   const max = Math.max(...values, 1);
   const W = 600, H = 80, pad = 4;
@@ -246,9 +246,9 @@ function VarSparkline({ rows }: { rows: VarRow[] }) {
   const path = `M ${points.join(' L ')}`;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-20">
-      <path d={path} fill="none" stroke="#c0392b" strokeWidth={1.5} />
+      <path d={path} fill="none" stroke="var(--bad, #c0392b)" strokeWidth={1.5} />
       {rows.map((r, i) => (
-        <circle key={i} cx={pad + i * stepX} cy={H - pad - (r.var_amount_zar / max) * (H - pad * 2)} r={2} fill="#c0392b">
+        <circle key={i} cx={pad + i * stepX} cy={H - pad - (r.var_amount_zar / max) * (H - pad * 2)} r={2} fill="var(--bad, #c0392b)">
           <title>{`${r.as_of_date} · ${ZAR(r.var_amount_zar)}`}</title>
         </circle>
       ))}

@@ -5,6 +5,7 @@ import { mergePath } from 'hono/utils/url';
 import type { HonoEnv } from '../utils/types';
 
 import authRoutes from './auth';
+import v2Routes from './v2';
 import ssoRoutes from './sso';
 import cockpitRoutes from './cockpit';
 import pulseRoutes from './pulse';
@@ -264,6 +265,7 @@ import monitoringRoutes from './monitoring';
 import lookupRoutes from './lookup';
 import adminRevenueRoutes from './admin-revenue';
 import adminMarketHaltRoutes from './admin-market-halt';
+import adminMaintenanceRoutes from './admin-maintenance';
 import backupRoutes from './backup';
 import searchRoutes from './search';
 import notificationsRoutes from './notifications';
@@ -722,6 +724,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   mount('/api/admin/monitoring', monitoringRoutes);
   mount('/api/admin/revenue', adminRevenueRoutes);
   mount('/api/admin/market-halt', adminMarketHaltRoutes);
+  mount('/api/admin/maintenance', adminMaintenanceRoutes);
   // Backup routes are deliberately mounted outside /api/admin to avoid being
   // shadowed by the admin sub-app's global authMiddleware.
   mount('/api/backup', backupRoutes);
@@ -849,6 +852,9 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   // A specific prefix must be registered BEFORE the broad /api catch-all so
   // Hono (which matches in registration order) routes it correctly.
   mount('/api/deals', dealsRoutes);
+
+  // v2 event-sourced domain engine — specific prefix before the /api catch-all.
+  mount('/api/v2', v2Routes);
 
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.
   mount('/api', platformFeaturesRoutes);

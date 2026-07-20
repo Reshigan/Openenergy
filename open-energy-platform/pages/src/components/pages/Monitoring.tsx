@@ -8,20 +8,20 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 
 // ── Color tokens ────────────────────────────────────────────────────────────
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BG2     = 'oklch(0.93 0.004 250)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.12 230)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
-const WARN    = 'oklch(0.50 0.18 55)';
-const WARN_BG = 'oklch(0.96 0.05 55)';
-const GOOD    = 'oklch(0.40 0.16 155)';
-const GOOD_BG = 'oklch(0.95 0.04 155)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2     = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.12 230))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const WARN    = 'var(--accent, oklch(0.50 0.18 55))';
+const WARN_BG = 'color-mix(in oklab, var(--warn) 15%, var(--s1))';
+const GOOD    = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG = 'color-mix(in oklab, var(--good) 15%, var(--s1))';
 const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 // ── Interfaces ───────────────────────────────────────────────────────────────
@@ -338,8 +338,8 @@ export function Monitoring(): React.JSX.Element {
               {selected.error_stack && (
                 <pre style={{
                   marginTop: 8, padding: '12px 16px',
-                  background: 'oklch(0.13 0.012 250)',
-                  color: 'oklch(0.88 0.008 250)',
+                  background: 'var(--ink, oklch(0.13 0.012 250))',
+                  color: 'var(--border-subtle, oklch(0.88 0.008 250))',
                   borderRadius: 8, fontSize: 11,
                   overflow: 'auto', maxHeight: 260,
                   fontFamily: MONO, lineHeight: 1.6,
@@ -410,7 +410,7 @@ export function Monitoring(): React.JSX.Element {
                 const isError = sc.status_class === '5xx';
                 const isWarn = sc.status_class === '4xx';
                 const isGood = sc.status_class === '2xx';
-                const bgColor = isError ? BAD_BG : isWarn ? WARN_BG : isGood ? GOOD_BG : 'oklch(0.94 0.003 250)';
+                const bgColor = isError ? BAD_BG : isWarn ? WARN_BG : isGood ? GOOD_BG : 'var(--s2, oklch(0.94 0.003 250))';
                 const textColor = isError ? BAD : isWarn ? WARN : isGood ? GOOD : TX2;
                 return (
                   <div key={sc.status_class} style={{
@@ -450,7 +450,7 @@ export function Monitoring(): React.JSX.Element {
                   <div key={r.route} style={{
                     padding: '8px 20px',
                     borderBottom: i < Math.min(stats.by_route.length, 12) - 1 ? `1px solid ${BORDER}` : 'none',
-                    background: i % 2 === 1 ? 'oklch(0.97 0.002 250)' : 'transparent',
+                    background: i % 2 === 1 ? 'var(--s1, oklch(0.97 0.002 250))' : 'transparent',
                   }}>
                     <div style={{
                       fontFamily: MONO, fontSize: 11, color: TX1,
@@ -479,7 +479,7 @@ export function Monitoring(): React.JSX.Element {
         {loading && (
           <div style={{
             padding: '10px 16px', borderRadius: 8,
-            background: 'oklch(0.95 0.03 250)',
+            background: 'color-mix(in oklab, var(--accent) 15%, var(--s1))',
             border: `1px solid ${BORDER}`,
             fontSize: 12, color: TX2, textAlign: 'center', fontWeight: 600,
           }}>
