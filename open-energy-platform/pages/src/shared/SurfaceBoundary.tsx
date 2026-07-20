@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { EaseError } from './ease/states';
 
 // Every leaf inherits graceful failure: a surface that throws renders the shared
-// EaseError card (with retry + an Atlas escape) instead of blanking the app.
+// EaseError card (with retry + a v2 Home escape) instead of blanking the app.
 export class SurfaceBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
@@ -13,7 +13,7 @@ export class SurfaceBoundary extends React.Component<{ children: React.ReactNode
     if (this.state.failed) {
       return (
         <EaseError message="This surface hit an error and couldn't render." onRetry={() => this.setState({ failed: false })}>
-          <Link to="/cockpit" className="btn ghost">Back to your cockpit</Link>
+          <Link to="/v2" className="btn ghost">Back to Home</Link>
         </EaseError>
       );
     }

@@ -108,7 +108,8 @@ test.describe('v2 surfaces', () => {
   test('retired routes redirect to /v2', async ({ page, baseURL }) => {
     await seedToken(page, ADMIN_TOKEN!);
     // NOTE: /deals is deliberately excluded — it redirects to /v2/trade, not
-    // plain /v2 (see App.tsx DealsRedirect). Covered by its own test below.
+    // plain /v2 (App.tsx maps /deals to an inline <Navigate to="/v2/trade">).
+    // Covered by its own test below.
     for (const path of ['/horizon', '/atlas', '/new', '/trading', '/admin', '/cockpit']) {
       await page.goto(`${baseURL}${path}`, { waitUntil: 'load' });
       await page.waitForURL('**/v2', { timeout: 15000 });
