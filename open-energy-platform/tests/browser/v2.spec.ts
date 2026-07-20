@@ -121,12 +121,25 @@ test.describe('v2 surfaces', () => {
     await page.waitForURL('**/v2/trade', { timeout: 15000 });
   });
 
-  test('parametrized legacy routes redirect into their v2 equivalents', async ({ page, baseURL }) => {
+  // Each parametrized redirect is its own single-goto test: chaining hard
+  // goto()s across the SPA's in-flight client <Navigate> redirects lets the
+  // next navigation interrupt the previous redirect that is still settling
+  // (deterministic, not flake). One goto + one waitForURL per test avoids it,
+  // matching the /deals test above.
+  test('/thread/:chainKey/:id redirects to /v2/t/:id (chainKey dropped)', async ({ page, baseURL }) => {
     await seedToken(page, ADMIN_TOKEN!);
     await page.goto(`${baseURL}/thread/some_chain/abc123`, { waitUntil: 'load' });
     await page.waitForURL('**/v2/t/abc123', { timeout: 15000 });
+  });
+
+  test('/ledger/:chainKey redirects to /v2/find?chain_key=', async ({ page, baseURL }) => {
+    await seedToken(page, ADMIN_TOKEN!);
     await page.goto(`${baseURL}/ledger/green_bond`, { waitUntil: 'load' });
     await page.waitForURL('**/v2/find?chain_key=green_bond', { timeout: 15000 });
+  });
+
+  test('/surface/:key redirects to /v2/s/:key (URL-encoded)', async ({ page, baseURL }) => {
+    await seedToken(page, ADMIN_TOKEN!);
     await page.goto(`${baseURL}/surface/admin:journeys`, { waitUntil: 'load' });
     await page.waitForURL('**/v2/s/admin%3Ajourneys', { timeout: 15000 });
   });
