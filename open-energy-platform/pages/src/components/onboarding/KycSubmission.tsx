@@ -23,7 +23,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { statusLabel } from '../../shared/ease/statusLabel';
-import '../../meridian/meridian.css';
+import '../../shared/surfaces.css';
 
 // Accept only the document formats the reviewers can open, and cap pre-upload size
 // so a too-large file fails with a clear message instead of a silent backend 413.
