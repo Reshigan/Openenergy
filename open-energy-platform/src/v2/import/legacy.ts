@@ -229,6 +229,43 @@ export const IMPORTABLE_CHAINS: Record<string, string | null> = {
   substation_asset: null,
   tariff_indexation: null,
   variation_order: null,
+
+  // ── wave 3 (STATUS_MAP cutover coverage) ─────────────────────────────────
+  // 27 chains whose v1 statuses are now mapped in STATUS_MAP below, so they
+  // become importable. Same `null` rule as wave 2: each counterpartyCol is a
+  // free-text name (contractor_name, acquirer_name, transferee_name,
+  // broker_name, counterparty_name, lta_firm_name, proponent_party_name,
+  // dfi_names), an institution string (network_operator, issuing_bank,
+  // agent_bank), a role token (current_ball_in_court_party, assigned_designer,
+  // report_submitted_to, source_party, trader_party), or absent — never a
+  // participant id, so UUID_RE attaches zero parties and `null` states it.
+  ccp_assessment: null, // proponent_party_name (free-text name)
+  disposition: null, // source_party (role token, not a participant id)
+  poslimit_case: null, // trader_party (role token, not a participant id)
+  dfr: null, // current_ball_in_court_party (role token, handover_dossier precedent)
+  unserved_energy_claim: null, // no counterparty column
+  ipp_acs: null, // no counterparty column
+  ipp_ccc: null, // network_operator (institution string)
+  ipp_cd: null, // contractor_name (free-text name)
+  ipp_coc: null, // acquirer_name (free-text name)
+  ipp_ctr: null, // no counterparty column
+  ipp_empr: null, // no counterparty column
+  ipp_env_monitoring: null, // report_submitted_to (role token)
+  ipp_eqt: null, // transferee_name (free-text name)
+  ipp_esmr: null, // dfi_names (plural free-text names)
+  ipp_final_completion: null, // no counterparty column
+  ipp_gcc: null, // no counterparty column
+  ipp_insr: null, // broker_name (free-text name)
+  ipp_lam: null, // counterparty_name (free-text name)
+  ipp_lrep: null, // agent_bank (institution string)
+  ipp_lta: null, // lta_firm_name (free-text name)
+  ipp_mc: null, // no counterparty column
+  ipp_omc: null, // contractor_name (free-text name)
+  ipp_ppavar: null, // no counterparty column
+  ipp_psec: null, // issuing_bank (institution string)
+  ipp_qgr: null, // no counterparty column
+  ipp_tq: null, // assigned_designer (role token)
+  ipp_wul: null, // no counterparty column
 };
 
 /** RENAMED sources (CUTOVER_COVERAGE §2): v1 descriptor key → v2 chain key.
@@ -281,6 +318,221 @@ export const RENAMED_IMPORTS: Record<string, string> = {
  *  mapping only picks which v2 state the txn resumes in (and therefore which
  *  timers arm). Unmapped unknown statuses still quarantine. */
 export const STATUS_MAP: Record<string, Record<string, string>> = {
+  ccp_assessment: {
+    requested: 'initiated', // request lodged = initial risk-held opening state
+    eligibility_check: 'initiated', // pre-diligence gate = still the opening step, risk-held
+    screening: 'assessing', // screening = diligence underway; assessing is the only diligence state
+    assessment_in_progress: 'assessing', // mid-diligence, risk-held
+    ccp_decision_pending: 'assessing', // approve/decline decision pending = still in assessing, no separate decision state
+    vvb_review: 'under_review', // independent-body review ≈ periodic review, risk-held non-terminal
+    on_hold: 'suspended', // only non-terminal hold state; lossy, v1 status in payload.row
+    returned: 'initiated', // sent back to applicant = restart at opening step
+    ccp_label_granted: 'approved', // admission granted
+    ccp_label_denied: 'declined', // terminal admission failure
+  },
+  disposition: {
+    received: 'disposition_requested', // request received = initial lender-held inbox
+    triaged: 'under_review', // moved past inbox into active lender review
+    assigned: 'under_review', // assigned to a reviewer = lender reviewing
+    investigating: 'under_review', // lender reviewing
+    referred: 'under_review', // referred on = still under review, non-terminal
+    escalated: 'under_review', // escalated = still live lender review, non-terminal
+    action_required: 'conditions_pending', // borrower must act = CP pending, borrower-held
+    action_in_progress: 'consent_granted', // borrower executing the consented disposal, borrower-held window
+    action_completed: 'completed', // terminal — disposal done
+    closed: 'completed', // terminal close = completed
+  },
+  poslimit_case: {
+    within_limit: 'cured', // position back inside cap = resolved inside limit = cured (terminal)
+  },
+  dfr: {
+    drafted: 'entries_open', // report being drafted = initial entries-open, ipp-held
+  },
+  unserved_energy_claim: {
+    claim_submitted: 'lodged', // claim submitted = initial lodged, grid-operator-held
+    metering_data_verified: 'metering_verified', // meter data verified
+    preliminary_quantum: 'quantum_determined', // preliminary quantum = quantum-determined stage, grid-held
+    grid_operator_response: 'grid_response_filed', // grid operator filed its response
+    negotiation: 'negotiating', // negotiation underway
+    settlement_offer: 'settlement_offered', // offer on the table, offtaker-held
+    claim_disputed: 'adjudication', // dispute = adjudication (dispute_claim edge -> adjudication)
+    formal_adjudication: 'adjudication', // formal adjudication in progress
+  },
+  ipp_acs: {
+    assessment_triggered: 'self_assessment_drafted', // triggered = opening = drafted, initial ipp-held
+    protection_systems_audit: 'protection_audit_underway', // protection audit underway
+    metering_scada_audit: 'metering_scada_audit_underway', // metering/SCADA audit underway
+    reactive_power_audit: 'reactive_power_audit_underway', // reactive power audit underway
+    frequency_response_audit: 'frequency_response_audit_underway', // frequency response audit underway
+    frt_pq_audit: 'frt_pq_audit_underway', // FRT/PQ audit underway
+    internal_technical_review: 'internal_review_complete', // no in-progress internal-review state; collapses to the only internal-review state, lossy
+    so_review_in_progress: 'so_review_underway', // SO review underway
+    so_submission: 'submitted_to_so', // formal handover to SO
+  },
+  ipp_ccc: {
+    load_flow_study: 'ccc_initiated', // operator technical study to price the work = pricing/initiation phase, operator-held
+    cost_assessment: 'ccc_initiated', // operator costing the strengthening work = initiation phase
+    negotiation_in_progress: 'ccc_initiated', // negotiating pre-heads-of-terms; still in the initiated phase
+    ipp_review: 'provisional_agreement', // IPP reviewing proposed terms = provisional round, ipp-held
+    arbitration_in_progress: 'dispute_filed', // arbitration = live dispute process, non-terminal
+    expert_determination: 'dispute_filed', // expert determination = live dispute-resolution process, non-terminal (NERSA determ. is the terminal one)
+  },
+  ipp_cd: {
+    default_identified: 'default_raised', // identification = the initial raise, ipp-held
+    cure_period_in_progress: 'cure_period', // v1 in-progress = the cure_period state; re-arms 42d cure-lapse time-bar
+    replacement_tendering: 'handover_in_progress', // tendering runs inside handover, pre-award; re-arms 30d
+  },
+  ipp_coc: {
+    notification_submitted: 'notified', // initial; notification lodged = notified
+    completeness_check: 'completeness_review',
+    competition_screen: 'completeness_review', // NERSA screening collapses into the review window, re-arms 10d; v1 status in payload.row
+    foreign_ownership_screen: 'completeness_review', // ditto — evaluation sub-stage, no dedicated v2 state
+    nersa_evaluation: 'completeness_review', // ditto
+    technical_assessment: 'completeness_review', // ditto
+    conditional_approval: 'conditionally_approved',
+    appeal_filed: 'rejected', // no appeal state; appeal contests a refusal, nearest terminal is rejected; appeal survives in payload.row
+  },
+  ipp_ctr: {
+    report_due: 'report_drafted', // obligation triggered pre-draft; earliest v2 state (initial)
+    data_preparation: 'report_drafted', // IPP data prep = drafting stage, ipp-held
+    trustee_review: 'report_drafted', // internal trust review pre-submission = ipp-held drafting
+    submitted_to_dtic: 'dtic_review', // submission arms the DTIC review window
+    ipp_review: 'dtic_review', // IPP addressing DTIC queries during the review cycle
+    responses_submitted: 'dtic_review', // responses land inside the review window, re-arms 30d
+    appeal_filed: 'report_rejected', // no filed-appeal state; pending appeal sits at rejected, determine_appeal resolves it; appeal in payload.row
+  },
+  ipp_empr: {
+    report_period_opened: 'report_opened',
+    monitoring_results_compilation: 'monitoring_compiled', // in-progress compile = the compiled stage
+    incident_review: 'incident_reviewed',
+    draft_report_preparation: 'draft_report_prepared',
+    internal_review: 'internal_review_completed',
+    eco_sign_off: 'eco_signed_off',
+    ca_review_in_progress: 'ca_review_commenced', // v2 has no in-progress state; commenced is the CA-review stage
+    competent_authority_submission: 'submitted_to_ca', // submission = submitted_to_ca, regulator-held, re-arms 120d
+  },
+  ipp_env_monitoring: {
+    report_drafted: 'compliance_assessed', // v1-dead status; draft sits post-assessment pre-submission, nearest non-terminal is compliance_assessed
+  },
+  ipp_eqt: {
+    transfer_initiated: 'transfer_proposed', // initiation = the initial proposal
+    due_diligence: 'transfer_proposed', // pre-submission DD, ipp-held proposal stage
+    offtaker_notification: 'transfer_proposed', // pre-submission notification, still proposal stage
+    lender_consent_requested: 'transfer_proposed', // CP gathered to complete the application, pre-submission
+    regulatory_notification: 'nersa_review', // notifying NERSA = review commenced, re-arms 14d
+    cp_documentation_submitted: 'nersa_review', // CP docs filed during review
+    conditions_precedent_tracking: 'nersa_review', // CP tracking pre-completion; no dedicated state
+    regulatory_clearance_issued: 'nersa_review', // cleared but unexecuted = completion pending, re-arms 14d; v1 status in payload.row
+  },
+  ipp_esmr: {
+    data_collection: 'reporting_period_open', // E&S data collection during the open period, ipp-held
+    monitoring_compilation: 'reporting_period_open', // pre-submission compile, ipp-held
+    ta_report_preparation: 'reporting_period_open', // report prep pre-submission, ipp-held
+    lender_review: 'report_submitted', // lender reviewing the submitted report, admin-held, re-arms 14d
+    lender_ta_review: 'report_submitted', // lender-TA review, post-submission window
+    clarification_requested: 'report_submitted', // clarification during review; report still submitted, re-arms 14d
+  },
+  ipp_final_completion: {
+    defects_outstanding: 'snag_list_issued', // a snag list IS the outstanding-defects record; EPC-held cure window
+    snag_list_cleared: 'inspection_complete', // cure done, back to IE ready-to-certify position; re-arms 5d IE clock
+  },
+  ipp_gcc: {
+    assessment_due: 'assessment_open', // not yet opened; earliest developer-held state
+    test_preparation: 'assessment_open', // pre-submission developer prep work
+    testing_in_progress: 'assessment_open', // testing is assessment-phase work, pre-submission
+    test_completed: 'assessment_open', // tests done, report not yet submitted to NERSA
+    report_drafted: 'assessment_open', // drafting report, still developer-held pre-submission
+    submitted_to_nersa: 'under_nersa_review', // submitted = NERSA now reviewing
+    nersa_review: 'under_nersa_review', // NERSA reviewing, re-arms 30d
+    verification_pending: 'under_nersa_review', // awaiting NERSA verification within the review window
+    corrective_action: 'deficiency_noted', // curing a noted deficiency; re-arms 30d corrective window
+  },
+  ipp_insr: {
+    broker_instruction: 'renewal_triggered', // broker instructed but cover not yet placed; developer-held pre-placement
+    documentation_preparation: 'renewal_triggered', // pre-placement prep, re-arms 5d
+    coverage_gap_analysis: 'renewal_triggered', // pre-placement gap review
+    documents_submitted: 'market_placement', // risk submitted to market = placed
+    terms_received: 'market_placement', // market returned terms; post-placement confirmation phase
+    lender_confirmation_requested: 'market_placement', // post-placement, awaiting lender confirmation
+    ipp_lender_review: 'market_placement', // lender reviewing placed cover, pre-resolution
+  },
+  ipp_lam: {
+    amendment_requested: 'amendment_drafted', // request = initial developer-held drafting
+    surveyor_appointed: 'amendment_drafted', // survey is developer prep, pre-submission
+    survey_completed: 'amendment_drafted', // survey done, application not yet submitted
+    authority_review: 'application_submitted', // authority reviewing = post-submission, holder matches (30d)
+    objections_resolved: 'application_submitted', // objections cleared, still within authority review
+    appeal_filed: 'application_submitted', // active appeal = authority re-reviewing; non-terminal, authority-held
+  },
+  ipp_lrep: {
+    reporting_triggered: 'package_drafted', // cycle opened; initial developer-held drafting
+    data_collection: 'package_drafted', // drafting-phase data gathering
+    financial_model_update: 'package_drafted', // drafting-phase model work
+    document_compilation: 'package_drafted', // compiling the package, pre-submission
+    technical_review: 'package_drafted', // internal review pre-submission, developer-held
+    ipp_sign_off: 'package_drafted', // developer sign-off before submission, still pre-submission
+    agent_bank_submission: 'package_submitted', // submitted to agent bank = admin-held awaiting response
+    lender_distribution: 'package_submitted', // package distributed to lenders = out the door
+    acknowledgement_pending: 'package_submitted', // awaiting acknowledgement; re-arms 30d SLA
+  },
+  ipp_lta: {
+    site_inspection_in_progress: 'certificate_requested', // LTA review work before a draft is issued; admin-held
+    progress_assessment: 'certificate_requested', // pre-draft LTA assessment
+    borrower_comments_submitted: 'draft_certificate_issued', // comments on the draft = draft review phase, developer-held
+    final_certificate_in_review: 'draft_certificate_issued', // draft under final review, pre-resolution
+  },
+  ipp_mc: {
+    milestone_triggered: 'milestone_scheduled', // initial developer-held scheduled state
+    documentation_preparation: 'milestone_scheduled', // developer prep, review not yet commenced
+    documentation_submitted: 'milestone_scheduled', // docs in, still pre-commencement developer phase
+    ipp_office_acknowledgment: 'final_review', // office acknowledged receipt = review commenced
+    ie_pre_review: 'final_review', // IE pre-review = final review underway
+    technical_verification: 'final_review', // verification within the review window
+    clarification_requested: 'final_review', // clarification sought mid-review; re-arms 14d
+  },
+  ipp_omc: {
+    renewal_triggered: 'tendering', // opening trigger = start of the round
+    market_sounding: 'tendering', // pre-bid soundings still within the tender window
+    tender_issued: 'tendering', // tender out, bids not yet in
+    bids_received: 'tendering', // bids in but not yet evaluated/selected
+    evaluation_complete: 'tendering', // evaluated, preferred bidder not yet named
+    lender_consent: 'preferred_bidder_selected', // post-selection consent step, pre-execution
+    nersa_acknowledgement: 'preferred_bidder_selected', // regulator ack sits between selection and execution
+    novation_pending: 'preferred_bidder_selected', // bidder chosen, novation executing but not yet done
+  },
+  ipp_ppavar: {
+    variation_requested: 'variation_lodged', // request = the lodge/open stage
+    regulatory_screen: 'regulatory_screening', // same stage, v1 short form
+  },
+  ipp_psec: {
+    security_required: 'application_submitted', // requirement identified = earliest non-terminal (initial)
+    bond_application_submitted: 'application_submitted', // same stage, v1 verbose form
+    bond_documentation: 'documentation', // same doc-prep stage
+    dmre_notification_sent: 'dmre_notified', // same DMRE-notified stage
+  },
+  ipp_qgr: {
+    report_quarter_opened: 'report_drafted', // opening trigger = drafting stage (initial)
+    operations_data_collection: 'report_drafted', // draft-phase data gathering, ipp-held
+    environmental_data_compilation: 'report_drafted', // draft-phase compilation
+    financial_data_compilation: 'report_drafted', // draft-phase compilation
+    social_indicators_tabulation: 'report_drafted', // draft-phase compilation
+    internal_review: 'report_drafted', // pre-submission internal review, still drafting
+    board_approval: 'report_drafted', // internal sign-off before submission
+    ipp_office_submission: 'submitted_to_ipp_office', // same submit stage
+    acknowledgement_pending: 'submitted_to_ipp_office', // submitted, awaiting office ack/decision
+  },
+  ipp_tq: {
+    logged: 'raised', // bookkeeping shade of raised (per chain note)
+    under_review: 'allocated', // bookkeeping shade of allocated (per chain note)
+    acknowledged: 'response_issued', // bookkeeping shade of response_issued (per chain note)
+    design_change_required: 'response_drafted', // substantive response outcome awaiting approve/issue
+  },
+  ipp_wul: {
+    application_preparation: 'wul_application_triggered', // drafting = initial "Application drafting"
+    site_assessment: 'technical_assessment', // DWS assessing the site = technical stage
+    public_participation_closed: 'technical_assessment', // participation window ended, now assessing
+    dws_final_review: 'technical_assessment', // final DWS review = the technical-assessment stage
+  },
   availability_guarantee: {
     settled: 'remedy_instructed',
     dispute_resolved: 'met_closed',

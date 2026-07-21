@@ -240,7 +240,7 @@ describe('importChain', () => {
   });
 
   it('rejects a chain outside the allow-list', async () => {
-    expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(178);
+    expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(205);
     await expect(importChain([], 'ppa_contract', newDeps())).rejects.toThrow(/not importable/);
   });
 
