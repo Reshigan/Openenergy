@@ -954,6 +954,7 @@ export const STATUS_MAP: Record<string, Record<string, string>> = {
     mobilization: 'cod_declared', // pre-commissioning construction
     mechanical_complete: 'cod_declared', // pre-commissioning construction (v1 status in payload.row)
     cold_commissioning: 'commissioning_review', // commissioning phase
+    cold_commissioned: 'commissioning_review', // same phase, past-tense v1 spelling (both spellings exist in the data)
     grid_synchronized: 'commissioning_review', // commissioning phase, pre reliability run
     cancelled: 'withdrawn', // v1 terminal cancel -> v2 withdrawn (cod_rejected is certifier refusal)
   },
@@ -1194,6 +1195,7 @@ export const STATUS_MAP: Record<string, Record<string, string>> = {
     draft: 'requisition_raised', // RFP being drafted = requisition stage
     published: 'rfq_issued', // RFP published to market = RFQ out
     bidding: 'rfq_issued', // bids open against the issued RFQ; non-terminal
+    bid_opened: 'bids_evaluating', // public bid opening — bids are in, evaluation starting
     bid_closed: 'bids_evaluating', // bids in, evaluation starting
     evaluation: 'bids_evaluating', // same stage, renamed
     shortlisted: 'bids_evaluating', // shortlist is part of evaluation; v1 status in payload.row
@@ -1280,17 +1282,29 @@ function isoOrNull(v: Json | undefined): string | null {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Resumable v1 fetch: only rows not yet imported (idempotency key absent).
- *  Table name is a static literal from the descriptor; chain_key and limit
- *  bind to `?` placeholders. */
-export async function fetchLegacyRows(db: D1Database, chain_key: string, limit: number): Promise<LegacyRow[]> {
+ *  Table name is a static literal from the descriptor; chain_key, afterId and
+ *  limit bind to `?` placeholders.
+ *
+ *  `afterId` is the id-ordered cursor. Without it a full backfill can stall:
+ *  a quarantined row never gets a v2_events row, so the NOT EXISTS clause
+ *  re-selects it on every call — a chain whose lowest-id rows are all
+ *  quarantinable would consume the whole window forever and never reach the
+ *  importable tail. Callers page by passing the last id of the previous page. */
+export async function fetchLegacyRows(
+  db: D1Database,
+  chain_key: string,
+  limit: number,
+  afterId = '',
+): Promise<LegacyRow[]> {
   const desc = legacyDescriptor(chain_key);
   const res = await db
     .prepare(
       `SELECT t.* FROM ${desc.table} t
-       WHERE NOT EXISTS (SELECT 1 FROM v2_events e WHERE e.idempotency_key = 'import:' || ? || ':' || t.id)
+       WHERE t.id > ?
+         AND NOT EXISTS (SELECT 1 FROM v2_events e WHERE e.idempotency_key = 'import:' || ? || ':' || t.id)
        ORDER BY t.id LIMIT ?`,
     )
-    .bind(chain_key, Math.max(1, Math.min(limit, 500)))
+    .bind(afterId, chain_key, Math.max(1, Math.min(limit, 500)))
     .all<LegacyRow>();
   return res.results ?? [];
 }
@@ -1428,8 +1442,17 @@ export async function importChain(
         break;
       } catch (e) {
         if (e instanceof ConstraintViolation) {
-          if (e.constraint === 'idempotency_key' || e.constraint === 'event_pk') {
+          if (e.constraint === 'idempotency_key') {
             report.skipped_existing++; // concurrent import raced us — same row landed
+            break;
+          }
+          if (e.constraint === 'event_pk') {
+            // v2_txns.id IS the v1 row id, and v1 ids are only unique per table —
+            // so (txn_id, seq=1) already taken means a DIFFERENT chain's row owns
+            // this id. Not a race (a race trips idempotency_key first, same key).
+            // Quarantine rather than count it skipped: it is un-imported data and
+            // the cutover reconciliation must see it.
+            report.quarantined.push({ id: rowId, status: rawStatus });
             break;
           }
           if (e.constraint === 'human_ref' && attempt < 6) continue;

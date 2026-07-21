@@ -7,7 +7,7 @@
 // imported txn as seq 2 chained off the imported hash.
 
 import { describe, it, expect } from 'vitest';
-import { importChain, importIdempotencyKey, IMPORTABLE_CHAINS, RENAMED_IMPORTS, STATUS_MAP } from '../../src/v2/import/legacy';
+import { importChain, importIdempotencyKey, fetchLegacyRows, IMPORTABLE_CHAINS, RENAMED_IMPORTS, STATUS_MAP } from '../../src/v2/import/legacy';
 import { MERIDIAN_CHAINS } from '../../src/utils/chain-registry-meridian';
 import { applyTransition, type EngineDeps } from '../../src/v2/domain/engine';
 import { CHAINS } from '../../src/routes/v2';
@@ -242,5 +242,71 @@ describe('importChain', () => {
   it('rejects a chain outside the allow-list', async () => {
     expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(122);
     await expect(importChain([], 'ppa_contract', newDeps())).rejects.toThrow(/not importable/);
+  });
+
+  // v2_txns.id IS the raw v1 row id, but v1 ids are only unique WITHIN a table —
+  // two different legacy tables can both hold a row 'cc-1'. The second one to be
+  // imported must be reported as un-imported, not silently counted as an
+  // already-present skip, or the cutover reconciliation over-reports coverage.
+  it('a v1 id already owned by another chain quarantines instead of counting as skipped', async () => {
+    const deps = newDeps();
+    await importChain(ccRows(), 'covenant_certificate', deps);
+    expect((await deps.store.getTxn('cc-1'))!.txn.chain_key).toBe('covenant_certificate');
+
+    // same id, different legacy table (oe_availability_guarantees)
+    const report = await importChain(
+      [{ id: 'cc-1', case_number: 'AG-001', chain_status: 'period_open', created_at: '2026-03-01 08:00:00' }],
+      'availability_guarantee',
+      deps,
+    );
+    expect(report.imported).toBe(0);
+    expect(report.skipped_existing).toBe(0);
+    expect(report.quarantined).toEqual([{ id: 'cc-1', status: 'period_open' }]);
+    // the incumbent txn is untouched
+    expect((await deps.store.getTxn('cc-1'))!.txn.chain_key).toBe('covenant_certificate');
+  });
+});
+
+// fetchLegacyRows owns the paging contract for a full backfill. The cursor is
+// load-bearing: quarantined rows never gain a v2_events row, so the NOT EXISTS
+// clause alone re-selects them forever and a driver paging without a cursor
+// never reaches the importable tail.
+describe('fetchLegacyRows paging', () => {
+  function stubDb() {
+    const calls: { sql: string; binds: unknown[] }[] = [];
+    const db = {
+      prepare(sql: string) {
+        const call = { sql, binds: [] as unknown[] };
+        calls.push(call);
+        return {
+          bind(...b: unknown[]) {
+            call.binds = b;
+            return { all: async () => ({ results: [] }) };
+          },
+        };
+      },
+    };
+    return { db: db as unknown as D1Database, calls };
+  }
+
+  it('binds the cursor, the chain key and the clamped limit in that order', async () => {
+    const { db, calls } = stubDb();
+    await fetchLegacyRows(db, 'covenant_certificate', 200, 'cc-9');
+    expect(calls).toHaveLength(1);
+    expect(calls[0].sql).toContain('FROM oe_covenant_certificates');
+    expect(calls[0].sql).toContain('t.id > ?');
+    expect(calls[0].sql).toContain('ORDER BY t.id');
+    expect(calls[0].binds).toEqual(['cc-9', 'covenant_certificate', 200]);
+  });
+
+  it('defaults to an empty cursor (start of table) and clamps the limit to 500', async () => {
+    const { db, calls } = stubDb();
+    await fetchLegacyRows(db, 'covenant_certificate', 10_000);
+    expect(calls[0].binds).toEqual(['', 'covenant_certificate', 500]);
+  });
+
+  it('never lets a request-supplied chain key reach identifier position', async () => {
+    const { db } = stubDb();
+    await expect(fetchLegacyRows(db, 'oe_users; DROP TABLE v2_txns', 10)).rejects.toThrow(/not importable/);
   });
 });

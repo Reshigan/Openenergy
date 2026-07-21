@@ -39,6 +39,7 @@ export default function BillingSurface(_props: { role: string }) {
         key={refreshKey}
         endpoint="/invoices"
         rowKey={(r) => r.id}
+        rowHref={(r) => `/settlement/invoices/${r.id}`}
         empty={{ title: 'No invoices', description: 'Settlement and platform invoices will appear here once raised.' }}
         columns={[
           { key: 'invoice_number', label: 'Invoice', render: (r) => <span className="font-mono text-[11px]">{r.invoice_number}</span> },

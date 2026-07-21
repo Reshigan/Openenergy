@@ -190,11 +190,20 @@ export class D1Store implements Store {
     const where: string[] = [];
     const binds: unknown[] = [];
     let join = '';
-    // scope: only txns this participant is a live party to, OR public ones.
+    // scope: txns this participant is a live party to, OR public ones, OR ones
+    // on a chain whose declared roles admit the caller (see scope_chain_keys).
+    // `owner` visibility is excluded from the role widening — it stays strict.
     if (f.scope_participant_id) {
       join = `LEFT JOIN v2_parties p ON p.txn_id = t.id AND p.until_event_id IS NULL AND p.participant_id = ?`;
       binds.push(f.scope_participant_id);
-      where.push(`(p.participant_id IS NOT NULL OR t.visibility = 'public')`);
+      const alts = [`p.participant_id IS NOT NULL`, `t.visibility = 'public'`];
+      const keys = f.scope_chain_keys ?? [];
+      if (keys.length) {
+        // Placeholders only — chain keys are bound, never interpolated.
+        alts.push(`(t.visibility = 'party' AND t.chain_key IN (${keys.map(() => '?').join(',')}))`);
+        binds.push(...keys);
+      }
+      where.push(`(${alts.join(' OR ')})`);
     }
     if (f.chain_key) { where.push(`t.chain_key = ?`); binds.push(f.chain_key); }
     if (f.open_only) { where.push(`t.closed_at IS NULL`); }

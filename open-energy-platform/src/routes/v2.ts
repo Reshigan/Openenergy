@@ -277,6 +277,7 @@ import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { IMPORTABLE_CHAINS, RENAMED_IMPORTS, fetchLegacyRows, importChain } from '../v2/import/legacy';
 import { sealPendingEvents } from '../v2/domain/merkle-seal';
+import { MERIDIAN_CHAINS } from '../utils/chain-registry-meridian';
 // D1Store is authored in a parallel workstream (src/v2/store/d1.ts). Until it
 // lands, tsc reports "cannot find module '../v2/store/d1'" — that error is
 // EXPECTED-pending-integration, not a defect in this file.
@@ -288,6 +289,16 @@ v2.use('*', authMiddleware);
 // Operator-class roles: platform staff / regulator who see across parties.
 // ponytail: hard-coded set; move to an rbac table if the role list churns.
 const OPERATOR_ROLES = ['admin', 'operator', 'regulator', 'support'];
+
+// JWT role → the suffixed form ChainDecl.roles / the v1 registry use. Mirrors
+// pages/src/v2/starts.ts::ROLE_ALIAS — keep the two in step.
+const ROLE_ALIAS: Record<string, string> = {
+  ipp: 'ipp_developer',
+  wind: 'ipp_developer',
+  carbon: 'carbon_fund',
+  grid: 'grid_operator',
+  esums_owner: 'esco',
+};
 
 // The chain registry lives inline in deps, chains-as-data. More chains get
 // added to this Record as they are transcribed; there is no separate registry
@@ -676,6 +687,59 @@ v2.post('/txn/:id/act', async (c) => {
   return runCommand(c, cmd);
 });
 
+// ── role-based audience ─────────────────────────────────────────────────────
+// The platform's authorisation model is role-based: every v1 chain declares
+// `roles: string[]` (src/utils/chain-registry-meridian.ts) and every one of its
+// REST modules gates on the JWT role, not on per-row party rows — v1 has none.
+// ChainDecl.roles carries the same audience into v2, so a chain that admits
+// `lender` is visible to lenders whether or not a v2_parties row exists. This
+// is what makes the legacy import visible: imported txns have no parties.
+// Chains that must stay strictly party-private declare `visibility: 'owner'`,
+// which the stores exclude from this widening.
+// Matching must be BIDIRECTIONAL: the JWT carries the suffixed form
+// ('ipp_developer', 'grid_operator', 'carbon_fund') while most ChainDecls
+// declare the short form ('ipp', 'grid', 'carbon'), so a one-way alias lookup
+// matches neither direction reliably. Each row is one equivalence class.
+const ROLE_SYNONYMS: string[][] = [
+  ['ipp', 'ipp_developer', 'wind'],
+  ['grid', 'grid_operator'],
+  ['carbon', 'carbon_fund'],
+  ['esco', 'esums_owner'],
+];
+
+// ~40% of ChainDecls list only per-txn party SLOTS ('holder', 'claimant',
+// 'buyer'…) and no JWT role at all, so ChainDecl.roles alone leaves whole
+// clusters (every carbon_* chain) visible to operators only. The v1 descriptor
+// carries the real shipped audience — `lanes` is keyed by JWT role and
+// `actions[].roles` are JWT roles — so union the two. Chains with no v1
+// descriptor fall back to ChainDecl.roles.
+const V1_KEY_FOR_V2 = new Map(Object.entries(RENAMED_IMPORTS).map(([v1, v2]) => [v2, v1]));
+let AUDIENCE: Map<string, Set<string>> | null = null;
+const chainAudience = (): Map<string, Set<string>> => {
+  if (AUDIENCE) return AUDIENCE;
+  const v1 = new Map(MERIDIAN_CHAINS.map((d) => [d.key, d]));
+  AUDIENCE = new Map(
+    Object.entries(CHAINS).map(([key, ch]) => {
+      const names = new Set((ch as { roles: string[] }).roles);
+      const d = v1.get(key) ?? v1.get(V1_KEY_FOR_V2.get(key) ?? '');
+      if (d) {
+        for (const r of Object.keys(d.lanes)) names.add(r);
+        for (const a of d.actions) for (const r of a.roles) names.add(r);
+      }
+      return [key, names] as const;
+    }),
+  );
+  return AUDIENCE;
+};
+
+const roleChainKeys = (jwtRole: string): string[] => {
+  const names = new Set([jwtRole, ROLE_ALIAS[jwtRole] ?? jwtRole]);
+  for (const group of ROLE_SYNONYMS) if (group.includes(jwtRole)) for (const g of group) names.add(g);
+  return [...chainAudience()]
+    .filter(([, audience]) => [...names].some((n) => audience.has(n)))
+    .map(([k]) => k);
+};
+
 // ── GET /txn/:id — read a txn + its parties + event log ─────────────────────
 // Visibility: operator-class roles see any txn; otherwise the caller must be a
 // live party, or the chain must be publicly visible.
@@ -690,7 +754,9 @@ v2.get('/txn/:id', async (c) => {
   const isOperator = OPERATOR_ROLES.includes(user.role);
   const isParty = bundle.parties.some((p) => p.until_event_id === null && p.participant_id === user.id);
   const isPublic = bundle.txn.visibility === 'public';
-  if (!isOperator && !isParty && !isPublic) {
+  const inRoleAudience =
+    bundle.txn.visibility === 'party' && roleChainKeys(user.role).includes(bundle.txn.chain_key);
+  if (!isOperator && !isParty && !isPublic && !inRoleAudience) {
     return c.json({ success: false, error: 'forbidden' }, 403);
   }
 
@@ -718,9 +784,13 @@ v2.get('/legacy-coverage', (c) => {
 
 // ── GET /txns — flexible list feeding Home / Find / Ledger ──────────────────
 // Query: ?chain_key=&open=1&mine=1&q=&limit=
-// Visibility: non-operators are ALWAYS scoped to their own party (+public) —
-// they can never enumerate another party's txns. Operators see all, unless
-// mine=1 narrows them to their own. The client computes the rich Home ordering
+// Visibility: a non-operator sees public txns, txns they are a live party to,
+// and — deliberately — `visibility:'party'` txns on the chains their JWT role is
+// an audience for (roleChainKeys). That last clause is a widening: v1 gated by
+// role, not by per-row party, so a role-scoped read is what the platform has
+// always shipped and what the v1 lanes/actions encode. `visibility:'owner'`
+// chains are NOT widened — those stay strictly party-scoped. mine=1 drops the
+// widening for anyone. Operators see all, unless mine=1. The client computes the rich Home ordering
 // (blocking / SLA / money) from the chain decl; the server returns opened_at DESC.
 v2.get('/txns', async (c) => {
   const user = getCurrentUser(c);
@@ -729,6 +799,8 @@ v2.get('/txns', async (c) => {
   const limit = Number(c.req.query('limit')) || 100;
   const rows = await buildDeps(c).store.listTxns({
     scope_participant_id: isOperator && !mine ? undefined : user.id,
+    // mine=1 means "only mine" — no role widening.
+    scope_chain_keys: mine ? [] : roleChainKeys(user.role),
     chain_key: c.req.query('chain_key') || undefined,
     open_only: c.req.query('open') === '1',
     q: c.req.query('q') || undefined,
@@ -810,9 +882,16 @@ v2.post('/import/:chain_key', async (c) => {
   }
   const body = await c.req.json().catch(() => ({}));
   const limit = Math.max(1, Math.min(Number(body?.limit) || 200, 500));
-  const rows = await fetchLegacyRows(c.env.DB, chain_key, limit);
+  // after_id is the id-ordered paging cursor (see fetchLegacyRows). Callers echo
+  // back `last_id` from the previous page; `fetched === 0` means exhausted.
+  const after_id = typeof body?.after_id === 'string' ? body.after_id : '';
+  const rows = await fetchLegacyRows(c.env.DB, chain_key, limit, after_id);
   const report = await importChain(rows, chain_key, buildDeps(c), { dry_run: body?.dry_run === true });
-  return c.json({ success: true, data: report });
+  const last = rows.length ? rows[rows.length - 1].id : null;
+  return c.json({
+    success: true,
+    data: { ...report, fetched: rows.length, last_id: last == null ? null : String(last) },
+  });
 });
 
 // ── Cron seams — called by runCron() in src/index.ts, not by HTTP ────────────

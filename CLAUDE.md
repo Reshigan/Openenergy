@@ -22,7 +22,7 @@ npm run check              # backend tsc --noEmit
 npm run check:pages        # SPA tsc --noEmit
 
 # Test
-npm test                   # vitest — 8167 unit tests; backend logic, matching, guards
+npm test                   # vitest — 9403 unit tests; backend logic, matching, guards
 npx vitest run path/to/file.test.ts          # single file
 npx vitest run -t "describe substring"       # by name pattern
 npm run test:browser       # Playwright against BASE (defaults to prod)
@@ -129,19 +129,22 @@ HS256 JWT, 1-hour TTL. Token in `Authorization: Bearer` and (for the SPA) `local
 
 Demo personas all use password `Demo@2024!`. Emails: `admin / trader / ipp / wind / offtaker / lender / carbon / regulator / grid / support @openenergy.co.za`.
 
-### Frontend chrome — Meridian
+### Frontend chrome — v2 (four surfaces)
 
-The SPA is **Meridian** — one full-canvas chrome (`MeridianFrame`, [pages/src/meridian/MeridianFrame.tsx](open-energy-platform/pages/src/meridian/MeridianFrame.tsx)) wrapping every authed page. The older systems (StitchPage, FioriShell, `LaunchBoardShell`/`WorkstationShell`, `/launch/:role`, `/cockpit`, per-domain `/{role}/workstation`) were retired in **Phase E**; those paths now `<Navigate to="/horizon">`.
+The SPA is **v2** — one chrome (`Shell`, [pages/src/v2/Shell.tsx](open-energy-platform/pages/src/v2/Shell.tsx)) wrapping every authed page, with a `data-role` wrapper driving a single `--accent` token (components never name a role), a `HeroBar` role header, and a built-in ⌘K `Palette` (Find-as-palette — the SPA has exactly one command palette, in Shell). The whole **Meridian** system (Horizon, Atlas, Ledger, Thread, Deal Desk, `MeridianFrame`, `CommandPalette`) was retired; `pages/src/meridian/` no longer exists.
 
-Post-login, `LaunchRedirect` ([App.tsx](open-energy-platform/pages/src/App.tsx)) calls `GET /api/onboarding/state` → `/onboard` (first visit) or `/horizon` (returning). The Meridian surfaces:
-- **Horizon** (`/horizon`) — per-role live workspace; lanes are the non-terminal chain cases visible to the role (`GET /api/horizon/:role`, [src/routes/horizon.ts](open-energy-platform/src/routes/horizon.ts)). `laneRoleFor` re-points `esums_owner`→`esco`.
-- **Atlas** (`/atlas`, ⌘K) — function library / discovery. Tiles come from `getRoleConfig(role).domains→features` in [roleData.ts](open-energy-platform/pages/src/ux-alternatives/launchpad-nav/roleData.ts); each must resolve to a chain Ledger (`f.chainKey`), a `route`, or a registered `/surface` — otherwise the tile is structurally hidden.
-- **Ledger** (`/ledger/:chainKey`) — per-chain list + schema-driven `+New` initiation.
-- **Thread** (`/thread/:chainKey/:id`) — two-sided cross-role transaction detail.
-- **Deal Desk** (`/deals`) — author/track deals; `/new` is the transaction picker (deep-links Ledger `?compose=1`).
-- **`/surface/:key`** — one parametric route renders `SURFACE_REGISTRY['<role>:<key>']` (static allow-list in [surfaces.tsx](open-energy-platform/pages/src/meridian/surfaces.tsx)) for non-chain surfaces (master-data CRUD, settings, analytics/ML, connectors).
+Post-login, `LaunchRedirect` ([App.tsx](open-energy-platform/pages/src/App.tsx)) calls `GET /api/onboarding/state` → `/onboard` (first visit) or `/v2` (returning). The four surfaces:
+- **Home** (`/v2`, [v2/Home.tsx](open-energy-platform/pages/src/v2/Home.tsx)) — per-role work queue; still backed by `GET /api/horizon/:role` ([src/routes/horizon.ts](open-energy-platform/src/routes/horizon.ts)).
+- **Find** (`/v2/find`, [v2/Find.tsx](open-energy-platform/pages/src/v2/Find.tsx)) — live transaction search; `?chain_key=` filters to one chain (the target of the retired `/ledger/:chainKey` deep link).
+- **Trade** (`/v2/trade`, [v2/Trade.tsx](open-energy-platform/pages/src/v2/Trade.tsx)) — order-book / deal authoring. Role-gated: the nav link shows only when `hasTrade(chains, role)` ([v2/starts.ts](open-energy-platform/pages/src/v2/starts.ts)).
+- **Transaction** (`/v2/t/:id`, [v2/Transaction.tsx](open-energy-platform/pages/src/v2/Transaction.tsx)) — one-page event log; resolves `chain_key` from the id server-side, so only `:id` is in the URL.
+- **`/v2/s/:key`** ([v2/Surface.tsx](open-energy-platform/pages/src/v2/Surface.tsx)) — one parametric route renders `SURFACE_REGISTRY['<role>:<key>']` (static allow-list in [v2/surfaces.tsx](open-energy-platform/pages/src/v2/surfaces.tsx), panels under [v2/surfaces/](open-energy-platform/pages/src/v2/surfaces/)) for non-chain surfaces (master-data CRUD, settings, analytics/ML, connectors).
 
-The chain registry [src/utils/chain-registry-meridian.ts](open-energy-platform/src/utils/chain-registry-meridian.ts) (`MERIDIAN_CHAINS`) is the source of truth for every chain's table/columns/lanes/actions. **Security invariant:** those SQL identifiers come exclusively from that static literal, never from request input; request values only ever bind to `?` placeholders.
+**Legacy-route redirects** (App.tsx): `/horizon /atlas /new /cockpit /admin /trading` + every retired per-domain path → `/v2`; `/deals` → `/v2/trade`; `/thread/:chainKey/:id` → `/v2/t/:id` (chainKey dropped); `/ledger/:chainKey` → `/v2/find?chain_key=`; `/surface/:key` → `/v2/s/:key`.
+
+**Shared kit** (consumed by v2 *and* by ~14 non-v2 components — ipp tabs, onboarding, launch): [pages/src/shared/](open-energy-platform/pages/src/shared/) holds `SurfaceBoundary`, `lib.ts`/`lib-pure.ts` (chain data layer + `humanizeKey`), the `ease/` kit (`statusLabel`, `states`, `PrimaryAction`, money/view-prefs), and `meridian.css` (relocated out of the retired `meridian/`, keep the name for the CSS selectors KycSubmission depends on).
+
+The chain registry [src/utils/chain-registry-meridian.ts](open-energy-platform/src/utils/chain-registry-meridian.ts) (`MERIDIAN_CHAINS`) is the **backend** source of truth for every chain's table/columns/lanes/actions — a separate system from the retired frontend `meridian/` folder; **do not rename or touch it**. **Security invariant:** those SQL identifiers come exclusively from that static literal, never from request input; request values only ever bind to `?` placeholders.
 
 ### Feature-depth rubric (load-bearing for any new work)
 

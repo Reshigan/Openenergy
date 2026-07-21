@@ -60,7 +60,13 @@ export class MemoryStore implements Store {
     let rows = [...this.txns.values()];
     if (f.scope_participant_id) {
       const pid = f.scope_participant_id;
-      rows = rows.filter((t) => t.visibility === 'public' || isLiveParty(t.id, pid));
+      const keys = new Set(f.scope_chain_keys ?? []);
+      rows = rows.filter(
+        (t) =>
+          t.visibility === 'public' ||
+          isLiveParty(t.id, pid) ||
+          (t.visibility === 'party' && keys.has(t.chain_key)),
+      );
     }
     if (f.chain_key) rows = rows.filter((t) => t.chain_key === f.chain_key);
     if (f.open_only) rows = rows.filter((t) => t.closed_at === null);

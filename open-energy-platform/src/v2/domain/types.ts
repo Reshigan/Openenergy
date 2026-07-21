@@ -304,9 +304,14 @@ export interface ExportQuery {
 
 /** Flexible list filter for Home/Find/Ledger. All predicates AND together.
  *  scope_participant_id set ⇒ only txns this participant is a live party to, OR
- *  public ones (non-operator scoping). Operators pass it undefined to see all. */
+ *  public ones, OR ones in scope_chain_keys (non-operator scoping). Operators
+ *  pass it undefined to see all. */
 export interface TxnListFilter {
   scope_participant_id?: string;
+  /** chains whose ChainDecl.roles admits the caller's JWT role — the platform's
+   *  role-based audience, which the party model alone cannot express. Only
+   *  widens `visibility:'party'` chains; `'owner'` stays party-only. */
+  scope_chain_keys?: string[];
   chain_key?: string;
   open_only?: boolean;
   /** substring over human_ref / title / fields (case-insensitive) */
