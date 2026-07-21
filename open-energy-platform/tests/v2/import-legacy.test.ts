@@ -240,15 +240,16 @@ describe('importChain', () => {
   });
 
   it('rejects a chain outside the allow-list', async () => {
-    expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(122);
+    expect(Object.keys(IMPORTABLE_CHAINS)).toHaveLength(178);
     await expect(importChain([], 'ppa_contract', newDeps())).rejects.toThrow(/not importable/);
   });
 
   // v2_txns.id IS the raw v1 row id, but v1 ids are only unique WITHIN a table —
-  // two different legacy tables can both hold a row 'cc-1'. The second one to be
-  // imported must be reported as un-imported, not silently counted as an
-  // already-present skip, or the cutover reconciliation over-reports coverage.
-  it('a v1 id already owned by another chain quarantines instead of counting as skipped', async () => {
+  // two different legacy tables can both hold a row 'cc-1'. The first to import
+  // keeps the bare id (so /v2/t/cc-1 and the legacy /thread redirect keep
+  // resolving); a later chain that collides takes `<chain>:<id>` instead of
+  // being dropped, so the cutover never silently loses a colliding row.
+  it('a v1 id already owned by another chain imports under a chain-namespaced id', async () => {
     const deps = newDeps();
     await importChain(ccRows(), 'covenant_certificate', deps);
     expect((await deps.store.getTxn('cc-1'))!.txn.chain_key).toBe('covenant_certificate');
@@ -259,11 +260,36 @@ describe('importChain', () => {
       'availability_guarantee',
       deps,
     );
+    expect(report.imported).toBe(1);
+    expect(report.skipped_existing).toBe(0);
+    expect(report.quarantined).toEqual([]);
+    // the incumbent keeps the bare id; the collider landed under `<chain>:<id>`
+    expect((await deps.store.getTxn('cc-1'))!.txn.chain_key).toBe('covenant_certificate');
+    const collided = (await deps.store.getTxn('availability_guarantee:cc-1'))!;
+    expect(collided.txn.chain_key).toBe('availability_guarantee');
+    expect(collided.txn.state).toBe('period_open');
+  });
+
+  // both the bare id AND the namespaced fallback are already taken → nowhere
+  // left to land the row, so it is quarantined for the reconciliation to see.
+  it('quarantines when both the bare and namespaced ids are taken', async () => {
+    const deps = newDeps();
+    await importChain(ccRows(), 'covenant_certificate', deps);
+    // pre-occupy the namespaced fallback id too
+    await importChain(
+      [{ id: 'availability_guarantee:cc-1', case_number: 'AG-000', chain_status: 'period_open', created_at: '2026-02-01 08:00:00' }],
+      'availability_guarantee',
+      deps,
+    );
+
+    const report = await importChain(
+      [{ id: 'cc-1', case_number: 'AG-001', chain_status: 'period_open', created_at: '2026-03-01 08:00:00' }],
+      'availability_guarantee',
+      deps,
+    );
     expect(report.imported).toBe(0);
     expect(report.skipped_existing).toBe(0);
     expect(report.quarantined).toEqual([{ id: 'cc-1', status: 'period_open' }]);
-    // the incumbent txn is untouched
-    expect((await deps.store.getTxn('cc-1'))!.txn.chain_key).toBe('covenant_certificate');
   });
 });
 

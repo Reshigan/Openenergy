@@ -161,6 +161,74 @@ export const IMPORTABLE_CHAINS: Record<string, string | null> = {
   slb_kpi_ratchet: null, // no counterparty column
   support_tickets: 'reporter', // ticket reporter is the counterparty user
   trade_report: 'counterparty', // trade counterparty (settlement_fail/trade_allocation precedent)
+
+  // ── wave 2 (cutover coverage sweep) ──────────────────────────────────────
+  // 56 chains that had a v1 descriptor and rows but no import path. Every one
+  // is `null` for the same measured reason: none of their counterpartyCol
+  // values holds a participant id — they are site names, asset tags, refs or
+  // free text (checked column-by-column against `participants`). importChain's
+  // UUID_RE guard means naming a role here would attach zero party rows
+  // anyway, so `null` states the fact instead of implying an attachment.
+  // Deliberately absent, same rule as RENAMED_IMPORTS: `work_order` (second
+  // descriptor over om_work_orders, drained by om_work_order) and `gcc_ncr`
+  // (rides oe_grid_code_compliance, drained by grid_code_compliance) — each
+  // source table imports exactly once.
+  article6_adjustment: null,
+  asset_prognostics: null,
+  audit_chain_block: null,
+  bess_soh: null,
+  commissioning: null,
+  compliance_notice: null,
+  cp_tracker: null,
+  csat_record: null,
+  dlp_defect: null,
+  dscr_monitoring: null,
+  dscr_report: null,
+  generation_revenue_assurance: null,
+  green_tariff_disclosure: null,
+  ipp_ael: null,
+  ipp_anr: null,
+  ipp_bbbee: null,
+  ipp_bfs: null,
+  ipp_cep: null,
+  ipp_construction_diary: null,
+  ipp_eam: null,
+  ipp_eco: null,
+  ipp_env_closure: null,
+  ipp_hra: null,
+  ipp_ie_cert: null,
+  ipp_iear: null,
+  ipp_land_register: null,
+  ipp_lcr: null,
+  ipp_method_statement: null,
+  ipp_mir: null,
+  ipp_om_handover: null,
+  ipp_payment_cert: null,
+  ipp_performance_bonds: null,
+  ipp_progress_claim: null,
+  ipp_refi: null,
+  ipp_rfi: null,
+  ipp_rpr: null,
+  ipp_sed: null,
+  ipp_subcontractor: null,
+  ipp_submittal: null,
+  ipp_tpa: null,
+  licence_obligation: null,
+  ncr: null,
+  oe_dispatch_nominations: null,
+  pnl_attribution: null,
+  ppa_obligation: null,
+  pr_underperformance: null,
+  pretrade_credit_check: null,
+  regulator_export_pack: null,
+  regulator_inbox: null,
+  site_instruction: null,
+  sla_performance_report: null,
+  smart_meter_asset: null,
+  stage_gate: null,
+  substation_asset: null,
+  tariff_indexation: null,
+  variation_order: null,
 };
 
 /** RENAMED sources (CUTOVER_COVERAGE §2): v1 descriptor key → v2 chain key.
@@ -1351,75 +1419,88 @@ export async function importChain(
       fields[name] = decl.type === 'boolean' && typeof v === 'number' ? v !== 0 : v;
     }
 
-    const event_id = deps.ids.uuid();
-    const unhashed: Omit<EventRow, 'hash'> = {
-      txn_id: rowId,
-      seq: 1,
-      event_id,
-      chain_key: v2Key,
-      type: `${v2Key}.imported`,
-      from_state: null,
-      to_state: status,
-      actor_id: 'system:import',
-      actor_kind: 'system:import',
-      on_behalf_of: null,
-      occurred_at,
-      caused_by: null,
-      reason_code: null,
-      reason_text: null,
-      payload: { provenance: 'legacy', row: row as Json },
-      payload_version: 1,
-      prev_hash: await genesisPrevHash(v2Key),
-      idempotency_key: idem,
-    };
-    const event: EventRow = { ...unhashed, hash: await eventHash(unhashed) };
-
-    // party: only where the counterparty column holds a confident participant id.
-    const parties: PartyRow[] = [];
-    const cp = desc.counterpartyCol ? row[desc.counterpartyCol] : null;
-    if (counterpartyRole && typeof cp === 'string' && UUID_RE.test(cp)) {
-      parties.push({
-        txn_id: rowId,
-        participant_id: cp,
-        role_on_txn: counterpartyRole,
-        terms: null,
-        from_event_id: event_id,
-        until_event_id: null,
-      });
-    }
-
-    // timers: non-terminal rows arm the state's TimerDecls from occurred_at
-    // (may be immediately due — correct SLA semantics for stale legacy rows).
-    // Terminal rows arm nothing. Same shape the engine arms (engine.ts).
-    const timers: TimerRow[] = [];
-    if (!state.terminal) {
-      const at = { epoch_ms: Date.parse(occurred_at), zone: 'UTC' as const };
-      for (const t of chain.timers ?? []) {
-        if (t.onState !== status) continue;
-        timers.push({
-          id: deps.ids.uuid(),
-          txn_id: rowId,
-          fire: t.fire,
-          due_at: isoUtc(addDuration(at, t.after)),
-          key: `${rowId}:${t.onState}:${t.fire}`,
-          class: t.kind,
-        });
-      }
-    }
-
     const refVal = row[desc.refCol];
     const refBase = typeof refVal === 'string' && refVal ? refVal : rowId;
-    const txn: TxnRow = {
-      id: rowId,
-      chain_key: v2Key,
-      human_ref: refBase,
-      title: chain.title(fields),
-      state: status,
-      seq: 1,
-      visibility: chain.visibility,
-      fields,
-      opened_at,
-      closed_at: state.terminal ? occurred_at : null,
+
+    // Everything below hangs off the txn id, and the id is not settled until we
+    // know whether it collides (see the id-collision note at the commit loop),
+    // so build the whole batch as a function of the candidate id.
+    const buildBatch = async (txnId: string, refAttempt: number): Promise<CommitBatch> => {
+      const event_id = deps.ids.uuid();
+      const unhashed: Omit<EventRow, 'hash'> = {
+        txn_id: txnId,
+        seq: 1,
+        event_id,
+        chain_key: v2Key,
+        type: `${v2Key}.imported`,
+        from_state: null,
+        to_state: status,
+        actor_id: 'system:import',
+        actor_kind: 'system:import',
+        on_behalf_of: null,
+        occurred_at,
+        caused_by: null,
+        reason_code: null,
+        reason_text: null,
+        payload: { provenance: 'legacy', row: row as Json },
+        payload_version: 1,
+        prev_hash: await genesisPrevHash(v2Key),
+        idempotency_key: idem,
+      };
+      const event: EventRow = { ...unhashed, hash: await eventHash(unhashed) };
+
+      // party: only where the counterparty column holds a confident participant id.
+      const parties: PartyRow[] = [];
+      const cp = desc.counterpartyCol ? row[desc.counterpartyCol] : null;
+      if (counterpartyRole && typeof cp === 'string' && UUID_RE.test(cp)) {
+        parties.push({
+          txn_id: txnId,
+          participant_id: cp,
+          role_on_txn: counterpartyRole,
+          terms: null,
+          from_event_id: event_id,
+          until_event_id: null,
+        });
+      }
+
+      // timers: non-terminal rows arm the state's TimerDecls from occurred_at
+      // (may be immediately due — correct SLA semantics for stale legacy rows).
+      // Terminal rows arm nothing. Same shape the engine arms (engine.ts).
+      const timers: TimerRow[] = [];
+      if (!state.terminal) {
+        const at = { epoch_ms: Date.parse(occurred_at), zone: 'UTC' as const };
+        for (const t of chain.timers ?? []) {
+          if (t.onState !== status) continue;
+          timers.push({
+            id: deps.ids.uuid(),
+            txn_id: txnId,
+            fire: t.fire,
+            due_at: isoUtc(addDuration(at, t.after)),
+            key: `${txnId}:${t.onState}:${t.fire}`,
+            class: t.kind,
+          });
+        }
+      }
+
+      const txn: TxnRow = {
+        id: txnId,
+        chain_key: v2Key,
+        human_ref: refAttempt === 1 ? refBase : `${refBase}~${refAttempt}`,
+        title: chain.title(fields),
+        state: status,
+        seq: 1,
+        visibility: chain.visibility,
+        fields,
+        opened_at,
+        closed_at: state.terminal ? occurred_at : null,
+      };
+
+      return {
+        insertEvent: event,
+        insertTxn: txn,
+        ...(parties.length ? { insertParties: parties } : {}),
+        ...(timers.length ? { insertTimers: timers } : {}),
+      };
     };
 
     if (dry_run) {
@@ -1427,39 +1508,41 @@ export async function importChain(
       continue;
     }
 
-    // Suffix-retry on human_ref collisions is safe: both stores validate ALL
-    // constraints before mutating anything, so a failed commit wrote nothing.
-    for (let attempt = 1; ; attempt++) {
-      const batch: CommitBatch = {
-        insertEvent: event,
-        insertTxn: attempt === 1 ? txn : { ...txn, human_ref: `${refBase}~${attempt}` },
-        ...(parties.length ? { insertParties: parties } : {}),
-        ...(timers.length ? { insertTimers: timers } : {}),
-      };
-      try {
-        await deps.store.commit(batch);
-        report.imported++;
-        break;
-      } catch (e) {
-        if (e instanceof ConstraintViolation) {
-          if (e.constraint === 'idempotency_key') {
-            report.skipped_existing++; // concurrent import raced us — same row landed
-            break;
+    // Commit under `rowId`, falling back to a chain-namespaced id. v2_txns.id
+    // IS the v1 row id, but v1 ids are only unique per TABLE — oe_ipp_lc_reports
+    // and the load-curtailment table both number their rows `lc_001`. The first
+    // chain to import an id keeps it bare (so existing /v2/t/<id> links and the
+    // legacy /thread redirect keep resolving); a later chain that collides takes
+    // `<chain>:<id>` instead of being dropped. Only if BOTH are taken is the row
+    // quarantined. Suffix-retry on human_ref is safe alongside this: both stores
+    // validate every constraint before mutating, so a failed commit wrote nothing.
+    let outcome: 'imported' | 'skipped' | 'collision' = 'collision';
+    for (const txnId of [rowId, `${v2Key}:${rowId}`]) {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          await deps.store.commit(await buildBatch(txnId, attempt));
+          outcome = 'imported';
+          break;
+        } catch (e) {
+          if (e instanceof ConstraintViolation) {
+            if (e.constraint === 'idempotency_key') {
+              outcome = 'skipped'; // concurrent import raced us — same row landed
+              break;
+            }
+            if (e.constraint === 'event_pk') {
+              outcome = 'collision';
+              break;
+            }
+            if (e.constraint === 'human_ref' && attempt < 6) continue;
           }
-          if (e.constraint === 'event_pk') {
-            // v2_txns.id IS the v1 row id, and v1 ids are only unique per table —
-            // so (txn_id, seq=1) already taken means a DIFFERENT chain's row owns
-            // this id. Not a race (a race trips idempotency_key first, same key).
-            // Quarantine rather than count it skipped: it is un-imported data and
-            // the cutover reconciliation must see it.
-            report.quarantined.push({ id: rowId, status: rawStatus });
-            break;
-          }
-          if (e.constraint === 'human_ref' && attempt < 6) continue;
+          throw e;
         }
-        throw e;
       }
+      if (outcome !== 'collision') break;
     }
+    if (outcome === 'imported') report.imported++;
+    else if (outcome === 'skipped') report.skipped_existing++;
+    else report.quarantined.push({ id: rowId, status: rawStatus });
   }
   return report;
 }
